@@ -18,13 +18,12 @@ export async function registerRoutes(
   registerChatRoutes(app); // For AI feedback "Chat"
 
   // Middleware to ensure portfolio exists for logged in users
+  // We remove auto-creation to allow for the onboarding flow
   app.use(async (req, res, next) => {
     if (req.isAuthenticated() && req.user) {
       const userId = (req.user as any).claims.sub;
-      let portfolio = await storage.getPortfolio(userId);
-      if (!portfolio) {
-        await storage.createPortfolio(userId);
-      }
+      const portfolio = await storage.getPortfolio(userId);
+      // Portfolio is now created via /api/portfolio/onboard
     }
     next();
   });
@@ -56,7 +55,27 @@ export async function registerRoutes(
         await storage.updatePortfolioBalance(userId, -cost);
       }
 
-      const trade = await storage.createTrade(userId, input);
+      // Calculate Risk/Reward
+      let riskAmount = null;
+      let rewardAmount = null;
+      let rrRatio = null;
+
+      if (input.stopLoss) {
+        riskAmount = Math.abs(Number(input.entryPrice) - Number(input.stopLoss)) * Number(input.size);
+      }
+      if (input.takeProfit) {
+        rewardAmount = Math.abs(Number(input.takeProfit) - Number(input.entryPrice)) * Number(input.size);
+      }
+      if (riskAmount && rewardAmount && riskAmount > 0) {
+        rrRatio = rewardAmount / riskAmount;
+      }
+
+      const trade = await storage.createTrade(userId, {
+        ...input,
+        riskAmount: riskAmount?.toFixed(2),
+        rewardAmount: rewardAmount?.toFixed(2),
+        rrRatio: rrRatio?.toFixed(2),
+      });
       res.status(201).json(trade);
     } catch (err) {
       if (err instanceof z.ZodError) {
