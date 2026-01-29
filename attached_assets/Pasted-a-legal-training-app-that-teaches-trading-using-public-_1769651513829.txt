@@ -1,0 +1,184 @@
+a legal training app that teaches trading using public market data + a simulator with fake currency, and it grades/coach-users with scores, insights, and (optional) leaderboards. Think “Duolingo for trading,” but with charts, setups, and feedback.
+
+Here’s a strong blueprint you can build in Python.
+
+⸻
+
+Core concept
+
+Users never connect a brokerage.
+They trade with paper money (fake balance) inside your app using real historical / delayed / (optionally) real-time market data. The app:
+	•	teaches basics → intermediate → advanced
+	•	gives “missions” (lessons) and practice challenges
+	•	grades trades and decisions with a clear scoring rubric
+	•	shows progress, streaks, ranks, and “what you did wrong”
+
+This is legal as a trading education + simulation product, as long as you’re clear you’re not giving personalized investment advice.
+
+⸻
+
+Key features to build
+
+1) Learn mode (structured curriculum)
+
+Create tracks like:
+	•	Stocks 101: market/limit orders, bid/ask, volatility, position sizing
+	•	Crypto 101: spreads, slippage, news volatility, risk
+	•	Technical basics: trend, support/resistance, volume, moving averages
+	•	Risk management: stop loss, take profit, R:R, max loss per day
+	•	Psychology: revenge trading, FOMO, overtrading
+
+Each lesson ends with:
+	•	a short quiz
+	•	a mini-sim challenge (“Place a trade with a 2:1 risk-reward”)
+
+2) Practice mode (paper trading simulator)
+	•	Fake wallet: e.g., “SonoDollars” / “SimCash” / “Practice Credits”
+	•	User can trade:
+	•	“Market” and “Limit” (simulate fills)
+	•	Stop-loss and take-profit
+	•	“Replay mode”: pick a day and trade like it’s live (candles reveal gradually)
+
+3) Feedback engine (what makes it feel premium)
+
+After each trade, show:
+	•	Entry quality (did you chase? buy into resistance? late entry?)
+	•	Risk quality (position size too big? no stop? bad R:R?)
+	•	Exit quality (took profit too early? held loser too long?)
+	•	Execution quality (slippage/spread, limit vs market choice)
+
+Make it feel like a coach that explains in simple English:
+
+“You entered after price already moved 3.2% in 4 candles (chase). Your stop was 0.4% away in a high-volatility zone, so you got wicked out.”
+
+4) Weekly/Daily “Trading Score”
+
+Users love a single number + breakdown:
+	•	Risk Score (0–100)
+	•	Discipline Score (0–100)
+	•	Strategy Fit Score (0–100)
+	•	Execution Score (0–100)
+	•	Overall Score (weighted)
+
+5) Optional social layer
+	•	Leaderboards by consistency (not raw profit)
+	•	“Risk-adjusted league” so gamblers don’t dominate
+	•	Private rooms for friends/classes
+
+⸻
+
+Scoring model (simple but powerful)
+
+Your scoring should reward good habits, not luck.
+
+Per-trade metrics
+
+You can compute these from trade logs + price series:
+	•	R multiple: profit / risk (risk = entry − stop for long)
+	•	Max adverse excursion (MAE): how far it went against them
+	•	Max favorable excursion (MFE): how far it went in their favor
+	•	Chase score: entered after a big candle move
+	•	Stop placement score: stop too tight for volatility (use ATR)
+	•	Rule adherence: did they follow the lesson rules?
+
+Example: scoring formula
+	•	Risk discipline (40%): position sizing + max daily loss + stop usage
+	•	Trade quality (30%): R multiple + entry/exit timing vs volatility
+	•	Consistency (20%): avoids revenge trading, overtrading, tilt
+	•	Learning (10%): quizzes + completing scenarios
+
+Important: Leaderboard should be based on risk-adjusted score and consistency, not “who YOLO’d into a moonshot.”
+
+⸻
+
+Data approach (public data)
+
+Start with:
+	•	Daily OHLCV for stocks/ETFs
+	•	Crypto OHLCV (minute/hour/day)
+	•	Later: add delayed intraday if you want the “live feel”
+
+Store:
+	•	candles (open/high/low/close/volume)
+	•	corporate actions if needed (splits/dividends) for stocks
+
+⸻
+
+Membership tiers (clean and convincing)
+
+Free tier
+	•	Basic lessons (Stocks 101 + intro crypto)
+	•	Basic simulator (market orders, limited assets)
+	•	Basic score + weekly recap
+	•	No advanced feedback (just win/loss + simple tips)
+
+Pro monthly/annual
+	•	Full curriculum (risk, strategy types, psychology)
+	•	Replay mode + scenarios
+	•	Advanced feedback engine (ATR stops, chase detection, R-multiple coaching)
+	•	More assets + watchlists
+	•	Full analytics: heatmaps, consistency, mistake breakdown
+
+Premium / Mentor (optional)
+	•	Personalized “learning path” (still not investment advice)
+	•	Deep trade review templates
+	•	Private leaderboard/classroom mode for groups
+
+⸻
+
+Legal safety (how to phrase it)
+
+You’ll want these principles everywhere:
+	•	“Educational simulation only”
+	•	“Not investment advice”
+	•	“Past performance doesn’t predict future results”
+	•	“No brokerage connection; trades are simulated”
+	•	“We provide generalized educational feedback, not personalized recommendations”
+
+Your premium features should be about process coaching, not “buy this now.”
+
+⸻
+
+Python architecture (what to build first)
+
+MVP in 4 modules
+	1.	Data service
+
+	•	fetch/store candles
+	•	serve candles by symbol/timeframe
+
+	2.	Sim engine
+
+	•	order fills (market/limit), fees, spreads
+	•	portfolio, positions, PnL
+
+	3.	Scoring engine
+
+	•	compute metrics per trade + per week
+	•	generate explanations (“reason codes” → human text)
+
+	4.	App API
+
+	•	FastAPI backend (clean for mobile + web)
+	•	Postgres for users/trades
+	•	Redis optional for caching
+
+⸻
+
+“Types of trading” you can teach (in-app tracks)
+
+Give users lanes so they don’t feel lost:
+	•	Long-term investing
+	•	Swing trading
+	•	Day trading (advanced)
+	•	Momentum
+	•	Mean reversion
+	•	Breakouts
+	•	Trend following
+	•	News volatility (advanced + risk warnings)
+
+Each track has:
+	•	rules
+	•	examples
+	•	practice scenarios
+	•	a scoring rubric tailored to it
