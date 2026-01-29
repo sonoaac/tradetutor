@@ -46,31 +46,30 @@ export class DatabaseStorage implements IStorage {
     return portfolio;
   }
 
-  async createPortfolio(userId: string): Promise<Portfolio> {
+  async createPortfolio(userId: string, data?: { track?: string, experienceLevel?: string, balance?: string }): Promise<Portfolio> {
     const [portfolio] = await db.insert(portfolios).values({
       userId,
-      balance: "100000.00",
-      totalProfitLoss: "0.00"
+      balance: data?.balance || "10000.00",
+      totalProfitLoss: "0.00",
+      track: data?.track || "stocks",
+      experienceLevel: data?.experienceLevel || "beginner"
     }).returning();
     return portfolio;
   }
 
   async resetPortfolio(userId: string): Promise<Portfolio> {
-    // Increment reset count and reset balance
+    const existing = await this.getPortfolio(userId);
     const [portfolio] = await db.update(portfolios)
       .set({ 
-        balance: "100000.00", 
+        balance: "10000.00", 
         totalProfitLoss: "0.00",
         lastResetAt: new Date(),
-        resetCount: 0 // Ideally increment, but sql increment is cleaner in raw sql. Let's just reset.
+        resetCount: (existing?.resetCount || 0) + 1
       })
       .where(eq(portfolios.userId, userId))
       .returning();
       
-    // Archive or delete old trades? For now, let's keep them but maybe filter by date? 
-    // Simpler: Delete all trades for this user on reset.
     await db.delete(trades).where(eq(trades.userId, userId));
-    
     return portfolio;
   }
 

@@ -18,8 +18,10 @@ export * from "./models/chat";
 export const portfolios = pgTable("portfolios", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id),
-  balance: numeric("balance", { precision: 12, scale: 2 }).notNull().default("100000.00"),
+  balance: numeric("balance", { precision: 12, scale: 2 }).notNull().default("10000.00"),
   totalProfitLoss: numeric("total_profit_loss", { precision: 12, scale: 2 }).notNull().default("0.00"),
+  track: text("track"), // 'stocks', 'crypto', 'forex'
+  experienceLevel: text("experience_level"), // 'beginner', 'intermediate'
   resetCount: integer("reset_count").default(0),
   lastResetAt: timestamp("last_reset_at").defaultNow(),
 });
@@ -49,6 +51,9 @@ export const trades = pgTable("trades", {
   aiFeedback: text("ai_feedback"), // The "Coach" feedback
   scoreRisk: integer("score_risk"), // 0-100
   scoreExecution: integer("score_execution"), // 0-100
+  riskAmount: numeric("risk_amount", { precision: 12, scale: 2 }),
+  rewardAmount: numeric("reward_amount", { precision: 12, scale: 2 }),
+  rrRatio: numeric("rr_ratio", { precision: 12, scale: 2 }),
 });
 
 export const tradesRelations = relations(trades, ({ one }) => ({

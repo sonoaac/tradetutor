@@ -1,0 +1,283 @@
+Here’s a clean, step-by-step “Start Trading Now” flow for your Python + Flask app (paper trading / training only). I’ll explain what the user sees and what your Flask backend should do at each step.
+
+⸻
+
+0) User clicks “Start Trading Now”
+
+What user sees
+
+A simple onboarding modal/page:
+	1.	Pick a track:
+	•	Stocks Basics
+	•	Crypto Basics
+	•	(later) Forex Basics
+	2.	Choose experience:
+	•	Beginner (recommended)
+	•	Intermediate
+	3.	Choose practice wallet:
+	•	SimCash (default)
+	•	“Reset wallet later” info
+
+Flask should do
+	•	If not logged in: redirect to /signup (or allow guest with limited saving)
+	•	Create/ensure user profile + default settings
+
+Routes
+	•	GET /start (shows onboarding)
+	•	POST /start (saves choices → redirects to dashboard)
+
+⸻
+
+1) Create a practice account (paper wallet)
+
+What user sees
+
+“Welcome. Here’s your practice wallet: $10,000 SimCash”
+	•	“This is a simulator. No real money.”
+
+Flask should do
+	•	Create a wallet row if none exists:
+	•	starting_balance = 10000
+	•	available_cash = 10000
+
+Routes
+	•	GET /dashboard
+
+DB tables
+	•	users
+	•	wallets (user_id, balance, available_cash, created_at)
+
+⸻
+
+2) Dashboard (home)
+
+What user sees
+
+A trading dashboard with:
+	•	Wallet balance + today’s score
+	•	A big search bar: “Search symbol (AAPL, TSLA, BTC-USD…)”
+	•	Quick buttons:
+	•	“Practice Lesson 1”
+	•	“Replay Market”
+	•	“Trade Now”
+
+Flask should do
+	•	Pull:
+	•	wallet
+	•	open positions
+	•	today/weekly score
+	•	suggested lesson
+
+Routes
+	•	GET /dashboard
+
+⸻
+
+3) User searches a symbol and opens the trade screen
+
+What user sees
+
+A symbol page:
+	•	mini chart (candles)
+	•	current price (or delayed price)
+	•	key stats: daily change %, volatility, volume
+	•	button: “Trade”
+
+Flask should do
+	•	Fetch candle data from your stored dataset/API layer
+	•	Cache latest price
+	•	Return JSON for chart (or render template)
+
+Routes
+	•	GET /asset/<symbol> (HTML)
+	•	GET /api/asset/<symbol>/candles?tf=1d&limit=120 (JSON)
+	•	GET /api/asset/<symbol>/quote (JSON)
+
+⸻
+
+4) Trade ticket (place a simulated order)
+
+What user sees
+
+A trade form (keep it beginner-friendly):
+
+Order Type
+	•	Market
+	•	Limit (optional toggle)
+
+Side
+	•	Buy (Long)
+	•	Sell (Short) (you can lock shorting to premium later)
+
+Quantity
+	•	shares or dollars (toggle)
+	•	show “estimated cost”
+
+Risk tools
+	•	Stop loss (recommended)
+	•	Take profit (optional)
+
+Button: “Place Sim Trade”
+
+Flask should do (core engine step)
+
+When they submit:
+	1.	Validate:
+	•	symbol exists
+	•	qty > 0
+	•	wallet has enough cash (for long buys)
+	2.	Get current simulated fill price:
+	•	for Market: use latest price + spread/slippage model
+	•	for Limit: store pending order; fill when price crosses
+	3.	Create orders row
+	4.	If filled immediately:
+	•	create/update positions
+	•	subtract cash
+	•	create fills record
+
+Routes
+	•	POST /trade (HTML form submit)
+	•	or POST /api/trade (JSON)
+
+Tables
+	•	orders
+	•	fills
+	•	positions
+	•	transactions (wallet movements)
+
+⸻
+
+5) Confirmation screen (instant clarity)
+
+What user sees
+
+A clean receipt:
+
+✅ “Sim Trade Placed”
+	•	Symbol: AAPL
+	•	Side: Buy
+	•	Qty: 3
+	•	Fill: $187.42
+	•	Stop: $182.00
+	•	Take Profit: $197.00
+	•	Risk: $16.26
+	•	R:R: 1:2.3
+
+Buttons:
+	•	“View Position”
+	•	“Trade Another”
+	•	“Start Lesson That Fits This Trade”
+
+Flask should do
+	•	Compute risk and R:R
+	•	Save trade metadata (risk, rr, strategy tags)
+
+Routes
+	•	GET /trade/receipt/<order_id>
+
+⸻
+
+6) Position monitoring (paper P&L + coaching)
+
+What user sees
+
+A “Positions” page:
+	•	Open positions list
+	•	Each has:
+	•	P&L
+	•	entry price
+	•	stop/take profit
+	•	“Close Position” button
+	•	“Coach feedback” (basic for free; detailed for premium)
+
+Flask should do
+	•	Recalculate unrealized P&L from latest price
+	•	Allow closing position:
+	•	create closing order/fill
+	•	update wallet
+	•	mark position closed
+
+Routes
+	•	GET /positions
+	•	POST /positions/<id>/close
+
+⸻
+
+7) After they close a trade: feedback + score (this is the hook)
+
+What user sees
+
+A “Trade Review” page:
+
+Overall Trade Score: 72/100
+	•	✅ Good: used a stop loss
+	•	⚠️ Improve: stop too tight for volatility (ATR)
+	•	⚠️ Improve: entered after a big candle (chase)
+
+Next action
+	•	“Practice Lesson: Stop Placement”
+	•	“Do a replay scenario: Avoid chasing”
+
+Flask should do
+	•	Run scoring engine on close:
+	•	R-multiple
+	•	ATR-based stop quality
+	•	chase detection
+	•	time-in-trade, MAE/MFE
+	•	Save:
+	•	trade_reviews
+	•	update daily_scores, weekly_scores
+
+Routes
+	•	GET /review/<trade_id>
+
+⸻
+
+8) Daily/weekly recap + leaderboard (optional)
+
+What user sees
+	•	Today score + streak
+	•	Mistake breakdown (top 3)
+	•	(Optional) leaderboard: “Consistency League”
+
+Flask should do
+	•	Aggregate per user:
+	•	average risk score
+	•	win rate (secondary)
+	•	max drawdown (simulated)
+	•	Only show leaderboard if user opts in
+
+Routes
+	•	GET /scores
+	•	GET /leaderboard
+
+⸻
+
+Minimal Flask route map (MVP)
+	•	GET/POST /start
+	•	GET /dashboard
+	•	GET /asset/<symbol>
+	•	GET /api/asset/<symbol>/candles
+	•	GET /api/asset/<symbol>/quote
+	•	POST /trade
+	•	GET /positions
+	•	POST /positions/<id>/close
+	•	GET /review/<trade_id>
+	•	GET /scores
+
+⸻
+
+The most important UX detail
+
+On every trade screen, show this line clearly:
+
+“Practice simulator only. No real money. Educational training.”
+
+⸻
+
+If you want, I can now give you the exact Flask file structure (app factory, blueprints, templates folder, static folder) + starter code for:
+	•	the trade ticket
+	•	wallet + positions
+	•	simple fill + scoring (v1)
+
+…and it’ll be paste-ready.

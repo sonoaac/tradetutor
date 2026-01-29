@@ -74,6 +74,19 @@ export const api = {
         401: errorSchemas.unauthorized,
       },
     },
+    onboard: {
+      method: 'POST' as const,
+      path: '/api/portfolio/onboard',
+      input: z.object({
+        track: z.string(),
+        experienceLevel: z.string(),
+        balance: z.string().optional(),
+      }),
+      responses: {
+        200: z.custom<typeof portfolios.$inferSelect>(),
+        401: errorSchemas.unauthorized,
+      },
+    },
     reset: {
       method: 'POST' as const,
       path: '/api/portfolio/reset',

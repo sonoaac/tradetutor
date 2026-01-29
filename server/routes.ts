@@ -118,6 +118,24 @@ export async function registerRoutes(
     res.json(portfolio);
   });
 
+  app.post(api.portfolio.onboard.path, async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    
+    try {
+      const input = api.portfolio.onboard.input.parse(req.body);
+      const portfolio = await storage.createPortfolio(userId, input);
+      res.json(portfolio);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+        });
+      }
+      throw err;
+    }
+  });
+
   app.post(api.portfolio.reset.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
