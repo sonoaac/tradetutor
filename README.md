@@ -14,7 +14,7 @@ TradeTutor is a professional-grade trading simulator designed to teach users the
 
 ## Key Features
 
-- **Replit Auth**: Secure login via Google, GitHub, or Email.
+- **Local Authentication**: Secure login with email and password using Passport.js.
 - **SimCash Portfolio**: Start with a $10,000 simulated balance.
 - **Educational Tracks**: Structured lessons for different asset classes.
 - **AI Trade Coach**: Feedback on your trade execution and risk management using OpenAI.
@@ -24,7 +24,7 @@ TradeTutor is a professional-grade trading simulator designed to teach users the
 
 - **Database**: PostgreSQL (Neon-backed) managed via Drizzle ORM.
 - **AI**: OpenAI integration configured for "Coach" feedback.
-- **Authentication**: Native Replit Auth integration.
+- **Authentication**: Local email/password authentication with Passport.js.
 - **Onboarding**: Backend support for track and experience selection.
 
 ## Roadmap & Missing Features

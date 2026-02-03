@@ -49,9 +49,11 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: Infinity,
       retry: false,
+      throwOnError: false, // Don't throw errors, let components handle them
     },
     mutations: {
       retry: false,
+      throwOnError: false,
     },
   },
 });

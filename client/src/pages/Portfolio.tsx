@@ -17,6 +17,7 @@ import { TradeList } from "@/components/TradeList";
 
 export default function Portfolio() {
   const { data: portfolio, isLoading } = usePortfolio();
+  const { data: trades = [], isLoading: isLoadingTrades } = useTrades();
   const { mutate: resetPortfolio, isPending: isResetting } = useResetPortfolio();
 
   if (isLoading) {
@@ -68,17 +69,17 @@ export default function Portfolio() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                  <div>
                    <p className="text-sm text-muted-foreground mb-1">Current Balance</p>
-                   <p className="text-4xl font-mono font-bold text-foreground tracking-tight">${Number(portfolio?.balance).toLocaleString()}</p>
+                   <p className="text-4xl font-mono font-bold text-foreground tracking-tight">${Number(portfolio?.balance || 0).toLocaleString()}</p>
                  </div>
                  <div>
                    <p className="text-sm text-muted-foreground mb-1">Total Profit/Loss</p>
-                   <p className={`text-4xl font-mono font-bold tracking-tight ${Number(portfolio?.totalProfitLoss) >= 0 ? 'text-success' : 'text-destructive'}`}>
-                     {Number(portfolio?.totalProfitLoss) > 0 ? '+' : ''}{Number(portfolio?.totalProfitLoss).toLocaleString()}
+                   <p className={`text-4xl font-mono font-bold tracking-tight ${(trades.reduce((sum, t) => sum + Number(t.pnl || 0), 0)) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                     {trades.reduce((sum, t) => sum + Number(t.pnl || 0), 0) > 0 ? '+' : ''}${trades.reduce((sum, t) => sum + Number(t.pnl || 0), 0).toLocaleString()}
                    </p>
                  </div>
                  <div>
-                   <p className="text-sm text-muted-foreground mb-1">Resets</p>
-                   <p className="text-4xl font-mono font-bold text-foreground tracking-tight">{portfolio?.resetCount}</p>
+                   <p className="text-sm text-muted-foreground mb-1">Total Trades</p>
+                   <p className="text-4xl font-mono font-bold text-foreground tracking-tight">{trades.length}</p>
                  </div>
               </div>
            </div>

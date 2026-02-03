@@ -1,6 +1,34 @@
 import { z } from 'zod';
 import { insertTradeSchema, trades, lessons, lessonProgress, portfolios } from './schema';
 
+// Quiz question schema
+export const quizQuestionSchema = z.object({
+  question: z.string(),
+  options: z.array(z.string()),
+  correct: z.number(),
+  explanation: z.string(),
+});
+
+export const quizDataSchema = z.object({
+  questions: z.array(quizQuestionSchema),
+});
+
+// Lesson response with quiz data
+export const lessonResponseSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  slug: z.string(),
+  description: z.string().optional(),
+  content: z.string().optional(),
+  track: z.string().optional(),
+  difficulty: z.string().optional(),
+  order: z.number().optional(),
+  quizData: quizDataSchema.optional(),
+  createdAt: z.string(),
+  isCompleted: z.boolean().optional(),
+  score: z.number().optional(),
+});
+
 // ============================================
 // SHARED ERROR SCHEMAS
 // ============================================
@@ -101,14 +129,14 @@ export const api = {
       method: 'GET' as const,
       path: '/api/lessons',
       responses: {
-        200: z.array(z.custom<typeof lessons.$inferSelect & { isCompleted?: boolean; score?: number }>()),
+        200: z.array(lessonResponseSchema),
       },
     },
     get: {
       method: 'GET' as const,
       path: '/api/lessons/:slug',
       responses: {
-        200: z.custom<typeof lessons.$inferSelect & { isCompleted?: boolean; score?: number }>(),
+        200: lessonResponseSchema,
         404: errorSchemas.notFound,
       },
     },

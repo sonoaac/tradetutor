@@ -1,0 +1,55 @@
+# Flask / Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment
+.env
+.env.flask
+.flaskenv
+
+# Database
+*.db
+*.sqlite
+instance/
+migrations/versions/*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node (for React frontend)
+node_modules/
+client/node_modules/
+.npm
+package-lock.json
+client/dist/
+
+# Vercel
+.vercel

@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { TrendingUp, ShieldCheck, Zap, ArrowRight, BarChart3, Users } from "lucide-react";
+import { AuthModal } from "@/components/AuthModal";
 
 export default function Landing() {
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden font-sans">
       {/* Navbar */}
@@ -15,8 +19,13 @@ export default function Landing() {
               <span className="font-display font-bold text-xl tracking-tight">TradeTutor</span>
             </div>
             <div className="flex items-center gap-4">
-              <Link href="/api/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Log In</Link>
-              <Link href="/api/login">
+              <button 
+                onClick={() => setShowAuthModal(true)}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Log In
+              </button>
+              <Link href="/market">
                 <button className="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-full font-medium text-sm transition-all shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5">
                   Get Started Free
                 </button>
@@ -47,7 +56,7 @@ export default function Landing() {
               Practice with real-time market data, get AI-powered feedback on your trades, and master technical analysis before you risk a single dollar.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/api/login">
+              <Link href="/market">
                 <button className="w-full sm:w-auto px-8 py-4 rounded-full bg-primary text-white font-bold text-lg shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
                   Start Trading Now <ArrowRight className="w-5 h-5" />
                 </button>
@@ -146,6 +155,14 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode, titl
       </div>
       <h3 className="text-xl font-bold font-display mb-3 text-foreground">{title}</h3>
       <p className="text-muted-foreground leading-relaxed">{description}</p>
+    </div>
+  );
+}
+
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
     </div>
   );
 }

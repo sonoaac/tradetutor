@@ -1,0 +1,36 @@
+# Flask Core
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# Database
+Flask-SQLAlchemy==3.1.1
+psycopg2-binary==2.9.9
+Flask-Migrate==4.0.5
+
+# Authentication
+Flask-Login==0.6.3
+Flask-Bcrypt==1.0.1
+
+# CORS
+Flask-Cors==4.0.0
+
+# Rate Limiting
+Flask-Limiter==3.5.0
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Decimal/JSON handling
+simplejson==3.19.2
+
+# OpenAI (optional, for AI coaching)
+openai==1.12.0
+
+# Stripe (optional, for payments)
+stripe==8.0.0
+
+# PayPal (optional, for payments)
+paypalrestsdk==1.13.1
+
+# Gunicorn (for production)
+gunicorn==21.2.0

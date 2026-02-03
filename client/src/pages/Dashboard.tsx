@@ -3,13 +3,400 @@ import { usePortfolio } from "@/hooks/use-portfolio";
 import { useTrades } from "@/hooks/use-trades";
 import { StatCard } from "@/components/StatCard";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
-import { Wallet, TrendingUp, Activity, BarChart2 } from "lucide-react";
+import { Wallet, TrendingUp, Activity, BarChart2, AlertCircle } from "lucide-react";
 import { Loader2 } from "lucide-react";
+import { Link } from "wouter";
+import { useState } from "react";
+import { AuthModal } from "@/components/AuthModal";
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { data: portfolio, isLoading: isPortfolioLoading } = usePortfolio();
   const { data: trades, isLoading: isTradesLoading } = useTrades();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+        <Sidebar />
+        
+        <main className="flex-1 md:ml-64 pb-20 md:pb-8">
+          <header className="px-8 py-6 border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-40 shadow-sm">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Your Trading Dashboard
+            </h1>
+            <p className="text-gray-600 mt-1">Learn, practice, and master trading with zero risk</p>
+          </header>
+
+          <div className="px-4 md:px-8 py-8 space-y-12">
+            {/* Welcome Hero Section */}
+            <div className="max-w-4xl mx-auto text-center space-y-6 py-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold mb-4">
+                <span className="animate-pulse">🚀</span> Start Your Trading Journey Today
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+                Master Trading Without<br />
+                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Risking Real Money
+                </span>
+              </h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Practice with $50,000 virtual cash, track your performance, and learn proven strategies
+                before trading with real capital.
+              </p>
+              <div className="flex gap-4 justify-center flex-wrap">
+                <button 
+                  onClick={() => setShowAuthModal(true)}
+                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold text-lg hover:shadow-xl hover:scale-105 transition-all shadow-lg"
+                >
+                  Start Free Trial
+                </button>
+                <Link href="/market">
+                  <button className="px-8 py-4 bg-white text-gray-800 border-2 border-gray-300 rounded-lg font-bold text-lg hover:border-blue-500 hover:bg-blue-50 transition-all">
+                    Browse Markets
+                  </button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Dashboard Preview with Annotations */}
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  📊 Your Dashboard Preview
+                </h3>
+                <p className="text-gray-600">Here's what you'll get access to after signing up</p>
+              </div>
+
+              {/* Mockup Dashboard */}
+              <div className="relative bg-white rounded-2xl shadow-2xl border-2 border-gray-200 overflow-hidden">
+                {/* Stats Grid Preview */}
+                <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-4 bg-gradient-to-r from-gray-50 to-blue-50 border-b-2 border-gray-200">
+                  <div className="relative group">
+                    <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200 hover:shadow-lg transition-all">
+                      <div className="flex items-center gap-2 text-gray-600 text-xs mb-2">
+                        <Wallet className="w-4 h-4" />
+                        <span className="font-semibold">PORTFOLIO</span>
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">$50,000</div>
+                      <div className="text-xs text-green-600 font-semibold mt-1">+$2,450 (5.2%)</div>
+                    </div>
+                    {/* Pointer Annotation */}
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
+                      <div className="bg-blue-600 text-white text-xs px-3 py-2 rounded-lg shadow-lg whitespace-nowrap font-semibold">
+                        💰 Track your balance
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-blue-600"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative group">
+                    <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200 hover:shadow-lg transition-all">
+                      <div className="flex items-center gap-2 text-gray-600 text-xs mb-2">
+                        <TrendingUp className="w-4 h-4" />
+                        <span className="font-semibold">P&L</span>
+                      </div>
+                      <div className="text-2xl font-bold text-green-600">+$4,250</div>
+                      <div className="text-xs text-gray-600 font-semibold mt-1">Last 30 days</div>
+                    </div>
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
+                      <div className="bg-green-600 text-white text-xs px-3 py-2 rounded-lg shadow-lg whitespace-nowrap font-semibold">
+                        📈 Monitor profits
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-green-600"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative group">
+                    <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200 hover:shadow-lg transition-all">
+                      <div className="flex items-center gap-2 text-gray-600 text-xs mb-2">
+                        <Activity className="w-4 h-4" />
+                        <span className="font-semibold">WIN RATE</span>
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">68.5%</div>
+                      <div className="text-xs text-gray-600 font-semibold mt-1">142 of 207 trades</div>
+                    </div>
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
+                      <div className="bg-purple-600 text-white text-xs px-3 py-2 rounded-lg shadow-lg whitespace-nowrap font-semibold">
+                        🎯 Track success rate
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-purple-600"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative group">
+                    <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200 hover:shadow-lg transition-all">
+                      <div className="flex items-center gap-2 text-gray-600 text-xs mb-2">
+                        <BarChart2 className="w-4 h-4" />
+                        <span className="font-semibold">TRADES</span>
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">207</div>
+                      <div className="text-xs text-gray-600 font-semibold mt-1">Total executed</div>
+                    </div>
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
+                      <div className="bg-orange-600 text-white text-xs px-3 py-2 rounded-lg shadow-lg whitespace-nowrap font-semibold">
+                        📊 View all trades
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-orange-600"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chart Preview */}
+                <div className="p-6 bg-gray-50">
+                  <div className="bg-white rounded-xl p-4 border-2 border-gray-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-bold text-gray-900">Performance Chart</h4>
+                      <span className="text-xs text-gray-500">Last 30 Days</span>
+                    </div>
+                    <div className="h-48 flex items-end gap-1">
+                      {Array.from({ length: 30 }).map((_, i) => {
+                        const height = Math.random() * 80 + 20;
+                        const isGreen = Math.random() > 0.4;
+                        return (
+                          <div
+                            key={i}
+                            className={`flex-1 rounded-t transition-all hover:opacity-70 ${
+                              isGreen ? 'bg-green-500' : 'bg-red-500'
+                            }`}
+                            style={{ height: `${height}%` }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Blur Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/50 to-transparent backdrop-blur-[2px] flex items-end justify-center pb-12">
+                  <div className="text-center space-y-4">
+                    <div className="text-6xl mb-2">🔒</div>
+                    <h3 className="text-2xl font-bold text-gray-900">Sign Up to Unlock</h3>
+                    <button 
+                      onClick={() => setShowAuthModal(true)}
+                      className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold hover:shadow-xl transition-all"
+                    >
+                      Create Free Account
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pricing Section */}
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-10">
+                <h3 className="text-3xl font-bold text-gray-900 mb-3">
+                  💎 Simple, Transparent Pricing
+                </h3>
+                <p className="text-gray-600">Start free. Upgrade when you're ready.</p>
+              </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* FREE Demo */}
+                <div className="bg-white rounded-2xl p-6 border-2 border-gray-300 hover:border-blue-400 hover:shadow-xl transition-all">
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🆓</span>
+                      <h4 className="text-xl font-bold text-gray-900">FREE</h4>
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900 mb-1">
+                      $0
+                    </div>
+                    <p className="text-gray-600 text-sm">Demo Plan</p>
+                  </div>
+                  <ul className="space-y-2 mb-6 text-sm">
+                    <li className="flex items-center gap-2 text-gray-700">
+                      <span className="text-green-500">✓</span> $100 SimCash
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-700">
+                      <span className="text-green-500">✓</span> 1 lesson only
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-700">
+                      <span className="text-green-500">✓</span> 1 trade (ever)
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-700">
+                      <span className="text-green-500">✓</span> 1 asset (BTN)
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-400">
+                      <span className="text-gray-300">✗</span> No portfolio stats
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-400">
+                      <span className="text-gray-300">✗</span> No RTT coaching
+                    </li>
+                  </ul>
+                  <button 
+                    onClick={() => setShowAuthModal(true)}
+                    className="w-full py-2.5 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition-colors text-sm"
+                  >
+                    Try Demo
+                  </button>
+                  <p className="text-center text-xs text-gray-500 mt-3">Show value first</p>
+                </div>
+
+                {/* STARTER */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border-2 border-green-400 hover:shadow-xl transition-all">
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🟢</span>
+                      <h4 className="text-xl font-bold text-gray-900">STARTER</h4>
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900 mb-1">
+                      $4.99<span className="text-sm text-gray-600">/mo</span>
+                    </div>
+                    <p className="text-gray-700 text-sm font-medium">Practice Plan</p>
+                  </div>
+                  <ul className="space-y-2 mb-6 text-sm">
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> $20,000 SimCash
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> Unlimited trades
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> 8 free assets
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> All 6 lessons
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> Portfolio tracking
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-400">
+                      <span className="text-gray-300">✗</span> No RTT coaching
+                    </li>
+                  </ul>
+                  <button 
+                    onClick={() => setShowAuthModal(true)}
+                    className="w-full py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-bold hover:shadow-lg transition-all text-sm"
+                  >
+                    Start Learning
+                  </button>
+                  <p className="text-center text-xs text-gray-600 mt-3">Best for beginners</p>
+                </div>
+
+                {/* PRO - Main Tier */}
+                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border-2 border-yellow-500 hover:shadow-2xl transition-all relative overflow-hidden">
+                  <div className="absolute top-3 right-3 bg-yellow-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
+                    POPULAR
+                  </div>
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🟡</span>
+                      <h4 className="text-xl font-bold text-gray-900">PRO</h4>
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900 mb-1">
+                      $9.99<span className="text-sm text-gray-600">/mo</span>
+                    </div>
+                    <p className="text-gray-900 text-sm font-bold">Main Tier</p>
+                  </div>
+                  <ul className="space-y-2 mb-6 text-sm">
+                    <li className="flex items-center gap-2 text-gray-900 font-semibold">
+                      <span className="text-green-500">✓</span> $50,000 SimCash
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> All 20 assets
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> RTT coaching ⚡
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> Strategy hints
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> Performance analytics
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> Priority features
+                    </li>
+                  </ul>
+                  <button 
+                    onClick={() => setShowAuthModal(true)}
+                    className="w-full py-2.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-bold hover:shadow-xl transition-all text-sm"
+                  >
+                    Go PRO
+                  </button>
+                  <p className="text-center text-xs text-gray-700 mt-3">Learn properly 🚀</p>
+                </div>
+
+                {/* LIFETIME PRO */}
+                <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl p-6 border-2 border-red-500 hover:shadow-2xl transition-all relative overflow-hidden">
+                  <div className="absolute top-3 right-3 bg-red-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
+                    BEST VALUE
+                  </div>
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🔴</span>
+                      <h4 className="text-xl font-bold text-gray-900">LIFETIME</h4>
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900 mb-1">
+                      $150
+                    </div>
+                    <p className="text-gray-900 text-sm font-bold">One-Time Forever</p>
+                  </div>
+                  <ul className="space-y-2 mb-6 text-sm">
+                    <li className="flex items-center gap-2 text-gray-900 font-bold">
+                      <span className="text-green-500">✓</span> Everything in PRO
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> Forever access
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> Unlimited resets
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> All future features
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900">
+                      <span className="text-green-500">✓</span> No subscription
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-900 font-semibold">
+                      <span className="text-purple-500">★</span> VIP status
+                    </li>
+                  </ul>
+                  <button 
+                    onClick={() => setShowAuthModal(true)}
+                    className="w-full py-2.5 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg font-bold hover:shadow-xl transition-all text-sm"
+                  >
+                    Get Lifetime
+                  </button>
+                  <p className="text-center text-xs text-gray-700 mt-3">Pay once, own forever</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Feature Highlights */}
+            <div className="max-w-4xl mx-auto text-center space-y-4 py-8">
+              <h3 className="text-2xl font-bold text-gray-900">🎓 What You'll Learn</h3>
+              <div className="grid md:grid-cols-3 gap-6 mt-8">
+                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                  <div className="text-4xl mb-3">📚</div>
+                  <h4 className="font-bold text-gray-900 mb-2">Trading Basics</h4>
+                  <p className="text-sm text-gray-600">Master orders, positions, and market mechanics</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                  <div className="text-4xl mb-3">📊</div>
+                  <h4 className="font-bold text-gray-900 mb-2">Technical Analysis</h4>
+                  <p className="text-sm text-gray-600">Learn to read charts and identify patterns</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                  <div className="text-4xl mb-3">💡</div>
+                  <h4 className="font-bold text-gray-900 mb-2">Risk Management</h4>
+                  <p className="text-sm text-gray-600">Protect capital with proven strategies</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <MobileNav />
+        <AuthModal 
+          isOpen={showAuthModal} 
+          onClose={() => setShowAuthModal(false)} 
+        />
+      </div>
+    );
+  }
 
   if (isPortfolioLoading || isTradesLoading) {
     return (

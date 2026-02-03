@@ -6,37 +6,37 @@
 
 @layer base {
   :root {
-    /* Dark Theme Default */
-    --background: 222 47% 11%;     /* #0F172A */
-    --foreground: 210 40% 98%;     /* #F8FAFC */
+    /* Professional Light Theme */
+    --background: 0 0% 100%;           /* White #FFFFFF */
+    --foreground: 0 0% 0%;             /* Black #000000 */
 
-    --card: 217 33% 17%;           /* #1E293B */
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;                 /* White */
+    --card-foreground: 0 0% 0%;        /* Black */
 
-    --popover: 217 33% 17%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
 
-    --primary: 221 83% 53%;        /* #2563EB */
-    --primary-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;            /* Blue #3B82F6 */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 25% 27%;      /* #334155 */
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;          /* Light Gray #F1F5F9 */
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;   /* Gray #64748B */
 
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 0 0% 0%;
 
-    --destructive: 0 84% 60%;      /* #EF4444 */
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;          /* Red #EF4444 */
+    --destructive-foreground: 0 0% 100%;
     
-    --success: 142 71% 45%;        /* #22C55E */
-    --success-foreground: 210 40% 98%;
+    --success: 142 71% 45%;            /* Green #22C55E */
+    --success-foreground: 0 0% 100%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 17%;
-    --ring: 221 83% 53%;
+    --border: 214 32% 91%;             /* Gray #E2E8F0 */
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;               /* Blue */
 
     --radius: 0.75rem;
     
@@ -48,7 +48,11 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
+  }
+  #root {
+    min-height: 100vh;
+    background: white;
   }
   body {
     @apply bg-background text-foreground antialiased font-sans selection:bg-primary/20 selection:text-primary-foreground;

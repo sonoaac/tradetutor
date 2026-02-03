@@ -1,11 +1,16 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useCreateTrade } from "@/hooks/use-trades";
+import { useAuth } from "@/hooks/use-auth";
+import { usePortfolio } from "@/hooks/use-portfolio";
 import { Loader2, TrendingUp, TrendingDown } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { TradeConfirmation } from "@/components/TradeConfirmation";
+import { AuthModal } from "@/components/AuthModal";
 
 const orderSchema = z.object({
   symbol: z.string().min(1, "Symbol is required"),
@@ -23,7 +28,14 @@ interface OrderFormProps {
 
 export function OrderForm({ symbol, currentPrice }: OrderFormProps) {
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedTrade, setConfirmedTrade] = useState<any>(null);
+  const [newBalance, setNewBalance] = useState(0);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [, navigate] = useLocation();
+  const { isAuthenticated } = useAuth();
   const { mutate: createTrade, isPending } = useCreateTrade();
+  const { data: portfolio, refetch: refetchPortfolio } = usePortfolio();
   const { toast } = useToast();
 
   const form = useForm<OrderFormValues>({
@@ -35,6 +47,22 @@ export function OrderForm({ symbol, currentPrice }: OrderFormProps) {
   });
 
   const onSubmit = (data: OrderFormValues) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to place trades",
+        action: (
+          <button 
+            onClick={() => setShowAuthModal(true)}
+            className="px-3 py-1 bg-primary text-white rounded text-sm"
+          >
+            Log In
+          </button>
+        ),
+      });
+      return;
+    }
+
     createTrade(
       {
         ...data,
@@ -42,12 +70,22 @@ export function OrderForm({ symbol, currentPrice }: OrderFormProps) {
         entryPrice: currentPrice,
       },
       {
-        onSuccess: () => {
-          toast({
-            title: "Order Executed",
-            description: `${side.toUpperCase()} ${data.size} ${data.symbol} @ ${currentPrice}`,
-            className: side === 'buy' ? "border-l-4 border-l-success" : "border-l-4 border-l-destructive",
+        onSuccess: async (response) => {
+          // Refetch portfolio to get new balance
+          const updatedPortfolio = await refetchPortfolio();
+          
+          setConfirmedTrade({
+            id: response.id,
+            symbol: data.symbol,
+            side,
+            size: data.size,
+            entryPrice: currentPrice,
+            stopLoss: data.stopLoss,
+            takeProfit: data.takeProfit,
           });
+          setNewBalance(updatedPortfolio.data?.balance || portfolio?.balance || 0);
+          setShowConfirmation(true);
+          
           form.reset({ symbol, size: 1 });
         },
         onError: (err) => {
@@ -150,6 +188,18 @@ export function OrderForm({ symbol, currentPrice }: OrderFormProps) {
           </button>
         </div>
       </form>
+
+      <TradeConfirmation
+        trade={confirmedTrade}
+        newBalance={newBalance}
+        open={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+      />
+
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
     </div>
   );
 }
