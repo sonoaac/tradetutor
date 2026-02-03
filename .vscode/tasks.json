@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "auto-push-on-save",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/auto-push.ps1"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}
