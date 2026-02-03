@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
+import { apiUrl } from "@/lib/api";
 
 export function useMarketCandles(symbol: string, interval: '1m' | '5m' | '1h' = '1h') {
   return useQuery({
@@ -8,7 +9,7 @@ export function useMarketCandles(symbol: string, interval: '1m' | '5m' | '1h' = 
       // Build base URL with symbol param
       const urlBase = buildUrl(api.market.candles.path, { symbol });
       // Add query params
-      const url = `${urlBase}?interval=${interval}`;
+      const url = apiUrl(`${urlBase}?interval=${interval}`);
       
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch market data");

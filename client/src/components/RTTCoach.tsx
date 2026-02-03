@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { AlertCircle, TrendingUp, TrendingDown, Zap, Lock, Activity, DollarSign } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { AuthModal } from '@/components/AuthModal';
+import { apiUrl } from '@/lib/api';
 
 interface CoachingSignal {
   action: string;
@@ -55,7 +56,7 @@ export function RTTCoach({ symbol, side = 'buy', enabled, onToggle }: RTTCoachPr
   const fetchCoaching = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/market/rtt/${symbol}?side=${side}`);
+      const res = await fetch(apiUrl(`/api/market/rtt/${symbol}?side=${side}`));
       const data = await res.json();
       setCoaching(data.coaching);
     } catch (error) {

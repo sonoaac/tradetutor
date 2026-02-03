@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
+import { apiUrl } from "@/lib/api";
 
 export function usePortfolio() {
   return useQuery({
     queryKey: [api.portfolio.get.path],
     queryFn: async () => {
-      const res = await fetch(api.portfolio.get.path, { credentials: "include" });
+      const res = await fetch(apiUrl(api.portfolio.get.path), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch portfolio");
       return api.portfolio.get.responses[200].parse(await res.json());
     },
@@ -16,7 +17,7 @@ export function useResetPortfolio() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch(api.portfolio.reset.path, {
+      const res = await fetch(apiUrl(api.portfolio.reset.path), {
         method: "POST",
         credentials: "include",
       });

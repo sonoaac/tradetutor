@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { TrendingUp, Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiUrl } from '@/lib/api';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -32,7 +33,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthMod
     setLoading(true);
 
     try {
-      const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const endpoint = apiUrl(mode === 'login' ? '/api/auth/login' : '/api/auth/register');
       const body = mode === 'login' 
         ? { email: formData.email, password: formData.password }
         : formData;

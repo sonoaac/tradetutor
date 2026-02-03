@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { TrendingUp, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiUrl } from '@/lib/api';
 
 export default function Auth() {
   const [, navigate] = useLocation();
@@ -24,7 +25,7 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const endpoint = apiUrl(mode === 'login' ? '/api/auth/login' : '/api/auth/register');
       const body = mode === 'login' 
         ? { email: formData.email, password: formData.password }
         : formData;
