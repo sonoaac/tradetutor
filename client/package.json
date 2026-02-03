@@ -37,7 +37,8 @@
     "tailwindcss": "^3.4.17",
     "tslib": "^2.8.1",
     "wouter": "^3.9.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "zod-validation-error": "^5.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",
