@@ -78,7 +78,7 @@ export default function Landing() {
                {/* Just a visual placeholder for the landing page chart */}
                <svg className="w-full h-full" viewBox="0 0 1200 400" preserveAspectRatio="none">
                  <path d="M0,350 L50,340 L100,360 L150,300 L200,320 L250,250 L300,280 L350,200 L400,220 L450,150 L500,180 L550,100 L600,120 L650,80 L700,100 L750,50 L800,80 L850,20 L900,40 L950,10 L1200,10" 
-                       fill="none" stroke="#3B82F6" strokeWidth="3" className="drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+                       fill="none" stroke="#3B82F6" strokeWidth="3" style={{filter: "drop-shadow(0 0 15px rgba(59, 130, 246, 0.5))"}} />
                  <path d="M0,400 L0,350 L50,340 L100,360 L150,300 L200,320 L250,250 L300,280 L350,200 L400,220 L450,150 L500,180 L550,100 L600,120 L650,80 L700,100 L750,50 L800,80 L850,20 L900,40 L950,10 L1200,10 L1200,400 Z" 
                        fill="url(#grad1)" opacity="0.2" />
                  <defs>
@@ -155,14 +155,6 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode, titl
       </div>
       <h3 className="text-xl font-bold font-display mb-3 text-foreground">{title}</h3>
       <p className="text-muted-foreground leading-relaxed">{description}</p>
-    </div>
-  );
-}
-
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-      />
     </div>
   );
 }
