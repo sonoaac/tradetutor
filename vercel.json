@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://tradetutor.onrender.com/api/:path*"
+      "destination": "https://api.tradetutor.academy/api/:path*"
     },
     {
       "source": "/(.*)",
