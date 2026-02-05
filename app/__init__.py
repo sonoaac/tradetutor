@@ -31,12 +31,14 @@ def create_app(config_name='development'):
     from app.blueprints.trading.routes import trading_bp
     from app.blueprints.lessons.routes import lessons_bp
     from app.blueprints.api.routes import api_bp
+    from app.blueprints.payment.routes import payment_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(core_bp, url_prefix='/api')
     app.register_blueprint(trading_bp, url_prefix='/api')
     app.register_blueprint(lessons_bp, url_prefix='/api/lessons')
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(payment_bp, url_prefix='/api/payment')
     
     # Health check endpoint
     @app.route('/api/health')

@@ -12,6 +12,10 @@ import MarketPage from "@/pages/MarketPage";
 import LessonsPage from "@/pages/LessonsPage";
 import LessonDetailPage from "@/pages/LessonDetailPage";
 import Portfolio from "@/pages/Portfolio";
+import PricingPage from "@/pages/PricingPage";
+import PaymentSuccessPage from "@/pages/PaymentSuccessPage";
+import PaymentCancelPage from "@/pages/PaymentCancelPage";
+import SubscriptionPage from "@/pages/SubscriptionPage";
 
 function Router() {
   return (
@@ -24,6 +28,10 @@ function Router() {
       <Route path="/lessons" component={LessonsPage} />
       <Route path="/lessons/:id" component={LessonDetailPage} />
       <Route path="/portfolio" component={Portfolio} />
+      <Route path="/pricing" component={PricingPage} />
+      <Route path="/payment/success" component={PaymentSuccessPage} />
+      <Route path="/payment/cancel" component={PaymentCancelPage} />
+      <Route path="/subscription" component={SubscriptionPage} />
       <Route component={NotFound} />
     </Switch>
   );

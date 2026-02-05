@@ -34,6 +34,7 @@ class Config:
     # Stripe (for future payments)
     STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
     STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+    STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
     
     # PayPal (for future payments)
     PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID')
