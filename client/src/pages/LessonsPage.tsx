@@ -96,7 +96,7 @@ export default function LessonsPage() {
       
       <main className="flex-1 md:ml-64 pb-24 md:pb-8">
         {/* Top Progress Bar */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-6">
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-4 sm:px-6 md:px-8 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">

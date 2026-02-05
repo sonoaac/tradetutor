@@ -28,10 +28,10 @@ export default function Portfolio() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <main className="flex-1 md:ml-64 pb-24 md:pb-8">
-        <header className="px-8 py-6 border-b border-border bg-background/50 backdrop-blur-sm sticky top-0 z-40 flex justify-between items-center">
+        <header className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-b border-border bg-background/50 backdrop-blur-sm sticky top-0 z-40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
           <div>
-            <h1 className="text-2xl font-bold font-display">Portfolio</h1>
-            <p className="text-muted-foreground">Manage your account and history.</p>
+            <h1 className="text-xl sm:text-2xl font-bold font-display">Portfolio</h1>
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Manage your account and history.</p>
           </div>
           
           <AlertDialog>
@@ -62,11 +62,11 @@ export default function Portfolio() {
           </AlertDialog>
         </header>
 
-        <div className="p-8 space-y-8">
+        <div className="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
            {/* Account Summary */}
-           <div className="bg-card rounded-2xl border border-border p-8 shadow-sm">
-              <h2 className="text-lg font-bold font-display mb-6">Account Summary</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+           <div className="bg-card rounded-lg sm:rounded-2xl border border-border p-4 sm:p-6 md:p-8 shadow-sm">
+              <h2 className="text-base sm:text-lg font-bold font-display mb-4 sm:mb-6">Account Summary</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
                  <div>
                    <p className="text-sm text-muted-foreground mb-1">Current Balance</p>
                    <p className="text-4xl font-mono font-bold text-foreground tracking-tight">${Number(portfolio?.balance || 0).toLocaleString()}</p>

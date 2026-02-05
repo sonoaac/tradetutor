@@ -67,52 +67,52 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-6">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 sm:p-6 md:p-8">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-gray-100 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-gray-50 rounded-full blur-[120px]" />
+        <div className="absolute top-[-10%] right-[-5%] w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-gray-100 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-gray-50 rounded-full blur-[120px]" />
       </div>
 
-      <Card className="w-full max-w-md bg-white border-2 border-black shadow-2xl relative z-10">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 rounded-xl bg-black flex items-center justify-center">
-              <TrendingUp className="text-white w-6 h-6" />
+      <Card className="w-full max-w-md bg-white border border-gray-200 sm:border-2 sm:border-black shadow-xl sm:shadow-2xl relative z-10">
+        <CardHeader className="space-y-1 text-center p-6 sm:p-8">
+          <div className="flex justify-center mb-3 sm:mb-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-black flex items-center justify-center">
+              <TrendingUp className="text-white w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-black">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-black">
             {mode === 'login' ? 'Welcome Back' : 'Get Started Free'}
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-sm sm:text-base text-gray-600">
             {mode === 'login' 
               ? 'Enter your credentials to continue' 
               : 'Create your account and start trading'}
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
               <>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-gray-700 font-semibold">First Name</Label>
+                    <Label htmlFor="firstName" className="text-xs sm:text-sm text-gray-700 font-semibold">First Name</Label>
                     <Input
                       id="firstName"
                       placeholder="John"
                       value={formData.firstName}
                       onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                      className="bg-white border-2 border-gray-300 focus:border-black text-black placeholder:text-gray-400"
+                      className="bg-white border border-gray-300 sm:border-2 focus:border-black text-black text-sm sm:text-base placeholder:text-gray-400 p-2 sm:p-2.5"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-gray-700 font-semibold">Last Name</Label>
+                    <Label htmlFor="lastName" className="text-xs sm:text-sm text-gray-700 font-semibold">Last Name</Label>
                     <Input
                       id="lastName"
                       placeholder="Doe"
                       value={formData.lastName}
                       onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                      className="bg-white border-2 border-gray-300 focus:border-black text-black placeholder:text-gray-400"
+                      className="bg-white border border-gray-300 sm:border-2 focus:border-black text-black text-sm sm:text-base placeholder:text-gray-400 p-2 sm:p-2.5"
                     />
                   </div>
                 </div>
@@ -120,7 +120,7 @@ export default function Auth() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700 font-semibold">Email</Label>
+              <Label htmlFor="email" className="text-xs sm:text-sm text-gray-700 font-semibold">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -128,12 +128,12 @@ export default function Auth() {
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 required
-                className="bg-white border-2 border-gray-300 focus:border-black text-black placeholder:text-gray-400"
+                className="bg-white border border-gray-300 sm:border-2 focus:border-black text-black text-sm sm:text-base placeholder:text-gray-400 p-2 sm:p-2.5"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 font-semibold">Password</Label>
+              <Label htmlFor="password" className="text-xs sm:text-sm text-gray-700 font-semibold">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -141,33 +141,34 @@ export default function Auth() {
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                 required
-                className="bg-white border-2 border-gray-300 focus:border-black text-black placeholder:text-gray-400"
+                className="bg-white border border-gray-300 sm:border-2 focus:border-black text-black text-sm sm:text-base placeholder:text-gray-400 p-2 sm:p-2.5"
               />
             </div>
 
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-black hover:bg-gray-800 text-white font-bold transition-all shadow-lg"
+              className="w-full bg-black hover:bg-gray-800 text-white font-bold transition-all shadow-lg text-sm sm:text-base py-2 sm:py-3"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {mode === 'login' ? 'Logging in...' : 'Creating account...'}
+                  <span className="hidden sm:inline">{mode === 'login' ? 'Logging in...' : 'Creating account...'}</span>
+                  <span className="sm:hidden">{mode === 'login' ? 'Logging in' : 'Creating...'}</span>
                 </>
               ) : (
                 mode === 'login' ? 'Log In' : 'Create Account'
               )}
             </Button>
 
-            <div className="text-center text-sm text-gray-600">
+            <div className="text-center text-xs sm:text-sm text-gray-600 space-y-2">
               {mode === 'login' ? (
                 <>
                   Don't have an account?{' '}
                   <button
                     type="button"
                     onClick={() => setMode('register')}
-                    className="text-black hover:text-gray-700 font-bold underline"
+                    className="text-black hover:text-gray-700 font-bold underline block sm:inline"
                   >
                     Sign up
                   </button>
@@ -178,7 +179,7 @@ export default function Auth() {
                   <button
                     type="button"
                     onClick={() => setMode('login')}
-                    className="text-black hover:text-gray-700 font-bold underline"
+                    className="text-black hover:text-gray-700 font-bold underline block sm:inline"
                   >
                     Log in
                   </button>

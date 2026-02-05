@@ -167,9 +167,9 @@ export default function MarketPage() {
         </div>
 
         {/* Main Layout */}
-        <div className="flex">
-          {/* Left Sidebar - Asset List */}
-          <div className="w-80 border-r-2 border-gray-200 bg-white h-[calc(100vh-140px)] overflow-y-auto">
+        <div className="flex flex-col md:flex-row">
+          {/* Left Sidebar - Asset List - Hidden on mobile, shown on md+ */}
+          <div className="hidden md:block w-80 border-r-2 border-gray-200 bg-white h-[calc(100vh-140px)] overflow-y-auto">
             <div className="p-4 border-b-2 border-gray-200 sticky top-0 bg-white z-10">
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
