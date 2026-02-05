@@ -45,6 +45,7 @@ export default function SimulatorPage() {
   const [quantity, setQuantity] = useState('1');
   const [limitPrice, setLimitPrice] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'chart' | 'trade' | 'positions' | 'history'>('chart');
   const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({
     'SMBY': 152.45,
     'BTN': 43120.00,
@@ -233,10 +234,11 @@ export default function SimulatorPage() {
           </div>
         </div>
 
-        {/* Main Trading Layout */}
-        <div className="flex">
-          {/* Left Panel - Order Form */}
-          <div className="w-96 border-r-2 border-gray-200 bg-white h-[calc(100vh-180px)] overflow-y-auto">
+        {/* Main Trading Layout: Desktop = 2-col (form + chart) | Mobile = tabs */}
+        <div className="flex flex-col lg:grid lg:grid-cols-[320px_1fr] min-h-[100dvh] overflow-hidden">
+          
+          {/* LEFT PANEL - Trading Form (Hidden on mobile, shown lg+) */}
+          <div className="hidden lg:flex flex-col border-r border-gray-200 bg-white overflow-hidden">
             <div className="p-4 border-b-2 border-gray-200 bg-gray-50">
               <h3 className="font-bold text-black text-lg">Place Order</h3>
             </div>
@@ -358,22 +360,264 @@ export default function SimulatorPage() {
             </div>
           </div>
 
-          {/* Center - Chart */}
-          <div className="flex-1 bg-gray-50">
-            <div className="bg-gradient-to-r from-white to-gray-50 border-b-2 border-gray-200 px-6 py-4 shadow-sm">
-              <h2 className="text-2xl font-bold text-black">{selectedSymbol} Trading Chart</h2>
+          {/* CENTER - Chart & Mobile Tabs (Responsive Layout) */}
+          <div className="flex flex-col bg-gray-50 overflow-hidden">
+            
+            {/* Header - Symbol & Chart Title */}
+            <div className="bg-gradient-to-r from-white to-gray-50 border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 shadow-sm sticky top-0 z-20">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-black">{selectedSymbol} Trading Chart</h2>
             </div>
 
-            <div className="p-6">
-              <SimpleTradingChart
-                symbol={selectedSymbol}
-                currentPrice={currentPrice}
-              />
+            {/* Mobile Tab Switcher (hidden on lg+) */}
+            <div className="lg:hidden flex gap-2 px-4 py-2 border-b border-gray-200 bg-white sticky top-14 z-20 overflow-x-auto">
+              {(['chart', 'trade', 'positions', 'history'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setMobileTab(tab)}
+                  className={`px-3 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-all ${
+                    mobileTab === tab
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
             </div>
+
+            {/* Chart Content (shown when mobileTab === 'chart' on mobile, always shown on desktop) */}
+            <div className={`flex-1 overflow-y-auto ${mobileTab === 'chart' ? 'block' : 'hidden lg:block'}`}>
+              <div className="p-4 sm:p-6">
+                <SimpleTradingChart
+                  symbol={selectedSymbol}
+                  currentPrice={currentPrice}
+                />
+              </div>
+            </div>
+
+            {/* Trade Panel (Mobile Only) */}
+            {mobileTab === 'trade' && (
+              <div className="lg:hidden flex-1 overflow-y-auto pb-24">
+                <div className="p-4 space-y-4 bg-white border-b border-gray-200">
+                  <h3 className="font-bold text-black text-lg">Place Order</h3>
+                  
+                  {/* Symbol Input */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Symbol</label>
+                    <input
+                      type="text"
+                      value={selectedSymbol}
+                      onChange={(e) => setSelectedSymbol(e.target.value.toUpperCase())}
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black font-mono font-bold text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
+                      placeholder="SMBY"
+                    />
+                  </div>
+
+                  {/* Buy/Sell Toggle */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Side</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setOrderSide('buy')}
+                        className={`py-3 rounded-lg font-bold transition-all ${
+                          orderSide === 'buy'
+                            ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Buy
+                      </button>
+                      <button
+                        onClick={() => setOrderSide('sell')}
+                        className={`py-3 rounded-lg font-bold transition-all ${
+                          orderSide === 'sell'
+                            ? 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Sell
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Order Type */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Order Type</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setOrderType('market')}
+                        className={`py-2 rounded-lg font-semibold text-sm transition-all ${
+                          orderType === 'market'
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Market
+                      </button>
+                      <button
+                        onClick={() => setOrderType('limit')}
+                        className={`py-2 rounded-lg font-semibold text-sm transition-all ${
+                          orderType === 'limit'
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Limit
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Quantity */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Quantity</label>
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black font-mono focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
+                      placeholder="1"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+
+                  {/* Limit Price (if limit order) */}
+                  {orderType === 'limit' && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Limit Price</label>
+                      <input
+                        type="number"
+                        value={limitPrice}
+                        onChange={(e) => setLimitPrice(e.target.value)}
+                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black font-mono focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                  )}
+
+                  {/* Current Price Display */}
+                  <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200 shadow-sm">
+                    <div className="text-xs text-gray-600 uppercase font-semibold mb-1">Current Price</div>
+                    <div className="text-2xl font-mono font-bold text-blue-600">${currentPrice.toFixed(2)}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Positions Panel (Mobile Only) */}
+            {mobileTab === 'positions' && (
+              <div className="lg:hidden flex-1 overflow-y-auto pb-24">
+                <div className="bg-white border-b border-gray-200 p-4">
+                  <h3 className="font-bold text-black flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-blue-600" />
+                    Open Positions ({positions.length})
+                  </h3>
+                </div>
+                <div className="divide-y divide-gray-100">
+                  {positions.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <div className="text-4xl mb-3">📊</div>
+                      <div className="text-gray-500 font-semibold mb-1">No open positions</div>
+                      <div className="text-sm text-gray-400">Place your first order to start trading</div>
+                    </div>
+                  ) : (
+                    positions.map(position => (
+                      <div 
+                        key={position.id} 
+                        className={`p-4 hover:bg-gray-50 transition-all border-l-4 ${
+                          position.profitLoss >= 0 
+                            ? 'border-green-500 bg-green-50/30' 
+                            : 'border-red-500 bg-red-50/30'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="font-bold text-black">{position.symbol}</div>
+                            {position.profitLoss >= 0 && position.profitLossPercent > 5 && (
+                              <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-semibold">
+                                🔥 Hot
+                              </span>
+                            )}
+                          </div>
+                          <button className="text-gray-400 hover:text-red-600 transition-colors">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="text-xs text-gray-500 capitalize mb-2">{position.type} • {position.quantity} shares</div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <div className="text-xs text-gray-500">Entry</div>
+                            <div className="font-mono text-black">${position.entryPrice.toFixed(2)}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500">Current</div>
+                            <div className="font-mono text-black">${position.currentPrice.toFixed(2)}</div>
+                          </div>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-gray-100">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-600">P&L</span>
+                            <div className="text-right">
+                              <div className={`font-mono font-bold text-sm ${position.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {position.profitLoss >= 0 ? '+' : ''}${position.profitLoss.toFixed(2)}
+                              </div>
+                              <div className={`text-xs font-semibold ${position.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {position.profitLossPercent >= 0 ? '+' : ''}{position.profitLossPercent.toFixed(2)}%
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* History Panel (Mobile Only) */}
+            {mobileTab === 'history' && (
+              <div className="lg:hidden flex-1 overflow-y-auto pb-24">
+                <div className="bg-white border-b border-gray-200 p-4">
+                  <h3 className="font-bold text-black flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-blue-600" />
+                    Recent Orders
+                  </h3>
+                </div>
+                <div className="divide-y divide-gray-100">
+                  {orders.slice(0, 10).map(order => (
+                    <div key={order.id} className="p-4 hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 transition-all">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <div className="font-bold text-black">{order.symbol}</div>
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded shadow-sm ${
+                            order.side === 'buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {order.side.toUpperCase()}
+                          </span>
+                        </div>
+                        <span className={`text-xs font-semibold ${
+                          order.status === 'executed' ? 'text-green-600' :
+                          order.status === 'pending' ? 'text-yellow-600' :
+                          'text-gray-500'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {order.quantity} @ ${order.price.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">{order.timestamp}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Right Panel - Positions & Orders */}
-          <div className="w-96 border-l-2 border-gray-200 bg-white h-[calc(100vh-180px)] overflow-y-auto">
+          {/* RIGHT PANEL - Positions & Orders (Desktop Only, hidden on mobile) */}
+          <div className="hidden lg:flex flex-col border-l border-gray-200 bg-white overflow-hidden">
             {/* Positions */}
             <div className="p-4 border-b-2 border-gray-200 bg-gray-50">
               <h3 className="font-bold text-black flex items-center gap-2">
@@ -478,6 +722,20 @@ export default function SimulatorPage() {
             </div>
           </div>
         </div>
+
+        {/* Mobile Sticky Bottom Action Button */}
+        {mobileTab === 'trade' && (
+          <button
+            onClick={handlePlaceOrder}
+            className={`lg:hidden fixed bottom-0 left-0 right-0 py-4 px-4 font-bold text-white shadow-2xl transition-all z-40 ${
+              orderSide === 'buy'
+                ? 'bg-gradient-to-r from-green-600 to-green-500'
+                : 'bg-gradient-to-r from-red-600 to-red-500'
+            }`}
+          >
+            {orderSide === 'buy' ? 'Place Buy Order' : 'Place Sell Order'}
+          </button>
+        )}
       </main>
       
       <MobileNav />

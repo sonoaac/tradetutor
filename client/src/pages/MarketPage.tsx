@@ -61,6 +61,7 @@ export default function MarketPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSymbol, setSelectedSymbol] = useState('BTN');
   const [activeTab, setActiveTab] = useState<'all' | 'stocks' | 'crypto' | 'forex' | 'indices'>('all');
+  const [mobileTab, setMobileTab] = useState<'chart' | 'assets' | 'overview'>('chart');
 
   const filteredAssets = useMemo(() => {
     const classMap = { all: "all", stocks: "stock", crypto: "crypto", forex: "forex", indices: "index" };
@@ -167,28 +168,29 @@ export default function MarketPage() {
           </div>
         </div>
 
-        {/* Main Layout */}
-        <div className="flex flex-col md:flex-row">
-          {/* Left Sidebar - Asset List - Hidden on mobile, shown on md+ */}
-          <div className="hidden md:block w-80 border-r-2 border-gray-200 bg-white h-[calc(100vh-140px)] overflow-y-auto">
-            <div className="p-4 border-b-2 border-gray-200 sticky top-0 bg-white z-10">
+        {/* 3-Column Layout: Desktop = Sidebar + Chart + Stats | Mobile = Single column + Tabs */}
+        <div className="flex flex-col lg:grid lg:grid-cols-[320px_1fr_300px] min-h-[100dvh] overflow-hidden">
+          
+          {/* LEFT SIDEBAR - Asset List (Hidden on mobile, shown lg+) */}
+          <div className="hidden lg:flex flex-col border-r border-gray-200 bg-white">
+            <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search markets..."
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg text-sm text-black placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
                 />
               </div>
               
-              <div className="flex gap-1">
+              <div className="flex gap-1 flex-wrap">
                 {(['all', 'stocks', 'crypto', 'forex', 'indices'] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all capitalize ${
+                    className={`px-2 py-1 text-xs font-semibold rounded transition-all capitalize ${
                       activeTab === tab
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -200,16 +202,15 @@ export default function MarketPage() {
               </div>
             </div>
 
-            <div className="divide-y divide-gray-100">
+            <div className="overflow-y-auto divide-y divide-gray-100 flex-1">
               {filteredAssets.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">No assets found</div>
+                <div className="p-8 text-center text-gray-500 text-sm">No assets found</div>
               ) : (
                 filteredAssets.map(asset => {
                   const quote = quotes[asset.symbol];
                   const isPositive = (quote?.change ?? 0) >= 0;
                   const isSelected = selectedSymbol === asset.symbol;
                   
-                  // Asset category icons
                   const getAssetIcon = (assetClass: string) => {
                     switch (assetClass) {
                       case 'stock': return '📈';
@@ -223,26 +224,25 @@ export default function MarketPage() {
                   return (
                     <button
                       key={asset.symbol}
-                      onClick={() => setSelectedSymbol(asset.symbol)}
-                      className={`w-full p-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all text-left group ${
-                        isSelected ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-600 shadow-md' : ''
+                      onClick={() => { setSelectedSymbol(asset.symbol); setMobileTab('chart'); }}
+                      className={`w-full p-3 hover:bg-blue-50 transition-all text-left ${
+                        isSelected ? 'bg-blue-50 border-l-4 border-blue-600' : ''
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <div>
-                          <div className="font-bold text-black text-sm group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
-                            <span className="text-base">{getAssetIcon(asset.class)}</span>
+                          <div className="font-bold text-black text-sm flex items-center gap-1.5">
+                            <span>{getAssetIcon(asset.class)}</span>
                             {asset.symbol}
                           </div>
                           <div className="text-xs text-gray-500 truncate">{asset.name}</div>
                         </div>
                         {quote && (
                           <div className="text-right">
-                            <div className="font-mono font-bold text-sm text-black">${quote.price.toFixed(2)}</div>
-                            <div className={`flex items-center gap-1 text-xs font-semibold ${
+                            <div className="font-mono font-bold text-xs text-black">${quote.price.toFixed(2)}</div>
+                            <div className={`text-xs font-semibold ${
                               isPositive ? 'text-green-600' : 'text-red-600'
                             }`}>
-                              {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                               {isPositive ? '+' : ''}{quote.changePercent?.toFixed(2)}%
                             </div>
                           </div>
@@ -256,59 +256,215 @@ export default function MarketPage() {
             </div>
           </div>
 
-          {/* Center - Chart Area */}
-          <div className="flex-1 bg-gray-50">
-            <div className="bg-white border-b-2 border-gray-200 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-black flex items-center gap-2">
-                      {selectedSymbol}
-                      {selectedAsset && (
-                        <span className="text-lg text-gray-500 font-normal">{selectedAsset.name}</span>
-                      )}
-                    </h2>
+          {/* CENTER - Chart Area */}
+          <div className="flex flex-col bg-gray-50 overflow-hidden">
+            {/* Header */}
+            <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-black flex items-center gap-2">
+                    {selectedSymbol}
                     {selectedAsset && (
-                      <p className="text-sm text-gray-600">{selectedAsset.sector}</p>
+                      <span className="text-base sm:text-lg text-gray-500 font-normal truncate">{selectedAsset.name}</span>
                     )}
-                  </div>
+                  </h2>
+                  {selectedAsset && (
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">{selectedAsset.sector}</p>
+                  )}
                 </div>
                 
                 {selectedQuote && (
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center justify-between sm:justify-end gap-4 flex-wrap">
                     <div>
-                      <div className="text-xs text-gray-600 uppercase font-semibold tracking-wide mb-1">Price</div>
-                      <div className="text-3xl font-mono font-bold text-black">${selectedQuote.price.toFixed(2)}</div>
+                      <div className="text-xs text-gray-600 uppercase font-semibold">Price</div>
+                      <div className="text-2xl sm:text-3xl font-mono font-bold text-black">${selectedQuote.price.toFixed(2)}</div>
                     </div>
                     <button
                       onClick={() => navigate('/simulator')}
-                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition-all shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 transform hover:scale-105"
+                      className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold text-sm sm:text-base rounded-lg transition-all shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40"
                     >
-                      Trade Now
+                      Trade
                     </button>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="p-6">
-              <SimpleTradingChart
-                symbol={selectedSymbol}
-                currentPrice={selectedQuote?.price || 100}
-              />
+            {/* Mobile Tab Switcher */}
+            <div className="lg:hidden flex gap-2 px-4 py-2 border-b border-gray-200 bg-white sticky top-0 z-10 overflow-x-auto">
+              {(['chart', 'assets', 'overview'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setMobileTab(tab)}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg whitespace-nowrap transition-all capitalize ${
+                    mobileTab === tab
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Chart or mobile panels */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Desktop: always show chart | Mobile: show only on chart tab */}
+              <div className={`${mobileTab === 'chart' ? 'block' : 'hidden lg:block'} p-4 sm:p-6`}>
+                <SimpleTradingChart
+                  symbol={selectedSymbol}
+                  currentPrice={selectedQuote?.price || 100}
+                />
+              </div>
+
+              {/* Mobile Assets Tab */}
+              {mobileTab === 'assets' && (
+                <div className="p-4 space-y-2">
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                  </div>
+                  <div className="flex gap-1 flex-wrap mb-3">
+                    {(['all', 'stocks', 'crypto', 'forex', 'indices'] as const).map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-3 py-1 text-xs font-semibold rounded capitalize ${
+                          activeTab === tab
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="space-y-2">
+                    {filteredAssets.slice(0, 10).map(asset => {
+                      const quote = quotes[asset.symbol];
+                      const isPositive = (quote?.change ?? 0) >= 0;
+                      return (
+                        <button
+                          key={asset.symbol}
+                          onClick={() => { setSelectedSymbol(asset.symbol); setMobileTab('chart'); }}
+                          className="w-full p-3 bg-white border border-gray-200 rounded-lg flex justify-between items-center hover:bg-gray-50"
+                        >
+                          <div className="text-left">
+                            <div className="font-bold text-sm text-black">{asset.symbol}</div>
+                            <div className="text-xs text-gray-500">{asset.name}</div>
+                          </div>
+                          {quote && (
+                            <div className="text-right">
+                              <div className="font-mono font-bold text-sm">${quote.price.toFixed(2)}</div>
+                              <div className={`text-xs ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                                {isPositive ? '+' : ''}{quote.changePercent?.toFixed(2)}%
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile Overview Tab */}
+              {mobileTab === 'overview' && (
+                <div className="p-4 space-y-3">
+                  {selectedQuote && (
+                    <>
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <h3 className="font-bold text-black text-sm mb-3 flex items-center gap-2">
+                          <BarChart3 className="w-4 h-4 text-blue-600" />
+                          Quote Details
+                        </h3>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Bid</span>
+                            <span className="font-mono font-bold text-black">${selectedQuote.bid.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Ask</span>
+                            <span className="font-mono font-bold text-black">${selectedQuote.ask.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Spread</span>
+                            <span className="font-mono font-bold text-black">${(selectedQuote.ask - selectedQuote.bid).toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <h3 className="font-bold text-black text-sm mb-3">Asset Info</h3>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Type</span>
+                            <span className="font-semibold text-black capitalize">{selectedAsset?.class}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Volatility</span>
+                            <span className={`font-semibold capitalize ${
+                              selectedAsset?.volatility === 'low' ? 'text-green-600' :
+                              selectedAsset?.volatility === 'medium' ? 'text-yellow-600' :
+                              'text-red-600'
+                            }`}>
+                              {selectedAsset?.volatility}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <h3 className="font-bold text-black text-sm mb-3 flex items-center gap-2">
+                          <DollarSign className="w-4 h-4" />
+                          Top Movers
+                        </h3>
+                        <div className="space-y-2">
+                          {allAssets.slice(0, 5).map(asset => {
+                            const quote = quotes[asset.symbol];
+                            if (!quote) return null;
+                            const isPositive = (quote.change ?? 0) >= 0;
+                            return (
+                              <button
+                                key={asset.symbol}
+                                onClick={() => { setSelectedSymbol(asset.symbol); setMobileTab('chart'); }}
+                                className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded transition-colors text-left"
+                              >
+                                <div>
+                                  <div className="font-semibold text-sm text-black">{asset.symbol}</div>
+                                  <div className="text-xs text-gray-500">${quote.price.toFixed(2)}</div>
+                                </div>
+                                <div className={`text-sm font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                                  {isPositive ? '+' : ''}{quote.changePercent?.toFixed(2)}%
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Right Sidebar - Market Stats */}
-          <div className="w-80 border-l-2 border-gray-200 bg-white h-[calc(100vh-140px)] overflow-y-auto">
-            <div className="p-4 border-b-2 border-gray-200 bg-gray-50">
-              <h3 className="font-bold text-black flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
+          {/* RIGHT SIDEBAR - Market Stats (Hidden on mobile, shown lg+) */}
+          <div className="hidden lg:flex flex-col border-l border-gray-200 bg-white overflow-hidden">
+            <div className="p-4 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+              <h3 className="font-bold text-black flex items-center gap-2 text-sm">
+                <BarChart3 className="w-4 h-4 text-blue-600" />
                 Market Overview
               </h3>
             </div>
 
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-4 overflow-y-auto flex-1">
               {selectedQuote && (
                 <>
                   <div className="bg-gray-50 rounded-lg p-3">
@@ -316,15 +472,15 @@ export default function MarketPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Bid</span>
-                        <span className="font-mono font-bold text-black">${selectedQuote.bid.toFixed(2)}</span>
+                        <span className="font-mono font-bold text-black text-xs">${selectedQuote.bid.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Ask</span>
-                        <span className="font-mono font-bold text-black">${selectedQuote.ask.toFixed(2)}</span>
+                        <span className="font-mono font-bold text-black text-xs">${selectedQuote.ask.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Spread</span>
-                        <span className="font-mono font-bold text-black">${(selectedQuote.ask - selectedQuote.bid).toFixed(2)}</span>
+                        <span className="font-mono font-bold text-black text-xs">${(selectedQuote.ask - selectedQuote.bid).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -334,11 +490,11 @@ export default function MarketPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Type</span>
-                        <span className="font-semibold text-black capitalize">{selectedAsset?.class}</span>
+                        <span className="font-semibold text-black capitalize text-xs">{selectedAsset?.class}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Volatility</span>
-                        <span className={`font-semibold capitalize ${
+                        <span className={`font-semibold capitalize text-xs ${
                           selectedAsset?.volatility === 'low' ? 'text-green-600' :
                           selectedAsset?.volatility === 'medium' ? 'text-yellow-600' :
                           'text-red-600'
@@ -348,39 +504,40 @@ export default function MarketPage() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="border-t border-gray-200 pt-3">
+                    <h4 className="text-xs text-gray-600 uppercase font-semibold mb-2 flex items-center gap-2">
+                      <DollarSign className="w-3 h-3" />
+                      Top Movers
+                    </h4>
+                    <div className="space-y-1">
+                      {allAssets.slice(0, 5).map(asset => {
+                        const quote = quotes[asset.symbol];
+                        if (!quote) return null;
+                        const isPositive = (quote.change ?? 0) >= 0;
+                        return (
+                          <button
+                            key={asset.symbol}
+                            onClick={() => setSelectedSymbol(asset.symbol)}
+                            className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded transition-colors text-left"
+                          >
+                            <div>
+                              <div className="font-semibold text-xs text-black">{asset.symbol}</div>
+                              <div className="text-xs text-gray-500">${quote.price.toFixed(2)}</div>
+                            </div>
+                            <div className={`text-xs font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                              {isPositive ? '+' : ''}{quote.changePercent?.toFixed(2)}%
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </>
               )}
-
-              <div className="border-t-2 border-gray-200 pt-4">
-                <h4 className="text-xs text-gray-600 uppercase font-semibold mb-3 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4" />
-                  Top Movers
-                </h4>
-                <div className="space-y-2">
-                  {allAssets.slice(0, 5).map(asset => {
-                    const quote = quotes[asset.symbol];
-                    if (!quote) return null;
-                    const isPositive = (quote.change ?? 0) >= 0;
-                    return (
-                      <button
-                        key={asset.symbol}
-                        onClick={() => setSelectedSymbol(asset.symbol)}
-                        className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors text-left"
-                      >
-                        <div>
-                          <div className="font-semibold text-sm text-black">{asset.symbol}</div>
-                          <div className="text-xs text-gray-500">${quote.price.toFixed(2)}</div>
-                        </div>
-                        <div className={`text-sm font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                          {isPositive ? '+' : ''}{quote.changePercent?.toFixed(2)}%
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             </div>
           </div>
+
         </div>
       </main>
       
