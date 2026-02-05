@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { Sidebar, MobileNav } from '@/components/Sidebar';
+import { Sidebar } from '@/components/Sidebar';
+import { MobileMenu } from '@/components/MobileMenu';
 import { SimpleTradingChart } from '@/components/SimpleTradingChart';
 import { Search, TrendingUp, TrendingDown, BarChart3, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
@@ -383,7 +384,5 @@ export default function MarketPage() {
         </div>
       </main>
       
-      <MobileNav />
-    </div>
-  );
+      <MobileMenu />
 }

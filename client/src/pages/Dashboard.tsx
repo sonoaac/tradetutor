@@ -2,7 +2,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePortfolio } from "@/hooks/use-portfolio";
 import { useTrades } from "@/hooks/use-trades";
 import { StatCard } from "@/components/StatCard";
-import { Sidebar, MobileNav } from "@/components/Sidebar";
+import { Sidebar } from "@/components/Sidebar";
+import { MobileMenu } from "@/components/MobileMenu";
 import { Wallet, TrendingUp, Activity, BarChart2, AlertCircle } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { Link } from "wouter";
@@ -388,7 +389,7 @@ export default function Dashboard() {
           </div>
         </main>
 
-        <MobileNav />
+        <MobileMenu />
         <AuthModal 
           isOpen={showAuthModal} 
           onClose={() => setShowAuthModal(false)} 
@@ -412,7 +413,7 @@ export default function Dashboard() {
   
   // Recent 5 trades
   const recentTrades = [...(trades || [])].sort((a, b) => 
-    new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime()
+    new Date(b.entryTime || 0).getTime() - new Date(a.entryTime || 0).getTime()
   ).slice(0, 5);
 
   return (
@@ -496,7 +497,7 @@ export default function Dashboard() {
         </div>
       </main>
       
-      <MobileNav />
+      <MobileMenu />
     </div>
   );
 }

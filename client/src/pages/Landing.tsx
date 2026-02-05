@@ -137,17 +137,33 @@ export default function Landing() {
 
           <div ref={scrollRefs.markets} className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 md:pb-6">
             {[
-              { name: 'Stocks', emoji: '📈' },
-              { name: 'Crypto', emoji: '₿' },
-              { name: 'Futures', emoji: '📊' },
-              { name: 'Options', emoji: '📉' },
-              { name: 'Forex', emoji: '💱' },
-              { name: 'Commodities', emoji: '⛽' },
+              { name: 'Stocks', emoji: '📈', gradient: 'from-blue-500 via-blue-400' },
+              { name: 'Crypto', emoji: '₿', gradient: 'from-orange-500 via-yellow-400' },
+              { name: 'Futures', emoji: '📊', gradient: 'from-purple-500 via-purple-400' },
+              { name: 'Options', emoji: '📉', gradient: 'from-green-500 via-green-400' },
+              { name: 'Forex', emoji: '💱', gradient: 'from-pink-500 via-pink-400' },
+              { name: 'Commodities', emoji: '⛽', gradient: 'from-amber-500 via-amber-400' },
             ].map((market) => (
-              <div key={market.name} className="flex-shrink-0 w-40 md:w-48 p-4 md:p-6 bg-card border border-white/10 rounded-lg hover:border-primary/50 transition cursor-pointer group">
-                <div className="text-3xl md:text-4xl mb-3 group-hover:scale-110 transition">{market.emoji}</div>
-                <h3 className="font-bold text-base md:text-lg">{market.name}</h3>
-                <p className="text-xs md:text-sm text-muted-foreground mt-2">Live data available</p>
+              <div key={market.name} className="flex-shrink-0 w-40 md:w-48 bg-card border border-white/10 rounded-lg hover:border-primary/50 transition cursor-pointer group overflow-hidden">
+                {/* Chart visualization */}
+                <div className={`h-24 md:h-28 bg-gradient-to-b ${market.gradient} to-transparent opacity-30 relative overflow-hidden`}>
+                  <svg className="w-full h-full" viewBox="0 0 200 100" preserveAspectRatio="none">
+                    <path d="M0,80 L20,70 L40,60 L60,75 L80,50 L100,65 L120,40 L140,55 L160,35 L200,50" 
+                          fill="none" stroke="url(#chartGrad)" strokeWidth="2" />
+                    <defs>
+                      <linearGradient id="chartGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style={{stopColor: '#fff', stopOpacity: 0.5}} />
+                        <stop offset="100%" style={{stopColor: '#fff', stopOpacity: 0.1}} />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </div>
+                {/* Content */}
+                <div className="p-4 md:p-6">
+                  <div className="text-2xl md:text-3xl mb-2">{market.emoji}</div>
+                  <h3 className="font-bold text-base md:text-lg">{market.name}</h3>
+                  <p className="text-xs md:text-sm text-muted-foreground mt-2">Live data available</p>
+                </div>
               </div>
             ))}
           </div>
@@ -162,7 +178,7 @@ export default function Landing() {
             <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">Everything you need to become a better trader</p>
           </div>
           
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-12 md:mb-16">
             <FeatureCard 
               icon={<ShieldCheck className="w-8 h-8 text-primary" />}
               title="Risk-Free Trading"
@@ -193,6 +209,66 @@ export default function Landing() {
               title="Progress Tracking"
               description="See your improvement over time with detailed statistics and achievements."
             />
+          </div>
+
+          {/* Trading Charts Grid */}
+          <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+            {/* Candlestick Chart */}
+            <div className="p-6 md:p-8 bg-card border border-white/10 rounded-lg">
+              <h3 className="font-bold text-lg md:text-xl mb-4">Candlestick Analysis</h3>
+              <svg className="w-full h-48" viewBox="0 0 400 200" preserveAspectRatio="none">
+                {/* Grid lines */}
+                {[0, 40, 80, 120, 160].map((y) => (
+                  <line key={`h-${y}`} x1="0" y1={y} x2="400" y2={y} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                ))}
+                {/* Candlesticks - simplified representation */}
+                <g>
+                  {/* Candle 1 - Green (bullish) */}
+                  <line x1="30" y1="60" x2="30" y2="100" stroke="#22c55e" strokeWidth="2" />
+                  <rect x="20" y="80" width="20" height="20" fill="#22c55e" stroke="#16a34a" strokeWidth="1" />
+                  
+                  {/* Candle 2 - Red (bearish) */}
+                  <line x1="70" y1="70" x2="70" y2="110" stroke="#ef4444" strokeWidth="2" />
+                  <rect x="60" y="85" width="20" height="25" fill="#ef4444" stroke="#dc2626" strokeWidth="1" />
+                  
+                  {/* Candle 3 - Green (bullish) */}
+                  <line x1="110" y1="50" x2="110" y2="95" stroke="#22c55e" strokeWidth="2" />
+                  <rect x="100" y="75" width="20" height="20" fill="#22c55e" stroke="#16a34a" strokeWidth="1" />
+                  
+                  {/* Candle 4 - Green (bullish) */}
+                  <line x1="150" y1="40" x2="150" y2="85" stroke="#22c55e" strokeWidth="2" />
+                  <rect x="140" y="65" width="20" height="20" fill="#22c55e" stroke="#16a34a" strokeWidth="1" />
+                  
+                  {/* Candle 5 - Red (bearish) */}
+                  <line x1="190" y1="50" x2="190" y2="100" stroke="#ef4444" strokeWidth="2" />
+                  <rect x="180" y="70" width="20" height="30" fill="#ef4444" stroke="#dc2626" strokeWidth="1" />
+                </g>
+              </svg>
+              <p className="text-sm text-muted-foreground mt-4">Master candlestick patterns and identify trading opportunities</p>
+            </div>
+
+            {/* Area Chart */}
+            <div className="p-6 md:p-8 bg-card border border-white/10 rounded-lg">
+              <h3 className="font-bold text-lg md:text-xl mb-4">Portfolio Growth</h3>
+              <svg className="w-full h-48" viewBox="0 0 400 200" preserveAspectRatio="none">
+                {/* Grid lines */}
+                {[0, 40, 80, 120, 160].map((y) => (
+                  <line key={`h2-${y}`} x1="0" y1={y} x2="400" y2={y} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                ))}
+                {/* Area chart */}
+                <path d="M0,160 L50,140 L100,110 L150,90 L200,70 L250,60 L300,50 L350,40 L400,30 L400,200 L0,200 Z" 
+                      fill="url(#areaGrad)" />
+                <path d="M0,160 L50,140 L100,110 L150,90 L200,70 L250,60 L300,50 L350,40 L400,30" 
+                      fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <defs>
+                  <linearGradient id="areaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style={{stopColor: '#3b82f6', stopOpacity: 0.3}} />
+                    <stop offset="100%" style={{stopColor: '#3b82f6', stopOpacity: 0}} />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <p className="text-sm text-muted-foreground mt-4">Track your portfolio value growth over time with visual analytics</p>
+            </div>
           </div>
         </div>
       </section>
@@ -237,11 +313,66 @@ export default function Landing() {
       {/* Stats Section */}
       <section className="py-16 md:py-24 bg-secondary/5 border-t border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 text-center">
-            <StatCard number="50K+" label="Active Traders" />
-            <StatCard number="1M+" label="Trades Simulated" />
-            <StatCard number="98%" label="Success Rate" />
-            <StatCard number="24/7" label="Market Coverage" />
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+            <StatCard 
+              number="50K+" 
+              label="Active Traders"
+              trend="+12%"
+              trendUp
+            />
+            <StatCard 
+              number="1M+" 
+              label="Trades Simulated"
+              trend="+28%"
+              trendUp
+            />
+            <StatCard 
+              number="98%" 
+              label="Success Rate"
+              trend="+5%"
+              trendUp
+            />
+            <StatCard 
+              number="24/7" 
+              label="Market Coverage"
+              trend="Always On"
+            />
+          </div>
+
+          {/* Trading Indicators Grid */}
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8 mt-12 md:mt-16">
+            <div className="p-6 bg-card border border-white/10 rounded-lg">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-bold text-base">Win Rate Indicator</h4>
+                <span className="text-sm font-bold text-green-400">68%</span>
+              </div>
+              <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+                <div className="bg-gradient-to-r from-green-500 to-emerald-400 h-full" style={{width: '68%'}} />
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">Based on simulator trades</p>
+            </div>
+
+            <div className="p-6 bg-card border border-white/10 rounded-lg">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-bold text-base">Risk Management</h4>
+                <span className="text-sm font-bold text-blue-400">92%</span>
+              </div>
+              <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-full" style={{width: '92%'}} />
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">Safe position sizing</p>
+            </div>
+
+            <div className="p-6 bg-card border border-white/10 rounded-lg">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-bold text-base">Profit Factor</h4>
+                <span className="text-sm font-bold text-purple-400">2.45x</span>
+              </div>
+              <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+                <div className="bg-gradient-to-r from-purple-500 to-pink-400 h-full" style={{width: '85%'}} />
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">Average profit ratio</p>
+            </div>
           </div>
         </div>
       </section>
@@ -368,11 +499,16 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode, titl
   );
 }
 
-function StatCard({ number, label }: { number: string, label: string }) {
+function StatCard({ number, label, trend, trendUp }: { number: string, label: string, trend?: string, trendUp?: boolean }) {
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-6 md:p-8 text-center">
       <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary mb-2">{number}</div>
-      <div className="text-base md:text-lg text-muted-foreground">{label}</div>
+      <div className="text-base md:text-lg text-muted-foreground mb-2">{label}</div>
+      {trend && (
+        <div className={`text-sm font-semibold ${trendUp ? 'text-green-400' : 'text-gray-400'}`}>
+          {trendUp && '↗ '}{trend}
+        </div>
+      )}
     </div>
   );
 }

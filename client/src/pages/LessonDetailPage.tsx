@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRoute, useLocation } from 'wouter';
-import { Sidebar, MobileNav } from '@/components/Sidebar';
+import { Sidebar } from '@/components/Sidebar';
+import { MobileMenu } from '@/components/MobileMenu';
 import { ArrowLeft, CheckCircle, XCircle, Trophy, Star, Target, ChevronRight, BookOpen, Lightbulb, TrendingUp, AlertCircle } from 'lucide-react';
 import LESSONS_DATABASE from '@/data/lessonsData';
 
@@ -428,7 +429,7 @@ export default function LessonDetailPage() {
         )}
       </main>
       
-      <MobileNav />
+      <MobileMenu />
     </div>
   );
 }

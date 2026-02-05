@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { Sidebar, MobileNav } from '@/components/Sidebar';
+import { Sidebar } from '@/components/Sidebar';
+import { MobileMenu } from '@/components/MobileMenu';
 import { Trophy, Star, Lock, CheckCircle, PlayCircle, Award, Target, Zap, Crown, GraduationCap, Sparkles, TrendingUp } from 'lucide-react';
 
 interface Lesson {
@@ -309,7 +310,7 @@ export default function LessonsPage() {
         </div>
       </main>
       
-      <MobileNav />
+      <MobileMenu />
     </div>
   );
 }

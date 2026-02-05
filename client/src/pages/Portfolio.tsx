@@ -1,4 +1,5 @@
-import { Sidebar, MobileNav } from "@/components/Sidebar";
+import { Sidebar } from "@/components/Sidebar";
+import { MobileMenu } from "@/components/MobileMenu";
 import { usePortfolio, useResetPortfolio } from "@/hooks/use-portfolio";
 import { useTrades } from "@/hooks/use-trades";
 import { Loader2, RefreshCcw, AlertTriangle } from "lucide-react";
@@ -91,7 +92,7 @@ export default function Portfolio() {
            </div>
         </div>
       </main>
-      <MobileNav />
+      <MobileMenu />
     </div>
   );
 }

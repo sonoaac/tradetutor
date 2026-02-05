@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Sidebar, MobileNav } from '@/components/Sidebar';
+import { Sidebar } from '@/components/Sidebar';
+import { MobileMenu } from '@/components/MobileMenu';
 import { SimpleTradingChart } from '@/components/SimpleTradingChart';
 import { DollarSign, TrendingUp, TrendingDown, Activity, Wallet, ArrowUpRight, ArrowDownRight, X } from 'lucide-react';
 
@@ -191,6 +192,7 @@ export default function SimulatorPage() {
   return (
     <div className="flex bg-white min-h-screen">
       <Sidebar />
+      <MobileMenu />
       
       <main className="flex-1 md:ml-64 pb-24 md:pb-8">
         {/* Portfolio Stats Bar */}
