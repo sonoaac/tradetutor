@@ -542,4 +542,6 @@ export default function MarketPage() {
       </main>
       
       <MobileMenu />
+    </div>
+  );
 }

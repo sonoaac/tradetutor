@@ -99,26 +99,26 @@ export default function LessonsPage() {
         {/* Top Progress Bar */}
         <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-4 sm:px-6 md:px-8 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <div className={`w-16 h-16 ${LEVEL_CONFIG[currentLevel as keyof typeof LEVEL_CONFIG].color} rounded-full flex items-center justify-center shadow-lg`}>
-                  <CurrentLevelIcon className="w-8 h-8 text-white" />
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className={`w-12 h-12 sm:w-16 sm:h-16 ${LEVEL_CONFIG[currentLevel as keyof typeof LEVEL_CONFIG].color} rounded-full flex items-center justify-center shadow-lg`}>
+                  <CurrentLevelIcon className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white">Learning Journey</h1>
-                  <p className="text-purple-100">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Learning Journey</h1>
+                  <p className="text-sm sm:text-base text-purple-100">
                     Level: {LEVEL_CONFIG[currentLevel as keyof typeof LEVEL_CONFIG].name}
                   </p>
                 </div>
               </div>
               
-              <div className="text-right">
+              <div className="w-full lg:w-auto lg:text-right">
                 <div className="flex items-center gap-2 text-white mb-1">
-                  <Trophy className="w-6 h-6 text-yellow-300" />
-                  <span className="text-3xl font-bold font-mono">{totalPoints}</span>
-                  <span className="text-purple-200">/ {totalPossible} pts</span>
+                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-300" />
+                  <span className="text-2xl sm:text-3xl font-bold font-mono">{totalPoints}</span>
+                  <span className="text-sm sm:text-base text-purple-200">/ {totalPossible} pts</span>
                 </div>
-                <div className="text-purple-100 text-sm">
+                <div className="text-purple-100 text-xs sm:text-sm">
                   {completedCount} of {MOCK_LESSONS.length} lessons completed
                 </div>
               </div>
@@ -146,9 +146,9 @@ export default function LessonsPage() {
         </div>
 
         {/* Level Filter Pills */}
-        <div className="bg-gray-50 border-b-2 border-gray-200 px-6 py-4">
+        <div className="bg-gray-50 border-b-2 border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
               <button
                 onClick={() => setSelectedLevel('all')}
                 className={`px-4 py-2 rounded-full font-semibold whitespace-nowrap transition-all ${
@@ -181,9 +181,9 @@ export default function LessonsPage() {
         </div>
 
         {/* Lessons Grid */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {filteredLessons.map((lesson) => {
                 const levelConfig = LEVEL_CONFIG[lesson.level];
                 const LevelIcon = levelConfig.icon;
@@ -277,12 +277,12 @@ export default function LessonsPage() {
             </div>
 
             {/* Achievement Badges Section */}
-            <div className="mt-12 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border-2 border-blue-200">
-              <h2 className="text-2xl font-bold text-black mb-4 flex items-center gap-2">
-                <Crown className="w-7 h-7 text-yellow-500" />
+            <div className="mt-8 sm:mt-12 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 sm:p-6 border-2 border-blue-200">
+              <h2 className="text-xl sm:text-2xl font-bold text-black mb-3 sm:mb-4 flex items-center gap-2">
+                <Crown className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-500" />
                 Your Achievements
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
                 {Object.entries(LEVEL_CONFIG).map(([key, config]) => {
                   const LevelIcon = config.icon;
                   const isUnlocked = totalPoints >= config.required;
