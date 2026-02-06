@@ -18,12 +18,21 @@ def create_app(config_name='development'):
     bcrypt.init_app(app)
     
     # Enable CORS for React frontend
-    CORS(app, supports_credentials=True, origins=[
+    allowed_origins = [
         'http://localhost:5173',  # Vite dev server
         'http://localhost:5174',  # Vite dev server alternate port
         'http://localhost:3000',  # Alternative frontend port
-        app.config.get('FRONTEND_URL', '*')
-    ])
+        'https://www.tradetutor.academy',  # Production frontend
+        'https://tradetutor.academy',  # Production frontend (no www)
+        'https://tradetutor.vercel.app',  # Vercel deployment
+    ]
+    
+    # Add custom FRONTEND_URL if set
+    frontend_url = app.config.get('FRONTEND_URL')
+    if frontend_url and frontend_url not in allowed_origins:
+        allowed_origins.append(frontend_url)
+    
+    CORS(app, supports_credentials=True, origins=allowed_origins)
     
     # Register blueprints
     from app.blueprints.auth.routes import auth_bp
