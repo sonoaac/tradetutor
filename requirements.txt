@@ -4,7 +4,7 @@ Werkzeug==3.0.1
 
 # Database
 Flask-SQLAlchemy==3.1.1
-psycopg2-binary==2.9.9
+# psycopg2-binary==2.9.9  # Not needed for SQLite, uncomment only if using PostgreSQL
 Flask-Migrate==4.0.5
 
 # Authentication
@@ -32,6 +32,8 @@ stripe==8.0.0
 
 # PayPal (optional, for payments)
 paypalrestsdk==1.13.1
+paypal-server-sdk==1.0.0
+requests==2.31.0
 
 # Gunicorn (for production)
 gunicorn==21.2.0

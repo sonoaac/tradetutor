@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { TrendingUp, TrendingDown, Activity, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, Clock, BarChart3, TrendingUpIcon } from 'lucide-react';
 
-interface PricePoint {
+interface Candle {
   time: number;
-  price: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
 }
 
 type TimePeriod = '1D' | '1W' | '1M' | '3M' | '1Y' | 'ALL';
+type ChartType = 'line' | 'candlestick';
 
 interface SimpleTradingChartProps {
   symbol: string;
@@ -16,9 +20,10 @@ interface SimpleTradingChartProps {
 
 export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m' }: SimpleTradingChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
+  const [candleData, setCandleData] = useState<Candle[]>([]);
   const [selectedTimeframe, setSelectedTimeframe] = useState(timeframe);
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('1D');
+  const [chartType, setChartType] = useState<ChartType>('line');
   const [high24h, setHigh24h] = useState(0);
   const [low24h, setLow24h] = useState(0);
   const [change24h, setChange24h] = useState(0);
@@ -36,24 +41,24 @@ export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m' }: S
     }
   };
 
-  // Initialize price history
+  // Initialize candle data
   useEffect(() => {
-    const points: PricePoint[] = [];
+    const candles: Candle[] = [];
     const now = Date.now();
     const pointCount = getPointCount(selectedPeriod);
     
-    // Generate historical data with realistic movement
-    let price = currentPrice * (0.95 + Math.random() * 0.1);
+    // Generate historical data with realistic OHLC movement
+    let basePrice = currentPrice * (0.95 + Math.random() * 0.1);
     
     // Calculate time interval based on period
     const getTimeInterval = (period: TimePeriod): number => {
       switch (period) {
-        case '1D': return 1000 * 60 * 14.4; // ~14 minutes per point (100 points in 24h)
-        case '1W': return 1000 * 60 * 60; // 1 hour per point
-        case '1M': return 1000 * 60 * 60 * 3; // 3 hours per point
-        case '3M': return 1000 * 60 * 60 * 6; // 6 hours per point
-        case '1Y': return 1000 * 60 * 60 * 24; // 1 day per point
-        case 'ALL': return 1000 * 60 * 60 * 24 * 2; // 2 days per point
+        case '1D': return 1000 * 60 * 14.4; // ~14 minutes per candle (100 candles in 24h)
+        case '1W': return 1000 * 60 * 60; // 1 hour per candle
+        case '1M': return 1000 * 60 * 60 * 3; // 3 hours per candle
+        case '3M': return 1000 * 60 * 60 * 6; // 6 hours per candle
+        case '1Y': return 1000 * 60 * 60 * 24; // 1 day per candle
+        case 'ALL': return 1000 * 60 * 60 * 24 * 2; // 2 days per candle
         default: return 1000;
       }
     };
@@ -62,41 +67,68 @@ export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m' }: S
     
     for (let i = 0; i < pointCount; i++) {
       const time = now - (pointCount - i) * interval;
-      price = price + (Math.random() - 0.49) * (currentPrice * 0.005);
-      points.push({ time, price });
+      
+      // Generate realistic OHLC data
+      const volatility = currentPrice * 0.003;
+      const open = basePrice;
+      const direction = Math.random() > 0.48 ? 1 : -1; // Slight upward bias
+      const change = (Math.random() * volatility * direction);
+      const close = open + change;
+      
+      // High and low based on the open and close
+      const maxPrice = Math.max(open, close);
+      const minPrice = Math.min(open, close);
+      const high = maxPrice + (Math.random() * volatility * 0.5);
+      const low = minPrice - (Math.random() * volatility * 0.5);
+      
+      candles.push({ time, open, high, low, close });
+      basePrice = close; // Next candle starts where this one closed
     }
     
-    setPriceHistory(points);
+    setCandleData(candles);
     
-    // Calculate 24h stats
-    const prices = points.map(p => p.price);
-    setHigh24h(Math.max(...prices));
-    setLow24h(Math.min(...prices));
-    setChange24h(((currentPrice - points[0].price) / points[0].price) * 100);
+    // Calculate 24h stats from all highs/lows
+    const allHighs = candles.map(c => c.high);
+    const allLows = candles.map(c => c.low);
+    setHigh24h(Math.max(...allHighs));
+    setLow24h(Math.min(...allLows));
+    setChange24h(((currentPrice - candles[0].close) / candles[0].close) * 100);
   }, [symbol, selectedPeriod]);
 
-  // Update with new price data
+  // Update with new price data (create new candle)
   useEffect(() => {
-    if (priceHistory.length === 0) return;
+    if (candleData.length === 0) return;
 
     const now = Date.now();
+    const lastCandle = candleData[candleData.length - 1];
     
-    setPriceHistory(prev => {
-      const updated = [...prev.slice(1), { time: now, price: currentPrice }];
+    // Create a new candle with the current price
+    const volatility = currentPrice * 0.002;
+    const newCandle: Candle = {
+      time: now,
+      open: lastCandle.close,
+      high: Math.max(lastCandle.close, currentPrice) + (Math.random() * volatility * 0.3),
+      low: Math.min(lastCandle.close, currentPrice) - (Math.random() * volatility * 0.3),
+      close: currentPrice
+    };
+    
+    setCandleData(prev => {
+      const updated = [...prev.slice(1), newCandle];
       
       // Update stats
-      const prices = updated.map(p => p.price);
-      setHigh24h(Math.max(...prices));
-      setLow24h(Math.min(...prices));
-      setChange24h(((currentPrice - updated[0].price) / updated[0].price) * 100);
+      const allHighs = updated.map(c => c.high);
+      const allLows = updated.map(c => c.low);
+      setHigh24h(Math.max(...allHighs));
+      setLow24h(Math.min(...allLows));
+      setChange24h(((currentPrice - updated[0].close) / updated[0].close) * 100);
       
       return updated;
     });
   }, [currentPrice]);
 
-  // Draw chart
+  // Draw chart (supports both line and candlestick)
   useEffect(() => {
-    if (!canvasRef.current || priceHistory.length < 2) return;
+    if (!canvasRef.current || candleData.length < 2) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -114,9 +146,9 @@ export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m' }: S
     ctx.clearRect(0, 0, width, height);
 
     // Calculate price range
-    const prices = priceHistory.map(p => p.price);
-    const maxPrice = Math.max(...prices);
-    const minPrice = Math.min(...prices);
+    const allPrices = candleData.flatMap(c => [c.high, c.low]);
+    const maxPrice = Math.max(...allPrices);
+    const minPrice = Math.min(...allPrices);
     const priceRange = maxPrice - minPrice || 1;
     const padding = 40;
 
@@ -139,49 +171,88 @@ export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m' }: S
       ctx.fillText('$' + price.toFixed(2), padding - 5, y + 4);
     }
 
-    // Draw area under line
-    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
     const isPositive = change24h >= 0;
-    gradient.addColorStop(0, isPositive ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)');
-    gradient.addColorStop(1, isPositive ? 'rgba(34, 197, 94, 0.05)' : 'rgba(239, 68, 68, 0.05)');
-    
-    ctx.beginPath();
-    priceHistory.forEach((point, i) => {
-      const x = padding + (width - padding * 2) * (i / (priceHistory.length - 1));
-      const y = padding + (height - padding * 2) * (1 - (point.price - minPrice) / priceRange);
-      
-      if (i === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    });
-    
-    const lastX = padding + (width - padding * 2);
-    const lastY = padding + (height - padding * 2) * (1 - (priceHistory[priceHistory.length - 1].price - minPrice) / priceRange);
-    ctx.lineTo(lastX, height - padding);
-    ctx.lineTo(padding, height - padding);
-    ctx.closePath();
-    ctx.fillStyle = gradient;
-    ctx.fill();
 
-    // Draw price line
-    ctx.strokeStyle = isPositive ? '#22c55e' : '#ef4444';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    
-    priceHistory.forEach((point, i) => {
-      const x = padding + (width - padding * 2) * (i / (priceHistory.length - 1));
-      const y = padding + (height - padding * 2) * (1 - (point.price - minPrice) / priceRange);
+    if (chartType === 'candlestick') {
+      // Draw candlesticks
+      const candleWidth = Math.max(2, (width - padding * 2) / candleData.length * 0.7);
       
-      if (i === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    });
-    
-    ctx.stroke();
+      candleData.forEach((candle, i) => {
+        const x = padding + (width - padding * 2) * (i / (candleData.length - 1));
+        const openY = padding + (height - padding * 2) * (1 - (candle.open - minPrice) / priceRange);
+        const closeY = padding + (height - padding * 2) * (1 - (candle.close - minPrice) / priceRange);
+        const highY = padding + (height - padding * 2) * (1 - (candle.high - minPrice) / priceRange);
+        const lowY = padding + (height - padding * 2) * (1 - (candle.low - minPrice) / priceRange);
+        
+        const isBullish = candle.close >= candle.open;
+        const bodyColor = isBullish ? '#22c55e' : '#ef4444';
+        const wickColor = isBullish ? '#16a34a' : '#dc2626';
+        
+        // Draw wick (high-low line)
+        ctx.strokeStyle = wickColor;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, highY);
+        ctx.lineTo(x, lowY);
+        ctx.stroke();
+        
+        // Draw body (open-close rectangle)
+        const bodyHeight = Math.abs(closeY - openY);
+        const bodyY = Math.min(openY, closeY);
+        
+        ctx.fillStyle = bodyColor;
+        ctx.fillRect(x - candleWidth / 2, bodyY, candleWidth, Math.max(bodyHeight, 1));
+        
+        // Add border to body
+        ctx.strokeStyle = wickColor;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x - candleWidth / 2, bodyY, candleWidth, Math.max(bodyHeight, 1));
+      });
+    } else {
+      // Draw line chart (existing logic)
+      // Draw area under line
+      const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
+      gradient.addColorStop(0, isPositive ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)');
+      gradient.addColorStop(1, isPositive ? 'rgba(34, 197, 94, 0.05)' : 'rgba(239, 68, 68, 0.05)');
+      
+      ctx.beginPath();
+      candleData.forEach((candle, i) => {
+        const x = padding + (width - padding * 2) * (i / (candleData.length - 1));
+        const y = padding + (height - padding * 2) * (1 - (candle.close - minPrice) / priceRange);
+        
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+      
+      const lastX = padding + (width - padding * 2);
+      const lastY = padding + (height - padding * 2) * (1 - (candleData[candleData.length - 1].close - minPrice) / priceRange);
+      ctx.lineTo(lastX, height - padding);
+      ctx.lineTo(padding, height - padding);
+      ctx.closePath();
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      // Draw price line
+      ctx.strokeStyle = isPositive ? '#22c55e' : '#ef4444';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      
+      candleData.forEach((candle, i) => {
+        const x = padding + (width - padding * 2) * (i / (candleData.length - 1));
+        const y = padding + (height - padding * 2) * (1 - (candle.close - minPrice) / priceRange);
+        
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+      
+      ctx.stroke();
+    }
 
     // Draw current price line
     const currentY = padding + (height - padding * 2) * (1 - (currentPrice - minPrice) / priceRange);
@@ -207,15 +278,15 @@ export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m' }: S
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
     
-    const timePoints = [0, priceHistory.length - 1];
+    const timePoints = [0, candleData.length - 1];
     timePoints.forEach(i => {
-      const point = priceHistory[i];
-      const x = padding + (width - padding * 2) * (i / (priceHistory.length - 1));
-      const date = new Date(point.time);
+      const candle = candleData[i];
+      const x = padding + (width - padding * 2) * (i / (candleData.length - 1));
+      const date = new Date(candle.time);
       const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       ctx.fillText(timeStr, x, height - padding + 20);
     });
-  }, [priceHistory, currentPrice, change24h]);
+  }, [candleData, currentPrice, change24h, chartType]);
 
   const isPositive = change24h >= 0;
 
@@ -260,22 +331,52 @@ export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m' }: S
         </div>
 
         {/* Time Period Selector */}
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-gray-500" />
-          <div className="flex gap-1">
-            {(['1D', '1W', '1M', '3M', '1Y', 'ALL'] as TimePeriod[]).map(period => (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+          {/* Chart Type Selector */}
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-gray-500" />
+            <div className="flex gap-1">
               <button
-                key={period}
-                onClick={() => setSelectedPeriod(period)}
+                onClick={() => setChartType('line')}
                 className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all transform hover:scale-105 ${
-                  selectedPeriod === period
-                    ? 'bg-blue-600 text-white shadow-md'
+                  chartType === 'line'
+                    ? 'bg-purple-600 text-white shadow-md'
                     : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                 }`}
               >
-                {period}
+                Line
               </button>
-            ))}
+              <button
+                onClick={() => setChartType('candlestick')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all transform hover:scale-105 ${
+                  chartType === 'candlestick'
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                }`}
+              >
+                Candlestick
+              </button>
+            </div>
+          </div>
+          
+          {/* Time Period */}
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-gray-500" />
+            <div className="flex gap-1 flex-wrap">
+              {(['1D', '1W', '1M', '3M', '1Y', 'ALL'] as TimePeriod[]).map(period => (
+                <button
+                  key={period}
+                  onClick={() => setSelectedPeriod(period)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all transform hover:scale-105 ${
+                    selectedPeriod === period
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                  }`}
+                >
+                  {period}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

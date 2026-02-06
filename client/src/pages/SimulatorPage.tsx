@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sidebar } from '@/components/Sidebar';
+import { Sidebar, MobileNav } from '@/components/Sidebar';
 import { MobileMenu } from '@/components/MobileMenu';
 import { SimpleTradingChart } from '@/components/SimpleTradingChart';
 import { DollarSign, TrendingUp, TrendingDown, Activity, Wallet, ArrowUpRight, ArrowDownRight, X } from 'lucide-react';
@@ -45,7 +45,8 @@ export default function SimulatorPage() {
   const [quantity, setQuantity] = useState('1');
   const [limitPrice, setLimitPrice] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [mobileTab, setMobileTab] = useState<'chart' | 'trade' | 'positions' | 'history'>('chart');
+  const [showChartModal, setShowChartModal] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'chart' | 'trade' | 'positions' | 'history'>('trade');
   const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({
     'SMBY': 152.45,
     'BTN': 43120.00,
@@ -370,7 +371,7 @@ export default function SimulatorPage() {
 
             {/* Mobile Tab Switcher (hidden on lg+) */}
             <div className="lg:hidden flex gap-2 px-4 py-2 border-b border-gray-200 bg-white sticky top-14 z-20 overflow-x-auto">
-              {(['chart', 'trade', 'positions', 'history'] as const).map(tab => (
+              {(['trade', 'positions', 'history'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setMobileTab(tab)}
@@ -385,8 +386,8 @@ export default function SimulatorPage() {
               ))}
             </div>
 
-            {/* Chart Content (shown when mobileTab === 'chart' on mobile, always shown on desktop) */}
-            <div className={`flex-1 overflow-y-auto ${mobileTab === 'chart' ? 'block' : 'hidden lg:block'}`}>
+            {/* Chart Content (desktop only - always shown on lg+) */}
+            <div className="hidden lg:block flex-1 overflow-y-auto">
               <div className="p-4 sm:p-6">
                 <SimpleTradingChart
                   symbol={selectedSymbol}
@@ -736,9 +737,41 @@ export default function SimulatorPage() {
             {orderSide === 'buy' ? 'Place Buy Order' : 'Place Sell Order'}
           </button>
         )}
+        
+        {/* Mobile Floating Chart Button */}
+        <button
+          onClick={() => setShowChartModal(true)}
+          className="lg:hidden fixed bottom-20 right-4 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
+          title="View Chart"
+        >
+          <Activity className="w-6 h-6" />
+        </button>
       </main>
       
       <MobileNav />
+
+      {/* Chart Modal (Mobile Only) */}
+      {showChartModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-2">
+          <div className="bg-white rounded-xl shadow-2xl w-full h-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-black">{selectedSymbol} Chart</h3>
+              <button
+                onClick={() => setShowChartModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <SimpleTradingChart
+                symbol={selectedSymbol}
+                currentPrice={currentPrice}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Order Confirmation Modal */}
       {showConfirmation && (

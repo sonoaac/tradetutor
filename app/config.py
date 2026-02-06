@@ -39,6 +39,12 @@ class Config:
     # PayPal (for future payments)
     PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID')
     PAYPAL_SECRET = os.environ.get('PAYPAL_SECRET')
+    PAYPAL_WEBHOOK_ID = os.environ.get('PAYPAL_WEBHOOK_ID')
+    PAYPAL_API_BASE = os.environ.get('PAYPAL_API_BASE', 'https://api-m.paypal.com')
+    PAYPAL_PLAN_STARTER_MONTHLY = os.environ.get('PAYPAL_PLAN_STARTER_MONTHLY')
+    PAYPAL_PLAN_STARTER_YEARLY = os.environ.get('PAYPAL_PLAN_STARTER_YEARLY')
+    PAYPAL_PLAN_PRO_MONTHLY = os.environ.get('PAYPAL_PLAN_PRO_MONTHLY')
+    PAYPAL_PLAN_PRO_YEARLY = os.environ.get('PAYPAL_PLAN_PRO_YEARLY')
 
 
 class DevelopmentConfig(Config):

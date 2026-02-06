@@ -78,6 +78,12 @@ export default function SubscriptionPage() {
     setPortalLoading(true);
     
     try {
+      if (subscription?.provider === "paypal") {
+        window.open("https://www.paypal.com/myaccount/autopay", "_blank");
+        setPortalLoading(false);
+        return;
+      }
+
       const response = await fetch("/api/payment/create-portal-session", {
         method: "POST",
         credentials: "include",
@@ -104,7 +110,11 @@ export default function SubscriptionPage() {
     setCancelLoading(true);
     
     try {
-      const response = await fetch("/api/payment/cancel-subscription", {
+      const endpoint = subscription?.provider === "paypal"
+        ? "/api/payment/paypal/cancel-subscription"
+        : "/api/payment/cancel-subscription";
+
+      const response = await fetch(endpoint, {
         method: "POST",
         credentials: "include",
       });
@@ -314,7 +324,9 @@ export default function SubscriptionPage() {
                 ) : (
                   <>
                     <Settings className="mr-2 h-4 w-4" />
-                    Manage Billing & Payment Method
+                    {subscription.provider === "paypal"
+                      ? "Manage in PayPal"
+                      : "Manage Billing & Payment Method"}
                   </>
                 )}
               </Button>
@@ -359,7 +371,9 @@ export default function SubscriptionPage() {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <CreditCard className="h-4 w-4" />
                 <span>
-                  Manage your payment methods and billing details through the billing portal
+                  {subscription.provider === "paypal"
+                    ? "Manage your PayPal subscription in your PayPal account"
+                    : "Manage your payment methods and billing details through the billing portal"}
                 </span>
               </div>
             </CardContent>
