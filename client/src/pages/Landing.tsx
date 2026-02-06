@@ -416,18 +416,30 @@ export default function Landing() {
             <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">Choose the plan that fits your trading journey</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-4 md:gap-6 max-w-6xl mx-auto">
             <PricingCard 
-              name="Starter"
+              name="Starter Monthly"
               price="$9.99"
               period="/month"
-              features={['Full simulator access', '10 lessons', 'Basic data', 'Community support']}
+              features={['Full simulator access', '10 lessons', 'Basic market data', 'Portfolio tracking', 'Mobile access']}
             />
             <PricingCard 
-              name="Pro Trader"
+              name="Starter Yearly"
+              price="$99"
+              period="/year"
+              features={['Full simulator access', '10 lessons', 'Basic market data', 'Portfolio tracking', 'Mobile access']}
+            />
+            <PricingCard 
+              name="Pro Monthly"
               price="$19.99"
               period="/month"
               popular
+              features={['Everything in Starter', 'Real-Time Tutor (RTT)', 'Advanced analysis', 'Priority support', 'Exclusive strategies']}
+            />
+            <PricingCard 
+              name="Pro Yearly"
+              price="$199"
+              period="/year"
               features={['Everything in Starter', 'Real-Time Tutor (RTT)', 'Advanced analysis', 'Priority support', 'Exclusive strategies']}
             />
           </div>

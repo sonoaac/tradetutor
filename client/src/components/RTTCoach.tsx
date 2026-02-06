@@ -151,7 +151,7 @@ export function RTTCoach({ symbol, side = 'buy', enabled, onToggle }: RTTCoachPr
             <div className="flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-yellow-900 leading-relaxed">
-                RTT Mode requires Gold ($9.99/mo) or Premium ($19.99/mo) subscription. 
+                RTT Mode requires Pro tier subscription ($19.99/mo or $199/year). 
                 Upgrade to unlock AI-powered coaching and point rewards.
               </p>
             </div>

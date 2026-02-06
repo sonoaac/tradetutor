@@ -242,9 +242,9 @@ export default function Dashboard() {
                       <h4 className="text-base sm:text-xl font-bold text-gray-900">STARTER</h4>
                     </div>
                     <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
-                      $4.99<span className="text-xs sm:text-sm text-gray-600">/mo</span>
+                      $9.99<span className="text-xs sm:text-sm text-gray-600">/mo</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-700 font-medium">Practice Plan</p>
+                    <p className="text-xs sm:text-sm text-gray-700 font-medium">Monthly or Yearly</p>
                   </div>
                   <ul className="space-y-1.5 sm:space-y-2 mb-4 sm:mb-6 text-xs sm:text-sm">
                     <li className="flex items-center gap-2 text-gray-900">
@@ -286,9 +286,9 @@ export default function Dashboard() {
                       <h4 className="text-base sm:text-xl font-bold text-gray-900">PRO</h4>
                     </div>
                     <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
-                      $9.99<span className="text-xs sm:text-sm text-gray-600">/mo</span>
+                      $19.99<span className="text-xs sm:text-sm text-gray-600">/mo</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-900 font-bold">Main Tier</p>
+                    <p className="text-xs sm:text-sm text-gray-900 font-bold">Monthly or Yearly</p>
                   </div>
                   <ul className="space-y-1.5 sm:space-y-2 mb-4 sm:mb-6 text-xs sm:text-sm">
                     <li className="flex items-center gap-2 text-gray-900 font-semibold">
@@ -319,48 +319,16 @@ export default function Dashboard() {
                   <p className="text-center text-xs text-gray-700 mt-2 sm:mt-3">Learn properly 🚀</p>
                 </div>
 
-                {/* LIFETIME */}
-                <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-lg sm:rounded-2xl p-4 sm:p-6 border border-red-400 sm:border-2 sm:border-red-500 hover:shadow-lg sm:hover:shadow-2xl transition-all relative overflow-hidden">
-                  <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold">
-                    BEST VALUE
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg sm:text-2xl">🔴</span>
-                      <h4 className="text-base sm:text-xl font-bold text-gray-900">LIFETIME</h4>
-                    </div>
-                    <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
-                      $150
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-900 font-bold">One-Time Forever</p>
-                  </div>
-                  <ul className="space-y-1.5 sm:space-y-2 mb-4 sm:mb-6 text-xs sm:text-sm">
-                    <li className="flex items-center gap-2 text-gray-900 font-bold">
-                      <span className="text-green-500">✓</span> Everything in PRO
-                    </li>
-                    <li className="flex items-center gap-2 text-gray-900">
-                      <span className="text-green-500">✓</span> Forever access
-                    </li>
-                    <li className="flex items-center gap-2 text-gray-900">
-                      <span className="text-green-500">✓</span> Unlimited resets
-                    </li>
-                    <li className="flex items-center gap-2 text-gray-900">
-                      <span className="text-green-500">✓</span> All future features
-                    </li>
-                    <li className="flex items-center gap-2 text-gray-900">
-                      <span className="text-green-500">✓</span> No subscription
-                    </li>
-                    <li className="flex items-center gap-2 text-gray-900 font-semibold">
-                      <span className="text-purple-500">★</span> VIP status
-                    </li>
-                  </ul>
-                  <button 
-                    onClick={() => setShowAuthModal(true)}
-                    className="w-full py-2 sm:py-2.5 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg font-bold hover:shadow-lg sm:hover:shadow-xl transition-all text-xs sm:text-sm"
-                  >
-                    Get Lifetime
-                  </button>
-                  <p className="text-center text-xs text-gray-700 mt-2 sm:mt-3">Pay once, own forever</p>
+                {/* CTA to View Pricing */}
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg sm:rounded-2xl p-4 sm:p-6 border border-blue-300 sm:border-2 sm:border-blue-400 hover:shadow-lg sm:hover:shadow-xl transition-all flex flex-col items-center justify-center text-center">
+                  <div className="text-4xl sm:text-5xl mb-3 sm:mb-4">💡</div>
+                  <h4 className="text-base sm:text-xl font-bold text-gray-900 mb-2">More Options Available</h4>
+                  <p className="text-xs sm:text-sm text-gray-700 mb-4 sm:mb-6">See all payment plans and choose monthly or yearly billing</p>
+                  <Link href="/pricing">
+                    <button className="w-full py-2 sm:py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-bold hover:shadow-lg sm:hover:shadow-xl transition-all text-xs sm:text-sm">
+                      View All Plans
+                    </button>
+                  </Link>
                 </div>
               </div>
             </div>
