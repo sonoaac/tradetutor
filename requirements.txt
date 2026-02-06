@@ -4,7 +4,7 @@ Werkzeug==3.0.1
 
 # Database
 Flask-SQLAlchemy==3.1.1
-# psycopg2-binary==2.9.9  # Not needed for SQLite, uncomment only if using PostgreSQL
+psycopg2-binary==2.9.9  # PostgreSQL driver (required for Render)
 Flask-Migrate==4.0.5
 
 # Authentication
