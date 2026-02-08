@@ -71,6 +71,10 @@ export default function SimulatorPage() {
   
   const profitLossPercent = totalPositionValue > 0 ? (profitLoss / totalPositionValue) * 100 : 0;
 
+  const profitLossPercentText = `${profitLossPercent > 0 ? '+' : ''}${profitLossPercent.toLocaleString(undefined, {
+    maximumFractionDigits: 3,
+  })}%`;
+
   const currentPrice = currentPrices[selectedSymbol] || 100;
 
   // Live price simulation
@@ -223,7 +227,7 @@ export default function SimulatorPage() {
                 Return
               </div>
               <div className={`text-2xl font-mono font-bold ${profitLossPercent >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {profitLossPercent >= 0 ? '+' : ''}{profitLossPercent}%
+                {profitLossPercentText}
               </div>
             </div>
           </div>

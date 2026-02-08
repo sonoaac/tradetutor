@@ -83,25 +83,26 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthMod
         onClick={onClose}
       />
       
-      <Card className="w-full max-w-md bg-white border-2 border-black shadow-2xl relative z-10 animate-in zoom-in-95 duration-200">
+      <Card className="w-full max-w-md border border-border shadow-2xl relative z-10 animate-in zoom-in-95 duration-200">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-black transition-colors z-10"
+          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors z-10 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
 
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 rounded-xl bg-black flex items-center justify-center">
-              <TrendingUp className="text-white w-6 h-6" />
+            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-sm">
+              <TrendingUp className="text-primary-foreground w-6 h-6" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-black">
+          <CardTitle className="text-2xl font-bold font-display">
             {mode === 'login' ? 'Welcome Back' : 'Get Started Free'}
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription>
             {mode === 'login' 
               ? 'Enter your credentials to continue' 
               : 'Create your account and start trading'}
@@ -114,23 +115,23 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthMod
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-gray-700 font-semibold">First Name</Label>
+                    <Label htmlFor="firstName" className="font-medium">First Name</Label>
                     <Input
                       id="firstName"
                       placeholder="John"
                       value={formData.firstName}
                       onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                      className="bg-white border-2 border-gray-300 focus:border-black text-black placeholder:text-gray-400"
+                      className="bg-background"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-gray-700 font-semibold">Last Name</Label>
+                    <Label htmlFor="lastName" className="font-medium">Last Name</Label>
                     <Input
                       id="lastName"
                       placeholder="Doe"
                       value={formData.lastName}
                       onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                      className="bg-white border-2 border-gray-300 focus:border-black text-black placeholder:text-gray-400"
+                      className="bg-background"
                     />
                   </div>
                 </div>
@@ -138,7 +139,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthMod
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700 font-semibold">Email</Label>
+              <Label htmlFor="email" className="font-medium">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -146,12 +147,12 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthMod
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 required
-                className="bg-white border-2 border-gray-300 focus:border-black text-black placeholder:text-gray-400"
+                className="bg-background"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 font-semibold">Password</Label>
+              <Label htmlFor="password" className="font-medium">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -159,14 +160,14 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthMod
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                 required
-                className="bg-white border-2 border-gray-300 focus:border-black text-black placeholder:text-gray-400"
+                className="bg-background"
               />
             </div>
 
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-black hover:bg-gray-800 text-white font-bold transition-all shadow-lg"
+              className="w-full font-semibold"
             >
               {loading ? (
                 <>
@@ -178,14 +179,14 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthMod
               )}
             </Button>
 
-            <div className="text-center text-sm text-gray-600">
+            <div className="text-center text-sm text-muted-foreground">
               {mode === 'login' ? (
                 <>
                   Don't have an account?{' '}
                   <button
                     type="button"
                     onClick={() => setMode('register')}
-                    className="text-black hover:text-gray-700 font-bold underline"
+                    className="text-primary hover:opacity-90 font-semibold underline underline-offset-4"
                   >
                     Sign up
                   </button>
@@ -196,7 +197,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthMod
                   <button
                     type="button"
                     onClick={() => setMode('login')}
-                    className="text-black hover:text-gray-700 font-bold underline"
+                    className="text-primary hover:opacity-90 font-semibold underline underline-offset-4"
                   >
                     Log in
                   </button>

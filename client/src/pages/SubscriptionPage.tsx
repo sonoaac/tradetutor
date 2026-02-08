@@ -78,12 +78,6 @@ export default function SubscriptionPage() {
     setPortalLoading(true);
     
     try {
-      if (subscription?.provider === "paypal") {
-        window.open("https://www.paypal.com/myaccount/autopay", "_blank");
-        setPortalLoading(false);
-        return;
-      }
-
       const response = await fetch("/api/payment/create-portal-session", {
         method: "POST",
         credentials: "include",
@@ -248,7 +242,7 @@ export default function SubscriptionPage() {
                   <div>
                     <CardTitle>{getPlanName(subscription.plan)}</CardTitle>
                     <CardDescription>
-                      {subscription.provider === "stripe" ? "Stripe" : "PayPal"} Subscription
+                      Subscription
                     </CardDescription>
                   </div>
                 </div>
@@ -324,9 +318,7 @@ export default function SubscriptionPage() {
                 ) : (
                   <>
                     <Settings className="mr-2 h-4 w-4" />
-                    {subscription.provider === "paypal"
-                      ? "Manage in PayPal"
-                      : "Manage Billing & Payment Method"}
+                    Manage Billing
                   </>
                 )}
               </Button>
@@ -371,9 +363,7 @@ export default function SubscriptionPage() {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <CreditCard className="h-4 w-4" />
                 <span>
-                  {subscription.provider === "paypal"
-                    ? "Manage your PayPal subscription in your PayPal account"
-                    : "Manage your payment methods and billing details through the billing portal"}
+                  Manage your payment methods and billing details through the billing portal
                 </span>
               </div>
             </CardContent>
