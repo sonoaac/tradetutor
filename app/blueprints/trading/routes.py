@@ -10,6 +10,29 @@ from decimal import Decimal
 trading_bp = Blueprint('trading', __name__)
 
 
+_TIER_RANK = {
+    'free': 0,
+    'starter': 1,
+    'pro': 2,
+    'lifetime': 2,
+}
+
+
+def _has_min_tier(min_tier: str) -> bool:
+    current = getattr(current_user, 'tier', 'free') or 'free'
+    return _TIER_RANK.get(current, 0) >= _TIER_RANK.get(min_tier, 0)
+
+
+def _require_min_tier(min_tier: str, message: str):
+    if _has_min_tier(min_tier):
+        return None
+    return jsonify({
+        'message': message,
+        'requiredTier': min_tier,
+        'currentTier': getattr(current_user, 'tier', 'free') or 'free'
+    }), 403
+
+
 # === PORTFOLIO / WALLET ===
 
 @trading_bp.route('/wallet', methods=['GET'])
@@ -17,6 +40,10 @@ trading_bp = Blueprint('trading', __name__)
 @login_required
 def get_wallet():
     """Get user's wallet/portfolio"""
+    denied = _require_min_tier('starter', 'Your portfolio unlocks when you start trading. Upgrade to Starter to track P&L, positions, and performance stats.')
+    if denied:
+        return denied
+
     portfolio = Portfolio.query.filter_by(user_id=current_user.id).first()
     
     if not portfolio:
@@ -29,6 +56,10 @@ def get_wallet():
 @login_required
 def onboard_portfolio():
     """Create portfolio during onboarding"""
+    denied = _require_min_tier('starter', 'Trading is locked in Learn Mode. Upgrade to Starter to place trades and unlock your portfolio.')
+    if denied:
+        return denied
+
     data = request.get_json()
     
     # Check if portfolio already exists
@@ -53,6 +84,10 @@ def onboard_portfolio():
 @login_required
 def reset_portfolio():
     """Reset portfolio balance to $10,000"""
+    denied = _require_min_tier('starter', 'Portfolio tools are locked in Learn Mode. Upgrade to Starter to reset and track your portfolio.')
+    if denied:
+        return denied
+
     portfolio = Portfolio.query.filter_by(user_id=current_user.id).first()
     
     if not portfolio:
@@ -71,6 +106,10 @@ def reset_portfolio():
 @login_required
 def get_trades():
     """Get user's trades"""
+    denied = _require_min_tier('starter', 'Trading history unlocks when you start trading. Upgrade to Starter to view trades and positions.')
+    if denied:
+        return denied
+
     trades = Trade.query.filter_by(user_id=current_user.id).order_by(Trade.created_at.desc()).all()
     return jsonify([trade.to_dict() for trade in trades]), 200
 
@@ -79,6 +118,10 @@ def get_trades():
 @login_required
 def create_trade():
     """Place a new trade"""
+    denied = _require_min_tier('starter', 'Trading is locked in Learn Mode. Upgrade to Starter to place trades, track performance, and practice safely.')
+    if denied:
+        return denied
+
     data = request.get_json()
     
     # Get portfolio
@@ -148,6 +191,10 @@ def create_trade():
 @login_required
 def close_trade(trade_id):
     """Close an open trade"""
+    denied = _require_min_tier('starter', 'Trading is locked in Learn Mode. Upgrade to Starter to manage and close positions.')
+    if denied:
+        return denied
+
     trade = Trade.query.get_or_404(trade_id)
     
     # Verify ownership

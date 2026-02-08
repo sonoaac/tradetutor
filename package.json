@@ -10,5 +10,8 @@
     "preview": "cd client && npm run preview",
     "client:install": "cd client && npm install",
     "backend": "python run.py"
+  },
+  "dependencies": {
+    "framer-motion": "^12.33.0"
   }
 }

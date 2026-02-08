@@ -1,14 +1,34 @@
 import { useTrades, useCloseTrade } from "@/hooks/use-trades";
-import { Loader2, XCircle } from "lucide-react";
+import { AlertCircle, Loader2, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Link } from "wouter";
 
 export function TradeList({ currentPrice }: { currentPrice?: number }) {
-  const { data: trades, isLoading } = useTrades();
+  const { data: trades, isLoading, isError, error } = useTrades();
   const { mutate: closeTrade, isPending: isClosing } = useCloseTrade();
 
   if (isLoading) {
     return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" /></div>;
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-card border border-border rounded-2xl p-6">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
+          <div className="space-y-2">
+            <p className="font-bold">Trade history is locked</p>
+            <p className="text-sm text-muted-foreground">{(error as Error).message}</p>
+            <Link href="/pricing">
+              <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-10 px-4 text-sm font-medium">
+                View plans
+              </a>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const openTrades = trades?.filter(t => t.status === 'open') || [];

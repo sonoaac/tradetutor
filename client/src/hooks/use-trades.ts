@@ -7,7 +7,16 @@ export function useTrades() {
     queryKey: [api.trades.list.path],
     queryFn: async () => {
       const res = await fetch(apiUrl(api.trades.list.path), { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch trades");
+      if (!res.ok) {
+        let message = "Failed to fetch trades";
+        try {
+          const data = await res.json();
+          message = data?.message || message;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
       return api.trades.list.responses[200].parse(await res.json());
     },
   });
@@ -20,7 +29,16 @@ export function useTrade(id: number) {
       const url = apiUrl(buildUrl(api.trades.get.path, { id }));
       const res = await fetch(url, { credentials: "include" });
       if (res.status === 404) return null;
-      if (!res.ok) throw new Error("Failed to fetch trade");
+      if (!res.ok) {
+        let message = "Failed to fetch trade";
+        try {
+          const data = await res.json();
+          message = data?.message || message;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
       return api.trades.get.responses[200].parse(await res.json());
     },
     enabled: !!id,
@@ -61,7 +79,16 @@ export function useCloseTrade() {
         body: JSON.stringify({ exitPrice }),
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to close trade");
+      if (!res.ok) {
+        let message = "Failed to close trade";
+        try {
+          const data = await res.json();
+          message = data?.message || message;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
       return api.trades.close.responses[200].parse(await res.json());
     },
     onSuccess: () => {

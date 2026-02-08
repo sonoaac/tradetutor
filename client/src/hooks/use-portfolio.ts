@@ -7,7 +7,16 @@ export function usePortfolio() {
     queryKey: [api.portfolio.get.path],
     queryFn: async () => {
       const res = await fetch(apiUrl(api.portfolio.get.path), { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch portfolio");
+      if (!res.ok) {
+        let message = "Failed to fetch portfolio";
+        try {
+          const data = await res.json();
+          message = data?.message || message;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
       return api.portfolio.get.responses[200].parse(await res.json());
     },
   });
@@ -21,7 +30,16 @@ export function useResetPortfolio() {
         method: "POST",
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to reset portfolio");
+      if (!res.ok) {
+        let message = "Failed to reset portfolio";
+        try {
+          const data = await res.json();
+          message = data?.message || message;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
       return api.portfolio.reset.responses[200].parse(await res.json());
     },
     onSuccess: () => {

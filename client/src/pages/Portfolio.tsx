@@ -3,6 +3,7 @@ import { MobileMenu } from "@/components/MobileMenu";
 import { usePortfolio, useResetPortfolio } from "@/hooks/use-portfolio";
 import { useTrades } from "@/hooks/use-trades";
 import { Loader2, RefreshCcw, AlertTriangle } from "lucide-react";
+import { Link } from "wouter";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,12 +18,39 @@ import {
 import { TradeList } from "@/components/TradeList";
 
 export default function Portfolio() {
-  const { data: portfolio, isLoading } = usePortfolio();
-  const { data: trades = [], isLoading: isLoadingTrades } = useTrades();
+  const { data: portfolio, isLoading, isError: isPortfolioError, error: portfolioError } = usePortfolio();
+  const { data: trades = [], isLoading: isLoadingTrades, isError: isTradesError, error: tradesError } = useTrades();
   const { mutate: resetPortfolio, isPending: isResetting } = useResetPortfolio();
 
   if (isLoading) {
      return <div className="flex h-screen items-center justify-center bg-background"><Loader2 className="animate-spin w-10 h-10 text-primary" /></div>;
+  }
+
+  if (isPortfolioError || isTradesError) {
+    const message = ((portfolioError as Error | undefined)?.message || (tradesError as Error | undefined)?.message || "Portfolio is locked.");
+    return (
+      <div className="flex min-h-screen bg-background">
+        <Sidebar />
+        <main className="flex-1 md:ml-64 pb-24 md:pb-8">
+          <header className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-b border-border bg-background/50 backdrop-blur-sm sticky top-0 z-40">
+            <h1 className="text-xl sm:text-2xl font-bold font-display">Portfolio</h1>
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Upgrade to unlock portfolio tracking.</p>
+          </header>
+          <div className="p-6 md:p-10">
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-2xl">
+              <p className="font-bold mb-2">Your portfolio is locked in Learn Mode</p>
+              <p className="text-sm text-muted-foreground mb-4">{message}</p>
+              <Link href="/pricing">
+                <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-10 px-4 text-sm font-medium">
+                  View plans
+                </a>
+              </Link>
+            </div>
+          </div>
+        </main>
+        <MobileMenu />
+      </div>
+    );
   }
 
   return (

@@ -30,14 +30,22 @@ export function RTTCoach({ symbol, side = 'buy', enabled, onToggle }: RTTCoachPr
   const [loading, setLoading] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Remove tier check for now since User type doesn't have tier property
-  const canUseRTT = isAuthenticated;
+  const tier = user?.tier || 'free';
+  const canUseRTT = isAuthenticated && (tier === 'pro' || tier === 'lifetime');
 
   const handleToggle = (newEnabled: boolean) => {
     if (!isAuthenticated && newEnabled) {
       const confirmed = window.confirm('Login required for RTT Mode. Would you like to log in now?');
       if (confirmed) {
         setShowAuthModal(true);
+      }
+      return;
+    }
+
+    if (isAuthenticated && !canUseRTT && newEnabled) {
+      const confirmed = window.confirm('RTT Coach is a Pro feature. View plans to upgrade?');
+      if (confirmed) {
+        navigate('/pricing');
       }
       return;
     }
@@ -126,7 +134,7 @@ export function RTTCoach({ symbol, side = 'buy', enabled, onToggle }: RTTCoachPr
           {!isAuthenticated ? (
             'Login required to use RTT Mode'
           ) : !canUseRTT ? (
-            'Upgrade to unlock AI coaching'
+            'Upgrade to Pro (Mentored Trader) to unlock AI coaching'
           ) : enabled ? (
             'Real-time trading tutor analyzing market conditions'
           ) : (
@@ -151,8 +159,7 @@ export function RTTCoach({ symbol, side = 'buy', enabled, onToggle }: RTTCoachPr
             <div className="flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-yellow-900 leading-relaxed">
-                RTT Mode requires Pro tier subscription ($19.99/mo or $199/year). 
-                Upgrade to unlock AI-powered coaching and point rewards.
+                RTT Coach is a Pro feature ($19.99/mo or $199/year). Upgrade to unlock AI-powered coaching and point rewards.
               </p>
             </div>
           </div>

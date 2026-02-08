@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Zap, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 declare global {
   interface Window {
@@ -29,70 +30,66 @@ const plans: PricingPlan[] = [
   {
     id: "starter-monthly",
     baseId: "starter",
-    name: "Starter Monthly",
-    description: "Perfect for beginners learning to trade",
+    name: "Starter (Trader Mode)",
+    description: "Place trades, unlock your portfolio, and track performance",
     interval: "month",
     price: 9.99,
     icon: <Zap className="h-6 w-6" />,
     features: [
-      "Full access to trading simulator",
-      "10 structured lessons",
+      "Trading simulator (Buy/Sell)",
+      "Portfolio tracking (P&L, positions)",
+      "Up to 10 lessons",
       "Basic market data",
-      "Portfolio tracking",
-      "Mobile app access",
+      "Community updates",
     ],
   },
   {
     id: "starter-yearly",
     baseId: "starter",
-    name: "Starter Yearly",
-    description: "Save 17% with annual billing",
+    name: "Starter (Trader Mode)",
+    description: "2 months free with annual billing",
     interval: "year",
     price: 99,
     icon: <Zap className="h-6 w-6" />,
     features: [
-      "Full access to trading simulator",
-      "10 structured lessons",
+      "Trading simulator (Buy/Sell)",
+      "Portfolio tracking (P&L, positions)",
+      "Up to 10 lessons",
       "Basic market data",
-      "Portfolio tracking",
-      "Mobile app access",
+      "Community updates",
     ],
   },
   {
     id: "pro-monthly",
     baseId: "pro",
-    name: "Pro Monthly",
-    description: "For serious traders pushing their limits",
+    name: "Pro (Mentored Trader)",
+    description: "RTT Coach + advanced insights while you trade",
     interval: "month",
     price: 19.99,
     icon: <TrendingUp className="h-6 w-6" />,
     popular: true,
     features: [
       "Everything in Starter",
-      "Real-Time Tutor (RTT) mode",
+      "RTT Coach (real-time feedback)",
       "Advanced market analysis",
-      "Real-time coaching",
-      "Priority support",
-      "Exclusive trading strategies",
       "Performance analytics",
+      "Priority support",
     ],
   },
   {
     id: "pro-yearly",
     baseId: "pro",
-    name: "Pro Yearly",
-    description: "Best value for committed traders",
+    name: "Pro (Mentored Trader)",
+    description: "Best value with annual billing",
     interval: "year",
     price: 199,
     icon: <TrendingUp className="h-6 w-6" />,
     features: [
       "Everything in Starter",
-      "Real-Time Tutor (RTT) mode",
+      "RTT Coach (real-time feedback)",
       "Advanced market analysis",
-      "Real-time coaching",
-      "Priority support",
-      "Exclusive trading strategies",
       "Performance analytics",
+      "Priority support",
     ],
   },
 ];
@@ -102,6 +99,7 @@ export default function PricingPage() {
   const [paypalConfig, setPaypalConfig] = useState<any>(null);
   const [paypalReady, setPaypalReady] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"subscription" | "card">("subscription");
+  const [billingInterval, setBillingInterval] = useState<PlanInterval>("month");
 
   const formatPrice = (plan: PricingPlan) => {
     const period = plan.interval === "month" ? "month" : "year";
@@ -112,6 +110,11 @@ export default function PricingPage() {
         <div>
           <span className="text-4xl font-bold">${plan.price}</span>
           <span className="text-muted-foreground">/{period}</span>
+          {plan.baseId === "starter" && (
+            <div className="text-sm text-primary mt-1 font-medium">
+              2 months free
+            </div>
+          )}
           <div className="text-sm text-muted-foreground mt-1">
             (${monthlyEquivalent}/month)
           </div>
@@ -242,7 +245,7 @@ export default function PricingPage() {
         }
       }).render(`#${containerId}`);
     });
-  }, [paypalReady, paypalConfig, toast]);
+  }, [paypalReady, paypalConfig, toast, billingInterval]);
 
   // Render Card Fields for each plan
   useEffect(() => {
@@ -489,17 +492,47 @@ export default function PricingPage() {
         container.innerHTML = `<p class="text-sm text-muted-foreground">Card payments not available</p>`;
       }
     });
-  }, [paypalReady, paymentMethod, toast]);
+  }, [paypalReady, paymentMethod, toast, billingInterval]);
+
+  const visiblePlans = plans.filter((plan) => plan.interval === billingInterval);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Choose Your Trading Plan</h1>
+          <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
           <p className="text-xl text-muted-foreground mb-8">
-            Start learning to trade with confidence
+            Start in Learn Mode. Upgrade when you're ready to trade.
           </p>
+
+          <div className="flex flex-col items-center gap-4 mb-6">
+            <div className="inline-flex items-center gap-2 p-1 bg-secondary rounded-lg">
+              <button
+                onClick={() => setBillingInterval("month")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  billingInterval === "month"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingInterval("year")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  billingInterval === "year"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Yearly
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {billingInterval === "year" ? "Save with annual billing" : "Flexible month-to-month"}
+            </p>
+          </div>
 
           <div className="flex flex-col items-center gap-4 mb-4">
             <div className="inline-flex items-center gap-2 p-1 bg-secondary rounded-lg">
@@ -530,15 +563,45 @@ export default function PricingPage() {
                 : "One-time payment with any credit or debit card"}
             </p>
           </div>
-
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-secondary rounded-lg text-sm text-muted-foreground">
-            Choose monthly or yearly to match your trading pace
-          </div>
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan) => (
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="text-2xl">Free (Learn Mode)</CardTitle>
+              <CardDescription>Preview the platform and learn the basics</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <span className="text-4xl font-bold">$0</span>
+                <span className="text-muted-foreground">/forever</span>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  "Access the first 2 lessons",
+                  "Market exploration and watchlists",
+                  "RTT Coach preview (locked)",
+                  "Trading and portfolio tracking locked",
+                ].map((feature) => (
+                  <div key={feature} className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Link href="/auth">
+                <a className="w-full inline-flex items-center justify-center rounded-md border border-border bg-background min-h-10 px-8 text-sm font-medium hover:bg-secondary/40 transition-colors">
+                  Create free account
+                </a>
+              </Link>
+            </CardFooter>
+          </Card>
+
+          {visiblePlans.map((plan) => (
             <Card
               key={plan.id}
               className={`relative ${
@@ -598,9 +661,7 @@ export default function PricingPage() {
 
         {/* FAQ or Additional Info */}
         <div className="mt-16 text-center">
-          <p className="text-muted-foreground">
-            All plans include a 7-day money-back guarantee
-          </p>
+          <p className="text-muted-foreground">Secure checkout via PayPal. Cancel anytime.</p>
           <p className="text-sm text-muted-foreground mt-2">
             Need help choosing?{" "}
             <a href="mailto:support@tradetutor.com" className="text-primary hover:underline">

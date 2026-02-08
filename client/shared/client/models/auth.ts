@@ -6,4 +6,7 @@ export type User = {
   profileImageUrl?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  tier?: "free" | "starter" | "pro" | "lifetime" | null;
+  tierSource?: string | null;
+  tierExpiresAt?: string | null;
 };

@@ -154,8 +154,8 @@ export default function SubscriptionPage() {
 
   const getPlanName = (plan: string) => {
     const names: Record<string, string> = {
-      starter: "Starter Plan",
-      pro: "Pro Trader Plan",
+      starter: "Starter (Trader Mode)",
+      pro: "Pro (Mentored Trader)",
     };
     return names[plan] || plan;
   };
@@ -204,12 +204,12 @@ export default function SubscriptionPage() {
             <CardHeader className="text-center">
               <CardTitle>No Active Subscription</CardTitle>
               <CardDescription>
-                You're currently using the free plan
+                You're currently in Learn Mode
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center space-y-4">
               <p className="text-muted-foreground">
-                Upgrade to unlock premium features, real-time coaching, and advanced trading tools.
+                Upgrade to Starter to place trades and unlock your portfolio. Go Pro to unlock RTT Coach.
               </p>
               <Button
                 size="lg"
