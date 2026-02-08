@@ -1,12 +1,15 @@
 """Payment service for Stripe integration"""
 from datetime import datetime, timedelta
+from decimal import Decimal
 import requests
 import stripe
 from flask import current_app
 from app.extensions import db
 from app.models.billing import BillingAccount, BillingSubscription, BillingEvent
 from app.models.payment import Payment
+from app.models.portfolio import Portfolio
 from app.models.user import User
+from app.services.entitlements import get_starting_simcash
 
 
 class PaymentService:
@@ -317,6 +320,41 @@ class PaymentService:
         )
         
         return session
+
+    def create_payment_intent(self, user_id: str, amount: int, currency: str = 'usd', metadata: dict | None = None):
+        """Create a Stripe PaymentIntent.
+
+        Notes:
+        - Amount is in the smallest currency unit (e.g. cents for USD).
+        - This endpoint is provided for future one-time purchases/top-ups.
+        """
+        self._get_stripe_key()
+
+        if amount <= 0:
+            raise ValueError('Invalid amount')
+
+        intent = self.stripe.PaymentIntent.create(
+            amount=amount,
+            currency=currency,
+            automatic_payment_methods={'enabled': True},
+            metadata={
+                'user_id': user_id,
+                **(metadata or {})
+            }
+        )
+        return intent
+
+    def create_setup_intent(self, user_id: str, metadata: dict | None = None):
+        """Create a Stripe SetupIntent to save a payment method for future use."""
+        self._get_stripe_key()
+        intent = self.stripe.SetupIntent.create(
+            payment_method_types=['card'],
+            metadata={
+                'user_id': user_id,
+                **(metadata or {})
+            }
+        )
+        return intent
     
     def get_user_subscription(self, user_id: str, provider: str | None = None):
         """Get active subscription for user"""
@@ -384,6 +422,20 @@ class PaymentService:
             user.tier_expires_at = datetime.fromtimestamp(subscription['current_period_end'])
             user.is_premium = True
             user.premium_until = datetime.fromtimestamp(subscription['current_period_end'])
+
+            # Ensure the user has starting SimCash after upgrade.
+            # Grant only if the portfolio is missing or their balance is currently 0.
+            starting = Decimal(f"{int(get_starting_simcash(user))}.00")
+            portfolio = Portfolio.query.filter_by(user_id=user.id).first()
+            if not portfolio:
+                portfolio = Portfolio(user_id=user.id, balance=starting)
+                db.session.add(portfolio)
+            else:
+                try:
+                    if Decimal(str(portfolio.balance)) <= Decimal('0'):
+                        portfolio.balance = starting
+                except Exception:
+                    portfolio.balance = starting
         
         # Create payment record
         amount = session.get('amount_total', 0) / 100  # Convert cents to dollars

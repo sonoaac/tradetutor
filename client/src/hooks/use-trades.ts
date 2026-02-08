@@ -56,8 +56,10 @@ export function useCreateTrade() {
         credentials: "include",
       });
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to create trade");
+        const error = await res.json().catch(() => null);
+        const baseMessage = error?.message || "Failed to create trade";
+        const hint = error?.hint ? ` ${error.hint}` : "";
+        throw new Error(`${baseMessage}${hint}`.trim());
       }
       return api.trades.create.responses[201].parse(await res.json());
     },

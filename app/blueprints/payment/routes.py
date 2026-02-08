@@ -53,6 +53,49 @@ def create_checkout_session():
         return jsonify({'error': str(e)}), 500
 
 
+@payment_bp.route('/create-payment-intent', methods=['POST'])
+@login_required
+@limiter.limit("10 per minute")
+def create_payment_intent():
+    """Create a Stripe PaymentIntent (for future one-time payments/top-ups)."""
+    try:
+        data = request.get_json() or {}
+        amount = int(data.get('amount', 0))
+        currency = (data.get('currency') or 'usd').lower()
+
+        if amount <= 0:
+            return jsonify({'error': 'Invalid amount'}), 400
+
+        intent = payment_service.create_payment_intent(
+            user_id=current_user.id,
+            amount=amount,
+            currency=currency,
+            metadata=data.get('metadata') or {}
+        )
+
+        return jsonify({'clientSecret': intent.client_secret}), 200
+    except Exception as e:
+        current_app.logger.error(f'PaymentIntent error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+
+@payment_bp.route('/create-setup-intent', methods=['POST'])
+@login_required
+@limiter.limit("10 per minute")
+def create_setup_intent():
+    """Create a Stripe SetupIntent (save a card for future off-session use)."""
+    try:
+        data = request.get_json() or {}
+        intent = payment_service.create_setup_intent(
+            user_id=current_user.id,
+            metadata=data.get('metadata') or {}
+        )
+        return jsonify({'clientSecret': intent.client_secret}), 200
+    except Exception as e:
+        current_app.logger.error(f'SetupIntent error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+
 @payment_bp.route('/create-portal-session', methods=['POST'])
 @login_required
 @limiter.limit("5 per minute")

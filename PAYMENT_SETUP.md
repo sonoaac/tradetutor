@@ -25,6 +25,12 @@ STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
 FRONTEND_URL=http://localhost:5173
 ```
 
+### Deploying (Render / Vercel)
+
+- Set the same variables in your hosting provider's environment settings.
+- `FRONTEND_URL` should be your deployed frontend origin (for example, `https://yourapp.vercel.app`).
+- Use test keys in staging, live keys in production.
+
 ## Step 3: Create Stripe Products and Prices
 
 You need to create products in Stripe Dashboard for your subscription plans:
@@ -202,6 +208,8 @@ The following pages are now available:
 
 - `POST /api/payment/create-checkout-session` - Create Stripe checkout
 - `POST /api/payment/create-portal-session` - Open customer portal
+- `POST /api/payment/create-payment-intent` - Create a PaymentIntent (future one-time payments/top-ups)
+- `POST /api/payment/create-setup-intent` - Create a SetupIntent (save a card for later)
 - `GET /api/payment/subscription` - Get user's subscription
 - `POST /api/payment/cancel-subscription` - Cancel at period end
 - `POST /api/payment/webhook` - Handle Stripe webhooks

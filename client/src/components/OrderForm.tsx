@@ -89,9 +89,18 @@ export function OrderForm({ symbol, currentPrice }: OrderFormProps) {
           form.reset({ symbol, size: 1 });
         },
         onError: (err) => {
+          const message = err.message || "Order failed";
           toast({
             title: "Order Failed",
-            description: err.message,
+            description: message,
+            action: message.toLowerCase().includes("insufficient") ? (
+              <button
+                onClick={() => navigate("/portfolio")}
+                className="px-3 py-1 bg-primary text-white rounded text-sm"
+              >
+                Go to Portfolio
+              </button>
+            ) : undefined,
             variant: "destructive",
           });
         },

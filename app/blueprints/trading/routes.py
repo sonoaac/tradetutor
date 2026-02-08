@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.portfolio import Portfolio
 from app.models.trade import Trade
+from app.services.entitlements import get_starting_simcash
 from datetime import datetime
 from decimal import Decimal
 
@@ -33,6 +34,29 @@ def _require_min_tier(min_tier: str, message: str):
     }), 403
 
 
+def _tier_starting_balance_decimal() -> Decimal:
+    """Tier-based starting SimCash balance as a Decimal(15,2)."""
+    amount = int(get_starting_simcash(current_user))
+    return Decimal(f"{amount}.00")
+
+
+def _get_or_create_portfolio() -> Portfolio:
+    """Get the user's portfolio, creating it if missing (Starter+ only)."""
+    portfolio = Portfolio.query.filter_by(user_id=current_user.id).first()
+    if portfolio:
+        return portfolio
+
+    portfolio = Portfolio(
+        user_id=current_user.id,
+        balance=_tier_starting_balance_decimal(),
+        track=None,
+        experience=None,
+    )
+    db.session.add(portfolio)
+    db.session.commit()
+    return portfolio
+
+
 # === PORTFOLIO / WALLET ===
 
 @trading_bp.route('/wallet', methods=['GET'])
@@ -44,10 +68,7 @@ def get_wallet():
     if denied:
         return denied
 
-    portfolio = Portfolio.query.filter_by(user_id=current_user.id).first()
-    
-    if not portfolio:
-        return jsonify({'message': 'Portfolio not found. Please complete onboarding.'}), 404
+    portfolio = _get_or_create_portfolio()
     
     return jsonify(portfolio.to_dict()), 200
 
@@ -69,7 +90,7 @@ def onboard_portfolio():
     
     portfolio = Portfolio(
         user_id=current_user.id,
-        balance=Decimal('10000.00'),  # Starting SimCash
+        balance=_tier_starting_balance_decimal(),
         track=data.get('track'),  # 'stocks', 'crypto', 'forex'
         experience=data.get('experience')  # 'beginner', 'intermediate', 'advanced'
     )
@@ -83,17 +104,13 @@ def onboard_portfolio():
 @trading_bp.route('/portfolio/reset', methods=['POST'])
 @login_required
 def reset_portfolio():
-    """Reset portfolio balance to $10,000"""
+    """Reset portfolio balance to tier-based starting SimCash"""
     denied = _require_min_tier('starter', 'Portfolio tools are locked in Learn Mode. Upgrade to Starter to reset and track your portfolio.')
     if denied:
         return denied
 
-    portfolio = Portfolio.query.filter_by(user_id=current_user.id).first()
-    
-    if not portfolio:
-        return jsonify({'message': 'Portfolio not found'}), 404
-    
-    portfolio.balance = Decimal('10000.00')
+    portfolio = _get_or_create_portfolio()
+    portfolio.balance = _tier_starting_balance_decimal()
     db.session.commit()
     
     return jsonify(portfolio.to_dict()), 200
@@ -110,6 +127,8 @@ def get_trades():
     if denied:
         return denied
 
+    # Ensure the portfolio exists so Starter+ users don't get stuck on a missing wallet.
+    _get_or_create_portfolio()
     trades = Trade.query.filter_by(user_id=current_user.id).order_by(Trade.created_at.desc()).all()
     return jsonify([trade.to_dict() for trade in trades]), 200
 
@@ -125,9 +144,7 @@ def create_trade():
     data = request.get_json()
     
     # Get portfolio
-    portfolio = Portfolio.query.filter_by(user_id=current_user.id).first()
-    if not portfolio:
-        return jsonify({'message': 'Portfolio not found'}), 404
+    portfolio = _get_or_create_portfolio()
     
     # Validate required fields
     required = ['symbol', 'side', 'size', 'entryPrice']
@@ -143,7 +160,12 @@ def create_trade():
     if side == 'buy':
         cost = entry_price * size
         if portfolio.balance < cost:
-            return jsonify({'message': 'Insufficient funds'}), 400
+            return jsonify({
+                'message': 'Insufficient funds',
+                'balance': str(portfolio.balance),
+                'required': str(cost),
+                'hint': 'You can reset your practice cash from the Portfolio page to restore your starting SimCash.'
+            }), 400
         
         # Deduct balance
         portfolio.balance -= cost
@@ -218,7 +240,7 @@ def close_trade(trade_id):
         proceeds = pnl
     
     # Update portfolio
-    portfolio = Portfolio.query.filter_by(user_id=current_user.id).first()
+    portfolio = _get_or_create_portfolio()
     portfolio.balance += proceeds
     
     # Update trade

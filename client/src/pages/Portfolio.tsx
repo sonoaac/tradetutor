@@ -65,7 +65,7 @@ export default function Portfolio() {
                 <AlertTriangle className="text-destructive w-5 h-5" /> Reset portfolio?
               </AlertDialogTitle>
               <AlertDialogDescription>
-                This wipes trade history and resets balance to $100,000. This action cannot be undone.
+                This resets your practice cash balance back to your plan’s starting SimCash. Trade history is kept.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

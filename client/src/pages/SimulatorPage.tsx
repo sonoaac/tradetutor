@@ -122,7 +122,7 @@ export default function SimulatorPage() {
     // Execute trade
     if (orderSide === 'buy') {
       if (totalCost > balance) {
-        alert('Insufficient balance');
+        alert('Insufficient cash balance. You can reset your practice cash from the Portfolio page, or upgrade your plan for a higher starting SimCash amount.');
         return;
       }
       
