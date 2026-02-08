@@ -1,5 +1,3 @@
-import { Sidebar } from "@/components/Sidebar";
-import { MobileMenu } from "@/components/MobileMenu";
 import { usePortfolio, useResetPortfolio } from "@/hooks/use-portfolio";
 import { useTrades } from "@/hooks/use-trades";
 import { Loader2, RefreshCcw, AlertTriangle } from "lucide-react";
@@ -29,98 +27,89 @@ export default function Portfolio() {
   if (isPortfolioError || isTradesError) {
     const message = ((portfolioError as Error | undefined)?.message || (tradesError as Error | undefined)?.message || "Portfolio is locked.");
     return (
-      <div className="flex min-h-screen bg-background">
-        <Sidebar />
-        <main className="flex-1 md:ml-64 pb-24 md:pb-8">
-          <header className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-b border-border bg-background/50 backdrop-blur-sm sticky top-0 z-40">
-            <h1 className="text-xl sm:text-2xl font-bold font-display">Portfolio</h1>
-            <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Upgrade to unlock portfolio tracking.</p>
-          </header>
-          <div className="p-6 md:p-10">
-            <div className="bg-card border border-border rounded-2xl p-6 max-w-2xl">
-              <p className="font-bold mb-2">Your portfolio is locked in Learn Mode</p>
-              <p className="text-sm text-muted-foreground mb-4">{message}</p>
-              <Link href="/pricing">
-                <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-10 px-4 text-sm font-medium">
-                  View plans
-                </a>
-              </Link>
-            </div>
-          </div>
-        </main>
-        <MobileMenu />
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold font-display">Portfolio</h1>
+          <p className="text-sm text-muted-foreground">Upgrade to unlock portfolio tracking.</p>
+        </div>
+        <div className="bg-card border border-border rounded-2xl p-6 max-w-2xl">
+          <p className="font-semibold mb-2">Your portfolio is locked in Learn Mode</p>
+          <p className="text-sm text-muted-foreground mb-4">{message}</p>
+          <Link href="/pricing">
+            <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-10 px-4 text-sm font-medium">
+              View plans
+            </a>
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 md:ml-64 pb-24 md:pb-8">
-        <header className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-b border-border bg-background/50 backdrop-blur-sm sticky top-0 z-40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold font-display">Portfolio</h1>
-            <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Manage your account and history.</p>
-          </div>
-          
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button className="flex items-center gap-2 px-4 py-2 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white rounded-lg transition-all text-sm font-bold">
-                <RefreshCcw className="w-4 h-4" /> Reset Account
-              </button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-card border-border">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="text-destructive w-5 h-5" /> Reset Portfolio?
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will wipe all your trade history and reset your balance to $100,000. This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="bg-secondary hover:bg-secondary/80">Cancel</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={() => resetPortfolio()} 
-                  className="bg-destructive hover:bg-destructive/90 text-white"
-                >
-                  {isResetting ? "Resetting..." : "Yes, Reset Everything"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </header>
-
-        <div className="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
-           {/* Account Summary */}
-           <div className="bg-card rounded-lg sm:rounded-2xl border border-border p-4 sm:p-6 md:p-8 shadow-sm">
-              <h2 className="text-base sm:text-lg font-bold font-display mb-4 sm:mb-6">Account Summary</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-                 <div>
-                   <p className="text-sm text-muted-foreground mb-1">Current Balance</p>
-                   <p className="text-4xl font-mono font-bold text-foreground tracking-tight">${Number(portfolio?.balance || 0).toLocaleString()}</p>
-                 </div>
-                 <div>
-                   <p className="text-sm text-muted-foreground mb-1">Total Profit/Loss</p>
-                   <p className={`text-4xl font-mono font-bold tracking-tight ${(trades.reduce((sum, t) => sum + Number(t.pnl || 0), 0)) >= 0 ? 'text-success' : 'text-destructive'}`}>
-                     {trades.reduce((sum, t) => sum + Number(t.pnl || 0), 0) > 0 ? '+' : ''}${trades.reduce((sum, t) => sum + Number(t.pnl || 0), 0).toLocaleString()}
-                   </p>
-                 </div>
-                 <div>
-                   <p className="text-sm text-muted-foreground mb-1">Total Trades</p>
-                   <p className="text-4xl font-mono font-bold text-foreground tracking-tight">{trades.length}</p>
-                 </div>
-              </div>
-           </div>
-
-           {/* Full Trade History */}
-           <div>
-              <h2 className="text-lg font-bold font-display mb-6">Full Trade History</h2>
-              <TradeList />
-           </div>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold font-display">Portfolio</h1>
+          <p className="text-sm text-muted-foreground">Manage your account and history.</p>
         </div>
-      </main>
-      <MobileMenu />
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button className="flex items-center gap-2 px-4 py-2 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white rounded-lg transition-all text-sm font-semibold">
+              <RefreshCcw className="w-4 h-4" /> Reset account
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="bg-card border-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="text-destructive w-5 h-5" /> Reset portfolio?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This wipes trade history and resets balance to $100,000. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-secondary hover:bg-secondary/80">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => resetPortfolio()}
+                className="bg-destructive hover:bg-destructive/90 text-white"
+              >
+                {isResetting ? "Resetting..." : "Yes, reset"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+
+      <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+        <h2 className="text-base font-semibold font-display mb-4">Account summary</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Current balance</p>
+            <p className="text-3xl sm:text-4xl font-mono font-bold tracking-tight">${Number(portfolio?.balance || 0).toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Total profit/loss</p>
+            <p
+              className={`text-3xl sm:text-4xl font-mono font-bold tracking-tight ${
+                trades.reduce((sum, t) => sum + Number(t.pnl || 0), 0) >= 0 ? "text-success" : "text-destructive"
+              }`}
+            >
+              {trades.reduce((sum, t) => sum + Number(t.pnl || 0), 0) > 0 ? "+" : ""}$
+              {trades.reduce((sum, t) => sum + Number(t.pnl || 0), 0).toLocaleString()}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Total trades</p>
+            <p className="text-3xl sm:text-4xl font-mono font-bold tracking-tight">{trades.length}</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold font-display mb-4">Trade history</h2>
+        <TradeList />
+      </div>
     </div>
   );
 }

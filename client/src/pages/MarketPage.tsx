@@ -1,7 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { Sidebar } from '@/components/Sidebar';
-import { MobileMenu } from '@/components/MobileMenu';
 import { SimpleTradingChart } from '@/components/SimpleTradingChart';
 import { Search, TrendingUp, TrendingDown, BarChart3, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
@@ -141,32 +139,29 @@ export default function MarketPage() {
   const selectedQuote = quotes[selectedSymbol];
 
   return (
-    <div className="flex bg-white min-h-screen">
-      <Sidebar />
-      
-      <main className="flex-1 md:ml-64 pb-24 md:pb-8">
-        {/* Top Ticker Bar */}
-        <div className="bg-gradient-to-r from-gray-800 to-gray-900 border-b-2 border-gray-700 px-6 py-2 overflow-x-auto">
-          <div className="flex items-center gap-8 text-sm whitespace-nowrap">
-            {allAssets.slice(0, 8).map(asset => {
-              const quote = quotes[asset.symbol];
-              const isPositive = (quote?.change ?? 0) >= 0;
-              return (
-                <div key={asset.symbol} className="flex items-center gap-2">
-                  <span className="text-gray-400 font-semibold">{asset.symbol}</span>
-                  {quote && (
-                    <>
-                      <span className="text-white font-mono font-bold">${quote.price.toFixed(2)}</span>
-                      <span className={`font-mono text-xs ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                        {isPositive ? '+' : ''}{quote.changePercent?.toFixed(2)}%
-                      </span>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+    <div className="bg-background">
+      {/* Top Ticker Bar */}
+      <div className="bg-card border-b border-border px-4 sm:px-6 py-2 overflow-x-auto">
+        <div className="flex items-center gap-8 text-sm whitespace-nowrap">
+          {allAssets.slice(0, 8).map(asset => {
+            const quote = quotes[asset.symbol];
+            const isPositive = (quote?.change ?? 0) >= 0;
+            return (
+              <div key={asset.symbol} className="flex items-center gap-2">
+                <span className="text-muted-foreground font-semibold">{asset.symbol}</span>
+                {quote && (
+                  <>
+                    <span className="text-foreground font-mono font-semibold">${quote.price.toFixed(2)}</span>
+                    <span className={`font-mono text-xs ${isPositive ? 'text-success' : 'text-destructive'}`}>
+                      {isPositive ? '+' : ''}{quote.changePercent?.toFixed(2)}%
+                    </span>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
+      </div>
 
         {/* 3-Column Layout: Desktop = Sidebar + Chart + Stats | Mobile = Single column + Tabs */}
         <div className="flex flex-col lg:grid lg:grid-cols-[320px_1fr_300px] min-h-[100dvh] overflow-hidden">
@@ -537,11 +532,7 @@ export default function MarketPage() {
               )}
             </div>
           </div>
-
         </div>
-      </main>
-      
-      <MobileMenu />
-    </div>
-  );
+      </div>
+    );
 }

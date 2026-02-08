@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Sidebar, MobileNav } from '@/components/Sidebar';
-import { MobileMenu } from '@/components/MobileMenu';
 import { SimpleTradingChart } from '@/components/SimpleTradingChart';
 import { DollarSign, TrendingUp, TrendingDown, Activity, Wallet, ArrowUpRight, ArrowDownRight, X } from 'lucide-react';
 
@@ -192,11 +190,7 @@ export default function SimulatorPage() {
   };
 
   return (
-    <div className="flex bg-white min-h-screen">
-      <Sidebar />
-      <MobileMenu />
-      
-      <main className="flex-1 md:ml-64 pb-24 md:pb-8">
+    <div className="space-y-6">
         {/* Portfolio Stats Bar */}
         <div className="bg-gradient-to-r from-gray-800 to-gray-900 border-b-2 border-gray-700 px-6 py-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -728,7 +722,7 @@ export default function SimulatorPage() {
         {mobileTab === 'trade' && (
           <button
             onClick={handlePlaceOrder}
-            className={`lg:hidden fixed bottom-0 left-0 right-0 py-4 px-4 font-bold text-white shadow-2xl transition-all z-40 ${
+            className={`lg:hidden fixed bottom-16 left-0 right-0 py-4 px-4 font-bold text-white shadow-2xl transition-all z-40 ${
               orderSide === 'buy'
                 ? 'bg-gradient-to-r from-green-600 to-green-500'
                 : 'bg-gradient-to-r from-red-600 to-red-500'
@@ -746,9 +740,6 @@ export default function SimulatorPage() {
         >
           <Activity className="w-6 h-6" />
         </button>
-      </main>
-      
-      <MobileNav />
 
       {/* Chart Modal (Mobile Only) */}
       {showChartModal && (

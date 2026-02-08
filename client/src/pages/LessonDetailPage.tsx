@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useRoute, useLocation } from 'wouter';
-import { Sidebar } from '@/components/Sidebar';
-import { MobileMenu } from '@/components/MobileMenu';
 import { ArrowLeft, CheckCircle, XCircle, Trophy, Star, Target, ChevronRight, BookOpen, Lightbulb, TrendingUp, AlertCircle } from 'lucide-react';
 import LESSONS_DATABASE from '@/data/lessonsData';
 
@@ -84,10 +82,7 @@ export default function LessonDetailPage() {
   const isCorrect = hasAnswered && selectedAnswers[currentQuestion] === question?.correctAnswer;
 
   return (
-    <div className="flex bg-white min-h-screen">
-      <Sidebar />
-      
-      <main className="flex-1 md:ml-64 pb-24 md:pb-8">
+    <div className="space-y-6">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-b border-blue-700 sm:border-b-2">
           <div className="max-w-4xl mx-auto">
@@ -427,9 +422,6 @@ export default function LessonDetailPage() {
             </div>
           </div>
         )}
-      </main>
-      
-      <MobileMenu />
     </div>
   );
 }

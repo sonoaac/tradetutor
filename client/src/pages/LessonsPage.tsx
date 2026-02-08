@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { Sidebar } from '@/components/Sidebar';
-import { MobileMenu } from '@/components/MobileMenu';
 import { Trophy, Star, Lock, CheckCircle, PlayCircle, Award, Target, Zap, Crown, GraduationCap, Sparkles, TrendingUp } from 'lucide-react';
 
 interface Lesson {
@@ -92,69 +90,62 @@ export default function LessonsPage() {
   const CurrentLevelIcon = LEVEL_CONFIG[currentLevel as keyof typeof LEVEL_CONFIG].icon;
 
   return (
-    <div className="flex bg-white min-h-screen">
-      <Sidebar />
-      
-      <main className="flex-1 md:ml-64 pb-24 md:pb-8">
-        {/* Top Progress Bar */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-4 sm:px-6 md:px-8 py-4 sm:py-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className={`w-12 h-12 sm:w-16 sm:h-16 ${LEVEL_CONFIG[currentLevel as keyof typeof LEVEL_CONFIG].color} rounded-full flex items-center justify-center shadow-lg`}>
-                  <CurrentLevelIcon className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Learning Journey</h1>
-                  <p className="text-sm sm:text-base text-purple-100">
-                    Level: {LEVEL_CONFIG[currentLevel as keyof typeof LEVEL_CONFIG].name}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="w-full lg:w-auto lg:text-right">
-                <div className="flex items-center gap-2 text-white mb-1">
-                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-300" />
-                  <span className="text-2xl sm:text-3xl font-bold font-mono">{totalPoints}</span>
-                  <span className="text-sm sm:text-base text-purple-200">/ {totalPossible} pts</span>
-                </div>
-                <div className="text-purple-100 text-xs sm:text-sm">
-                  {completedCount} of {MOCK_LESSONS.length} lessons completed
-                </div>
-              </div>
+    <div className="bg-background">
+      {/* Top Progress Bar */}
+      <div className="bg-card border border-border rounded-2xl p-4 sm:p-6">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className={"w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center bg-primary/10 text-primary"}>
+              <CurrentLevelIcon className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Learning Journey</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Level: {LEVEL_CONFIG[currentLevel as keyof typeof LEVEL_CONFIG].name}
+              </p>
+            </div>
+          </div>
 
-            {/* Progress Bar */}
-            {nextLevel && (
-              <div>
-                <div className="flex items-center justify-between text-white text-sm mb-2">
-                  <span>Progress to {nextLevel[1].name}</span>
-                  <span className="font-semibold">{Math.round(progressToNext)}%</span>
-                </div>
-                <div className="w-full bg-purple-800/30 rounded-full h-3 overflow-hidden">
-                  <div 
-                    className="bg-gradient-to-r from-yellow-400 to-yellow-300 h-full transition-all duration-500 rounded-full"
-                    style={{ width: `${progressToNext}%` }}
-                  />
-                </div>
-                <div className="text-purple-100 text-xs mt-1">
-                  {nextLevel[1].required - totalPoints} points until {nextLevel[1].name}
-                </div>
-              </div>
-            )}
+          <div className="w-full lg:w-auto lg:text-right">
+            <div className="flex items-center gap-2 mb-1">
+              <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+              <span className="text-2xl sm:text-3xl font-bold font-mono">{totalPoints}</span>
+              <span className="text-sm sm:text-base text-muted-foreground">/ {totalPossible} pts</span>
+            </div>
+            <div className="text-muted-foreground text-xs sm:text-sm">
+              {completedCount} of {MOCK_LESSONS.length} lessons completed
+            </div>
           </div>
         </div>
 
-        {/* Level Filter Pills */}
-        <div className="bg-gray-50 border-b-2 border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {nextLevel && (
+          <div>
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-muted-foreground">Progress to {nextLevel[1].name}</span>
+              <span className="font-semibold">{Math.round(progressToNext)}%</span>
+            </div>
+            <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+              <div
+                className="bg-primary h-full transition-all duration-500 rounded-full"
+                style={{ width: `${progressToNext}%` }}
+              />
+            </div>
+            <div className="text-muted-foreground text-xs mt-1">
+              {nextLevel[1].required - totalPoints} points until {nextLevel[1].name}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Level Filter Pills */}
+      <div className="mt-6">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
               <button
                 onClick={() => setSelectedLevel('all')}
                 className={`px-4 py-2 rounded-full font-semibold whitespace-nowrap transition-all ${
                   selectedLevel === 'all'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                 }`}
               >
                 All Levels
@@ -167,8 +158,8 @@ export default function LessonsPage() {
                     onClick={() => setSelectedLevel(key)}
                     className={`px-4 py-2 rounded-full font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
                       selectedLevel === key
-                        ? `${config.color} text-white shadow-lg`
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                     }`}
                   >
                     <LevelIcon className="w-4 h-4" />
@@ -177,13 +168,11 @@ export default function LessonsPage() {
                 );
               })}
             </div>
-          </div>
-        </div>
+      </div>
 
-        {/* Lessons Grid */}
-        <div className="p-4 sm:p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      {/* Lessons Grid */}
+      <div className="mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {filteredLessons.map((lesson) => {
                 const levelConfig = LEVEL_CONFIG[lesson.level];
                 const LevelIcon = levelConfig.icon;
@@ -191,53 +180,53 @@ export default function LessonsPage() {
                 return (
                   <div
                     key={lesson.id}
-                    className={`bg-white border-2 rounded-xl shadow-md overflow-hidden transition-all hover:shadow-xl ${
+                    className={`bg-card border rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md ${
                       lesson.locked 
-                        ? 'border-gray-300 opacity-75' 
+                        ? 'border-border opacity-75' 
                         : lesson.completed
                         ? 'border-green-500'
-                        : 'border-gray-200 hover:border-blue-500'
+                        : 'border-border hover:border-primary'
                     }`}
                   >
                     {/* Lesson Header */}
-                    <div className={`${levelConfig.color} px-4 py-3 flex items-center justify-between`}>
+                    <div className="bg-secondary px-4 py-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <LevelIcon className="w-5 h-5 text-white" />
-                        <span className="text-white font-semibold text-sm">{levelConfig.name}</span>
+                        <LevelIcon className="w-5 h-5 text-muted-foreground" />
+                        <span className="text-foreground font-semibold text-sm">{levelConfig.name}</span>
                       </div>
                       {lesson.completed && (
-                        <CheckCircle className="w-5 h-5 text-white" />
+                        <CheckCircle className="w-5 h-5 text-success" />
                       )}
                       {lesson.locked && (
-                        <Lock className="w-5 h-5 text-white" />
+                        <Lock className="w-5 h-5 text-muted-foreground" />
                       )}
                     </div>
 
                     {/* Lesson Body */}
                     <div className="p-4">
-                      <h3 className="text-lg font-bold text-black mb-2">{lesson.title}</h3>
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{lesson.description}</p>
+                      <h3 className="text-lg font-bold text-foreground mb-2">{lesson.title}</h3>
+                      <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{lesson.description}</p>
 
                       <div className="grid grid-cols-3 gap-2 mb-4">
-                        <div className="bg-gray-50 rounded-lg p-2 text-center">
-                          <div className="text-xs text-gray-600">Points</div>
-                          <div className="font-bold text-black flex items-center justify-center gap-1">
-                            <Star className="w-3 h-3 text-yellow-500" />
+                        <div className="bg-secondary/50 rounded-lg p-2 text-center">
+                          <div className="text-xs text-muted-foreground">Points</div>
+                          <div className="font-bold text-foreground flex items-center justify-center gap-1">
+                            <Star className="w-3 h-3 text-primary" />
                             {lesson.points}
                           </div>
                         </div>
-                        <div className="bg-gray-50 rounded-lg p-2 text-center">
-                          <div className="text-xs text-gray-600">Questions</div>
-                          <div className="font-bold text-black">{lesson.questions}</div>
+                        <div className="bg-secondary/50 rounded-lg p-2 text-center">
+                          <div className="text-xs text-muted-foreground">Questions</div>
+                          <div className="font-bold text-foreground">{lesson.questions}</div>
                         </div>
-                        <div className="bg-gray-50 rounded-lg p-2 text-center">
-                          <div className="text-xs text-gray-600">Duration</div>
-                          <div className="font-bold text-black text-xs">{lesson.duration}</div>
+                        <div className="bg-secondary/50 rounded-lg p-2 text-center">
+                          <div className="text-xs text-muted-foreground">Duration</div>
+                          <div className="font-bold text-foreground text-xs">{lesson.duration}</div>
                         </div>
                       </div>
 
                       {lesson.completed && lesson.score && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-2 mb-3">
+                        <div className="bg-success-soft border border-border rounded-lg p-2 mb-3">
                           <div className="flex items-center justify-between">
                             <span className="text-green-700 text-sm font-semibold">Score</span>
                             <span className="text-green-700 font-bold">{lesson.score}/{lesson.points}</span>
@@ -250,10 +239,10 @@ export default function LessonsPage() {
                         disabled={lesson.locked}
                         className={`w-full py-2 rounded-lg font-bold transition-all ${
                           lesson.locked
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            ? 'bg-secondary text-muted-foreground cursor-not-allowed'
                             : lesson.completed
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                            : 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
+                            ? 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'
+                            : 'bg-primary hover:bg-primary/90 text-primary-foreground'
                         }`}
                       >
                         {lesson.locked ? (
@@ -276,41 +265,38 @@ export default function LessonsPage() {
               })}
             </div>
 
-            {/* Achievement Badges Section */}
-            <div className="mt-8 sm:mt-12 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 sm:p-6 border-2 border-blue-200">
-              <h2 className="text-xl sm:text-2xl font-bold text-black mb-3 sm:mb-4 flex items-center gap-2">
-                <Crown className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-500" />
-                Your Achievements
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
-                {Object.entries(LEVEL_CONFIG).map(([key, config]) => {
-                  const LevelIcon = config.icon;
-                  const isUnlocked = totalPoints >= config.required;
-                  return (
-                    <div
-                      key={key}
-                      className={`text-center p-4 rounded-xl border-2 transition-all ${
-                        isUnlocked
-                          ? `${config.color} border-transparent text-white shadow-lg`
-                          : 'bg-gray-100 border-gray-300 text-gray-400'
-                      }`}
-                    >
-                      <LevelIcon className={`w-8 h-8 mx-auto mb-2 ${isUnlocked ? 'text-white' : 'text-gray-400'}`} />
-                      <div className="font-bold text-sm">{config.name}</div>
-                      <div className="text-xs opacity-90">{config.required} pts</div>
-                      {isUnlocked && (
-                        <CheckCircle className="w-4 h-4 mx-auto mt-1" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
             </div>
-          </div>
+
+      {/* Achievement Badges Section */}
+      <div className="mt-8 sm:mt-12 bg-card rounded-2xl p-4 sm:p-6 border border-border">
+        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+          <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+          Achievements
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
+          {Object.entries(LEVEL_CONFIG).map(([key, config]) => {
+            const LevelIcon = config.icon;
+            const isUnlocked = totalPoints >= config.required;
+            return (
+              <div
+                key={key}
+                className={`text-center p-4 rounded-xl border transition-all ${
+                  isUnlocked
+                    ? 'bg-primary/10 border-primary/20 text-foreground'
+                    : 'bg-secondary/50 border-border text-muted-foreground'
+                }`}
+              >
+                <LevelIcon className={`w-7 h-7 mx-auto mb-2 ${isUnlocked ? 'text-primary' : 'text-muted-foreground'}`} />
+                <div className="font-semibold text-sm">{config.name}</div>
+                <div className="text-xs">{config.required} pts</div>
+                {isUnlocked && (
+                  <CheckCircle className="w-4 h-4 mx-auto mt-1 text-success" />
+                )}
+              </div>
+            );
+          })}
         </div>
-      </main>
-      
-      <MobileMenu />
+      </div>
     </div>
   );
 }

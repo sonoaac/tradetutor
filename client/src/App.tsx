@@ -16,22 +16,84 @@ import PricingPage from "@/pages/PricingPage";
 import PaymentSuccessPage from "@/pages/PaymentSuccessPage";
 import PaymentCancelPage from "@/pages/PaymentCancelPage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
+import { AppShell } from "@/components/layout/AppShell";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/auth" component={Auth} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/simulator" component={SimulatorPage} />
-      <Route path="/market" component={MarketPage} />
-      <Route path="/lessons" component={LessonsPage} />
-      <Route path="/lessons/:id" component={LessonDetailPage} />
-      <Route path="/portfolio" component={Portfolio} />
-      <Route path="/pricing" component={PricingPage} />
-      <Route path="/payment/success" component={PaymentSuccessPage} />
-      <Route path="/payment/cancel" component={PaymentCancelPage} />
-      <Route path="/subscription" component={SubscriptionPage} />
+
+      <Route path="/dashboard">
+        {() => (
+          <AppShell>
+            <Dashboard />
+          </AppShell>
+        )}
+      </Route>
+      <Route path="/simulator">
+        {() => (
+          <AppShell>
+            <SimulatorPage />
+          </AppShell>
+        )}
+      </Route>
+      <Route path="/market">
+        {() => (
+          <AppShell>
+            <MarketPage />
+          </AppShell>
+        )}
+      </Route>
+      <Route path="/lessons">
+        {() => (
+          <AppShell>
+            <LessonsPage />
+          </AppShell>
+        )}
+      </Route>
+      <Route path="/lessons/:id">
+        {() => (
+          <AppShell>
+            <LessonDetailPage />
+          </AppShell>
+        )}
+      </Route>
+      <Route path="/portfolio">
+        {() => (
+          <AppShell>
+            <Portfolio />
+          </AppShell>
+        )}
+      </Route>
+      <Route path="/pricing">
+        {() => (
+          <AppShell>
+            <PricingPage />
+          </AppShell>
+        )}
+      </Route>
+      <Route path="/subscription">
+        {() => (
+          <AppShell>
+            <SubscriptionPage />
+          </AppShell>
+        )}
+      </Route>
+      <Route path="/payment/success">
+        {() => (
+          <AppShell>
+            <PaymentSuccessPage />
+          </AppShell>
+        )}
+      </Route>
+      <Route path="/payment/cancel">
+        {() => (
+          <AppShell>
+            <PaymentCancelPage />
+          </AppShell>
+        )}
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );

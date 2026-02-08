@@ -2,11 +2,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePortfolio } from "@/hooks/use-portfolio";
 import { useTrades } from "@/hooks/use-trades";
 import { StatCard } from "@/components/StatCard";
-import { Sidebar } from "@/components/Sidebar";
-import { MobileMenu } from "@/components/MobileMenu";
 import { Wallet, TrendingUp, Activity, BarChart2, AlertCircle } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { Link } from "wouter";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const { user, isAuthenticated } = useAuth();
@@ -17,63 +16,55 @@ export default function Dashboard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex min-h-screen bg-background">
-        <Sidebar />
-        <main className="flex-1 md:ml-64 pb-20 md:pb-8 flex items-center justify-center">
-          <div className="max-w-xl text-center p-6">
-            <h1 className="text-3xl font-bold font-display mb-2">Trading Dashboard</h1>
-            <p className="text-muted-foreground mb-6">Log in to view your portfolio, trade history, and performance stats.</p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/auth">
-                <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium">
-                  Log in
-                </a>
-              </Link>
-              <Link href="/pricing">
-                <a className="inline-flex items-center justify-center rounded-md border border-border bg-background h-11 px-6 text-sm font-medium">
-                  View plans
-                </a>
-              </Link>
-            </div>
+      <div className="flex items-center justify-center py-10">
+        <div className="max-w-xl text-center">
+          <h1 className="text-3xl font-bold font-display mb-2">Trading Dashboard</h1>
+          <p className="text-muted-foreground mb-6">Log in to view your portfolio, trade history, and performance stats.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/auth">
+              <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium">
+                Log in
+              </a>
+            </Link>
+            <Link href="/pricing">
+              <a className="inline-flex items-center justify-center rounded-md border border-border bg-background h-11 px-6 text-sm font-medium">
+                View plans
+              </a>
+            </Link>
           </div>
-        </main>
-        <MobileMenu />
+        </div>
       </div>
     );
   }
 
   if (tier === "free") {
     return (
-      <div className="flex min-h-screen bg-background">
-        <Sidebar />
-        <main className="flex-1 md:ml-64 pb-20 md:pb-8 flex items-center justify-center">
-          <div className="max-w-2xl p-6">
-            <div className="bg-card border border-border rounded-2xl p-6">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-primary mt-0.5" />
-                <div className="space-y-2">
-                  <h1 className="text-2xl font-bold font-display">Learn Mode</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Trading and portfolio tracking are locked while you learn. Upgrade to Starter to place trades, unlock your portfolio, and track your performance.
-                  </p>
-                  <Link href="/pricing">
-                    <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium">
-                      Upgrade to Starter
-                    </a>
-                  </Link>
-                </div>
+      <div className="flex items-center justify-center py-10">
+        <div className="max-w-2xl">
+          <div className="bg-card border border-border rounded-2xl p-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-primary mt-0.5" />
+              <div className="space-y-2">
+                <h1 className="text-2xl font-bold font-display">Learn Mode</h1>
+                <p className="text-sm text-muted-foreground">
+                  Trading and portfolio tracking are locked while you learn. Upgrade to Starter to place trades, unlock your portfolio, and track your performance.
+                </p>
+                <Link href="/pricing">
+                  <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium">
+                    Upgrade to Starter
+                  </a>
+                </Link>
               </div>
             </div>
           </div>
-        </main>
-        <MobileMenu />
+        </div>
       </div>
     );
   }
 
   if (isPortfolioLoading || isTradesLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background text-primary">
+      <div className="flex h-[60vh] w-full items-center justify-center text-primary">
         <Loader2 className="w-10 h-10 animate-spin" />
       </div>
     );
@@ -82,27 +73,23 @@ export default function Dashboard() {
   if (isPortfolioError || isTradesError) {
     const message = ((portfolioError as Error | undefined)?.message || (tradesError as Error | undefined)?.message || "Dashboard data is unavailable.");
     return (
-      <div className="flex min-h-screen bg-background">
-        <Sidebar />
-        <main className="flex-1 md:ml-64 pb-20 md:pb-8 flex items-center justify-center">
-          <div className="max-w-2xl p-6">
-            <div className="bg-card border border-border rounded-2xl p-6">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
-                <div className="space-y-2">
-                  <h1 className="text-2xl font-bold font-display">Dashboard unavailable</h1>
-                  <p className="text-sm text-muted-foreground">{message}</p>
-                  <Link href="/pricing">
-                    <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium">
-                      View plans
-                    </a>
-                  </Link>
-                </div>
+      <div className="flex items-center justify-center py-10">
+        <div className="max-w-2xl">
+          <div className="bg-card border border-border rounded-2xl p-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
+              <div className="space-y-2">
+                <h1 className="text-2xl font-bold font-display">Dashboard unavailable</h1>
+                <p className="text-sm text-muted-foreground">{message}</p>
+                <Link href="/pricing">
+                  <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium">
+                    View plans
+                  </a>
+                </Link>
               </div>
             </div>
           </div>
-        </main>
-        <MobileMenu />
+        </div>
       </div>
     );
   }
@@ -118,87 +105,87 @@ export default function Dashboard() {
   ).slice(0, 5);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      
-      <main className="flex-1 md:ml-64 pb-20 md:pb-8">
-        <header className="px-8 py-6 border-b border-border bg-background/50 backdrop-blur-sm sticky top-0 z-40">
-          <h1 className="text-2xl font-bold font-display">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, {user?.firstName || 'Trader'}.</p>
-        </header>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold font-display">Dashboard</h1>
+        <p className="text-muted-foreground">Welcome back, {user?.firstName || "Trader"}.</p>
+      </div>
 
-        <div className="p-4 md:p-8 space-y-8">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard 
-              title="Total SimCash" 
-              value={`$${Number(portfolio?.balance || 0).toLocaleString()}`} 
-              icon={<Wallet className="w-6 h-6" />}
-              className="bg-gradient-to-br from-card to-card/50"
-            />
-            <StatCard 
-              title="Total P&L" 
-              value={`$${Number(portfolio?.totalProfitLoss || 0).toLocaleString()}`} 
-              trend={portfolio?.totalProfitLoss && Number(portfolio.totalProfitLoss) > 0 ? 5.2 : -2.1} // Mock trend for now
-              icon={<TrendingUp className="w-6 h-6" />}
-            />
-            <StatCard 
-              title="Win Rate" 
-              value={`${winRatePct.toFixed(1)}%`} 
-              icon={<Activity className="w-6 h-6" />}
-              description="Last 30 days"
-            />
-            <StatCard 
-              title="Total Trades" 
-              value={totalTrades} 
-              icon={<BarChart2 className="w-6 h-6" />}
-            />
-          </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total SimCash"
+          value={`$${Number(portfolio?.balance || 0).toLocaleString()}`}
+          icon={<Wallet className="w-6 h-6" />}
+          className="bg-gradient-to-br from-card to-card/50"
+        />
+        <StatCard
+          title="Total P&L"
+          value={`$${Number(portfolio?.totalProfitLoss || 0).toLocaleString()}`}
+          trend={portfolio?.totalProfitLoss && Number(portfolio.totalProfitLoss) > 0 ? 5.2 : -2.1}
+          icon={<TrendingUp className="w-6 h-6" />}
+        />
+        <StatCard
+          title="Win Rate"
+          value={`${winRatePct.toFixed(1)}%`}
+          icon={<Activity className="w-6 h-6" />}
+          description="Last 30 days"
+        />
+        <StatCard
+          title="Total Trades"
+          value={totalTrades}
+          icon={<BarChart2 className="w-6 h-6" />}
+        />
+      </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Chart Section Placeholder */}
-            <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-6 shadow-sm min-h-[400px]">
-              <h3 className="text-lg font-bold mb-6 font-display">Performance History</h3>
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-xl">
-                Chart coming soon (needs historical portfolio data)
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
-              <h3 className="text-lg font-bold mb-6 font-display">Recent Activity</h3>
-              <div className="space-y-4">
-                {recentTrades.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">No trades yet. Go to Simulator to start!</p>
-                ) : (
-                  recentTrades.map(trade => (
-                    <div key={trade.id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${trade.side === 'buy' ? 'bg-success' : 'bg-destructive'}`} />
-                        <div>
-                          <p className="font-bold font-mono text-sm">{trade.symbol}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{trade.side} • {trade.size} units</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        {trade.status === 'closed' ? (
-                          <p className={`font-mono font-bold text-sm ${Number(trade.pnl) >= 0 ? 'text-success' : 'text-destructive'}`}>
-                            {Number(trade.pnl) > 0 ? '+' : ''}{Number(trade.pnl).toFixed(2)}
-                          </p>
-                        ) : (
-                          <p className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">OPEN</p>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-6 shadow-sm min-h-[360px]">
+          <h3 className="text-lg font-bold mb-6 font-display">Performance History</h3>
+          <div className="h-[260px] flex items-center justify-center text-muted-foreground border border-dashed border-border rounded-xl">
+            Chart coming soon (needs historical portfolio data)
           </div>
         </div>
-      </main>
-      
-      <MobileMenu />
+
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+          <h3 className="text-lg font-bold mb-6 font-display">Recent Activity</h3>
+          <div className="space-y-3">
+            {recentTrades.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No trades yet. Go to Simulator to start.</p>
+            ) : (
+              recentTrades.map((trade) => (
+                <div
+                  key={trade.id}
+                  className="flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-2 h-2 rounded-full", trade.side === "buy" ? "bg-success" : "bg-destructive")} />
+                    <div>
+                      <p className="font-semibold font-mono text-sm">{trade.symbol}</p>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {trade.side} • {trade.size} units
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {trade.status === "closed" ? (
+                      <p
+                        className={cn(
+                          "font-mono font-semibold text-sm",
+                          Number(trade.pnl) >= 0 ? "text-success" : "text-destructive"
+                        )}
+                      >
+                        {Number(trade.pnl) > 0 ? "+" : ""}
+                        {Number(trade.pnl).toFixed(2)}
+                      </p>
+                    ) : (
+                      <p className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded">OPEN</p>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
