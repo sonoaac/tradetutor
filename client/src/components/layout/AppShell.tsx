@@ -1,6 +1,6 @@
 import { ReactNode, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { LogOut, LogIn, TrendingUp } from "lucide-react";
+import { LogOut, LogIn, TrendingUp, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -11,6 +11,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { user, isAuthenticated, logout, isLoggingOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">(() =>
+    document.documentElement.classList.contains("dark") ? "dark" : "light"
+  );
 
   const pageLabel = useMemo(() => {
     if (location === "/dashboard") return "Dashboard";
@@ -49,6 +52,28 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Button variant="secondary" size="sm">Plans</Button>
                 </a>
               </Link>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => {
+                  const next = theme === "dark" ? "light" : "dark";
+                  setTheme(next);
+                  if (next === "dark") document.documentElement.classList.add("dark");
+                  else document.documentElement.classList.remove("dark");
+                  try {
+                    localStorage.setItem("theme", next);
+                  } catch {
+                    // ignore
+                  }
+                }}
+                title={theme === "dark" ? "Switch to light" : "Switch to dark"}
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                <span className="hidden sm:inline">{theme === "dark" ? "Light" : "Dark"}</span>
+              </Button>
 
               {isAuthenticated ? (
                 <div className="flex items-center gap-2">
