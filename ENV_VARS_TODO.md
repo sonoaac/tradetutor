@@ -21,14 +21,11 @@ Set these in your Render **Web Service** (Flask API).
 
 Required if you want Stripe checkout to work:
 
-- `STRIPE_SECRET_KEY` = `sk_live_...`
-- `STRIPE_PUBLISHABLE_KEY` = `pk_live_...`
-- `STRIPE_WEBHOOK_SECRET` = `whsec_...` (for `/api/payment/webhook`)
 
-Price IDs (you create these in Stripe; see section 3):
+### Security note
 
-- `STRIPE_PRICE_STARTER_MONTHLY` = `price_...`
-- `STRIPE_PRICE_STARTER_YEARLY` = `price_...`
+- Never commit or share `sk_*` / `whsec_*` values. If one is accidentally shared, rotate it in Stripe immediately and update the Render env var.
+
 - `STRIPE_PRICE_PRO_MONTHLY` = `price_...`
 - `STRIPE_PRICE_PRO_YEARLY` = `price_...`
 
