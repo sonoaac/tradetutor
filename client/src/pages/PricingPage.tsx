@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Zap, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { apiUrl } from "@/lib/api";
 
 type PlanInterval = "month" | "year";
 
@@ -131,7 +132,7 @@ export default function PricingPage() {
     setCheckoutLoadingPlanId(plan.id);
 
     try {
-      const response = await fetch("/api/payment/create-checkout-session", {
+      const response = await fetch(apiUrl("/api/payment/create-checkout-session"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -14,6 +14,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiUrl } from "@/lib/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,7 +53,7 @@ export default function SubscriptionPage() {
 
   const fetchSubscription = async () => {
     try {
-      const response = await fetch("/api/payment/subscription", {
+      const response = await fetch(apiUrl("/api/payment/subscription"), {
         credentials: "include",
       });
 
@@ -78,7 +79,7 @@ export default function SubscriptionPage() {
     setPortalLoading(true);
     
     try {
-      const response = await fetch("/api/payment/create-portal-session", {
+      const response = await fetch(apiUrl("/api/payment/create-portal-session"), {
         method: "POST",
         credentials: "include",
       });
@@ -108,7 +109,7 @@ export default function SubscriptionPage() {
         ? "/api/payment/paypal/cancel-subscription"
         : "/api/payment/cancel-subscription";
 
-      const response = await fetch(endpoint, {
+      const response = await fetch(apiUrl(endpoint), {
         method: "POST",
         credentials: "include",
       });
