@@ -35,6 +35,12 @@ class Config:
     STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
     STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
     STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
+
+    # Stripe Price IDs (Subscriptions)
+    STRIPE_PRICE_STARTER_MONTHLY = os.environ.get('STRIPE_PRICE_STARTER_MONTHLY')
+    STRIPE_PRICE_STARTER_YEARLY = os.environ.get('STRIPE_PRICE_STARTER_YEARLY')
+    STRIPE_PRICE_PRO_MONTHLY = os.environ.get('STRIPE_PRICE_PRO_MONTHLY')
+    STRIPE_PRICE_PRO_YEARLY = os.environ.get('STRIPE_PRICE_PRO_YEARLY')
     
     # PayPal (for future payments)
     PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID')

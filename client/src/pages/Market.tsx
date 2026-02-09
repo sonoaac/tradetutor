@@ -12,7 +12,7 @@ interface Asset {
   sector: string;
   class: string;
   volatility: string;
-  tier: string;
+    tier: 'free' | 'starter' | 'pro';
 }
 
 interface Quote {
@@ -26,14 +26,14 @@ interface Quote {
 const FALLBACK_ASSETS: Asset[] = [
   { symbol: 'SMBY', name: 'SmartBuy', sector: 'Retail Electronics', class: 'stock', volatility: 'medium', tier: 'free' },
   { symbol: 'BTN', name: 'BitNova', sector: 'Store of Value', class: 'crypto', volatility: 'high', tier: 'free' },
-  { symbol: 'PRTC', name: 'PearTech', sector: 'Consumer Tech', class: 'stock', volatility: 'medium', tier: 'gold' },
-  { symbol: 'ETHA', name: 'Ethera', sector: 'Smart Contracts', class: 'crypto', volatility: 'high', tier: 'gold' },
-  { symbol: 'VLTR', name: 'Voltra Motors', sector: 'EV / Auto', class: 'stock', volatility: 'high', tier: 'gold' },
-  { symbol: 'SOLR', name: 'Solari', sector: 'Fast L1', class: 'crypto', volatility: 'very-high', tier: 'gold' },
-  { symbol: 'TOP500', name: 'Top500', sector: 'Index', class: 'index', volatility: 'low', tier: 'gold' },
-  { symbol: 'TCH100', name: 'Tech100', sector: 'Index', class: 'index', volatility: 'medium', tier: 'gold' },
-  { symbol: 'USXEUR', name: 'USX/EURX', sector: 'FX Major', class: 'forex', volatility: 'low', tier: 'gold' },
-  { symbol: 'USXYNK', name: 'USX/YENK', sector: 'FX Major', class: 'forex', volatility: 'low', tier: 'gold' },
+    { symbol: 'PRTC', name: 'PearTech', sector: 'Consumer Tech', class: 'stock', volatility: 'medium', tier: 'pro' },
+    { symbol: 'ETHA', name: 'Ethera', sector: 'Smart Contracts', class: 'crypto', volatility: 'high', tier: 'starter' },
+    { symbol: 'VLTR', name: 'Voltra Motors', sector: 'EV / Auto', class: 'stock', volatility: 'high', tier: 'pro' },
+    { symbol: 'SOLR', name: 'Solari', sector: 'Fast L1', class: 'crypto', volatility: 'very-high', tier: 'pro' },
+    { symbol: 'TOP500', name: 'Top500', sector: 'Index', class: 'index', volatility: 'low', tier: 'starter' },
+    { symbol: 'TCH100', name: 'Tech100', sector: 'Index', class: 'index', volatility: 'medium', tier: 'pro' },
+    { symbol: 'USXEUR', name: 'USX/EURX', sector: 'FX Major', class: 'forex', volatility: 'low', tier: 'pro' },
+    { symbol: 'USXYNK', name: 'USX/YENK', sector: 'FX Major', class: 'forex', volatility: 'low', tier: 'pro' },
 ];
 
 function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 5000) {

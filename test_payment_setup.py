@@ -24,11 +24,20 @@ def test_stripe_config():
         stripe_secret = app.config.get('STRIPE_SECRET_KEY')
         stripe_public = app.config.get('STRIPE_PUBLISHABLE_KEY')
         stripe_webhook = app.config.get('STRIPE_WEBHOOK_SECRET')
+
+        starter_monthly = app.config.get('STRIPE_PRICE_STARTER_MONTHLY')
+        starter_yearly = app.config.get('STRIPE_PRICE_STARTER_YEARLY')
+        pro_monthly = app.config.get('STRIPE_PRICE_PRO_MONTHLY')
+        pro_yearly = app.config.get('STRIPE_PRICE_PRO_YEARLY')
         
         print("✓ Environment Variables:")
         print(f"  STRIPE_SECRET_KEY: {'✓ Set' if stripe_secret else '✗ Missing'}")
         print(f"  STRIPE_PUBLISHABLE_KEY: {'✓ Set' if stripe_public else '✗ Missing'}")
         print(f"  STRIPE_WEBHOOK_SECRET: {'✓ Set' if stripe_webhook else '✗ Missing (optional for testing)'}")
+        print(f"  STRIPE_PRICE_STARTER_MONTHLY: {'✓ Set' if starter_monthly else '✗ Missing'}")
+        print(f"  STRIPE_PRICE_STARTER_YEARLY: {'✓ Set' if starter_yearly else '✗ Missing'}")
+        print(f"  STRIPE_PRICE_PRO_MONTHLY: {'✓ Set' if pro_monthly else '✗ Missing'}")
+        print(f"  STRIPE_PRICE_PRO_YEARLY: {'✓ Set' if pro_yearly else '✗ Missing'}")
         print()
         
         if not stripe_secret or not stripe_public:
@@ -51,24 +60,27 @@ def test_stripe_config():
             
             # Check if price IDs are configured
             print("✓ Price IDs Configuration:")
-            price_ids = payment_service.PRICE_IDS
-            
-            for key, price_id in price_ids.items():
-                if price_id.startswith('price_'):
-                    # Check if this looks like a real Stripe price ID
-                    if len(price_id) > 20:
-                        print(f"  {key}: ✓ Configured ({price_id[:15]}...)")
-                    else:
-                        print(f"  {key}: ⚠ Placeholder - needs real Stripe price ID")
+            price_vars = {
+                'starter_monthly': starter_monthly,
+                'starter_yearly': starter_yearly,
+                'pro_monthly': pro_monthly,
+                'pro_yearly': pro_yearly,
+            }
+
+            for key, price_id in price_vars.items():
+                if not price_id:
+                    print(f"  {key}: ✗ Missing env var")
+                elif price_id.startswith('price_') and len(price_id) > 10:
+                    print(f"  {key}: ✓ Configured ({price_id[:15]}...)")
                 else:
-                    print(f"  {key}: ✗ Invalid format")
+                    print(f"  {key}: ⚠ Unexpected format")
             
             print()
             print("✅ Stripe is configured correctly!")
             print()
             print("Next steps:")
             print("1. Create products and prices in Stripe Dashboard")
-            print("2. Update price IDs in app/services/payment_service.py")
+            print("2. Set STRIPE_PRICE_* env vars (see ENV_VARS_TODO.md)")
             print("3. Start the server and test at http://localhost:5173/pricing")
             print()
             print("See PAYMENT_SETUP.md for detailed instructions.")

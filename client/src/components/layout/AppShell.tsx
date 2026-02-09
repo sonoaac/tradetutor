@@ -2,6 +2,12 @@ import { ReactNode, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { LogOut, LogIn, TrendingUp, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthModal } from "@/components/AuthModal";
@@ -15,6 +21,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     document.documentElement.classList.contains("dark") ? "dark" : "light"
   );
+
+  const avatarLetter = useMemo(() => {
+    const fromFirst = user?.firstName?.trim()?.[0];
+    const fromEmail = user?.email?.trim()?.[0];
+    return (fromFirst || fromEmail || "U").toUpperCase();
+  }, [user?.email, user?.firstName]);
 
   const pageLabel = useMemo(() => {
     if (location === "/dashboard") return "Dashboard";
@@ -78,22 +90,30 @@ export function AppShell({ children }: { children: ReactNode }) {
 
               {isAuthenticated ? (
                 <div className="flex items-center gap-2">
-                  <div className="hidden md:flex flex-col items-end leading-none">
-                    <span className="text-xs font-medium text-muted-foreground">Signed in</span>
-                    <span className="text-sm font-semibold">
-                      {user?.firstName ? `${user.firstName}` : "Trader"}
-                    </span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => logout()}
-                    disabled={isLoggingOut}
-                    className="gap-2"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span className="hidden sm:inline">Log out</span>
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-secondary text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        aria-label="User menu"
+                        title={user?.email || "User"}
+                      >
+                        {avatarLetter}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          logout();
+                        }}
+                        disabled={isLoggingOut}
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Log out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ) : (
                 <Button

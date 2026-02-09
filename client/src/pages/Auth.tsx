@@ -27,6 +27,7 @@ export default function Auth() {
   })();
   const [mode, setMode] = useState<'login' | 'register'>('register');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -37,6 +38,7 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage('');
 
     try {
       const endpoint = apiUrl(mode === 'login' ? '/api/auth/login' : '/api/auth/register');
@@ -54,7 +56,15 @@ export default function Auth() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || 'Authentication failed');
+        setErrorMessage(data.message || 'Authentication failed');
+        return;
+      }
+
+      // Update cached session immediately so the UI reflects logged-in state right away
+      if (data?.user) {
+        queryClient.setQueryData(["/api/auth/user"], data.user);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       }
 
       toast({
@@ -66,16 +76,11 @@ export default function Auth() {
 
       // Small delay for UX
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
         navigate(nextPath || '/dashboard');
       }, 500);
 
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Something went wrong',
-        variant: 'destructive'
-      });
+      setErrorMessage(error?.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
@@ -107,6 +112,11 @@ export default function Auth() {
 
         <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {errorMessage ? (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {errorMessage}
+              </div>
+            ) : null}
             {mode === 'register' && (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">

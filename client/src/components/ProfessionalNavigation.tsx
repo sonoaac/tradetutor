@@ -3,10 +3,18 @@ import { TrendingUp, Menu, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Link } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
 
 export function ProfessionalNavigation() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, logout, isLoggingOut } = useAuth();
+
+  const avatarLetter = (() => {
+    const fromFirst = user?.firstName?.trim()?.[0];
+    const fromEmail = user?.email?.trim()?.[0];
+    return (fromFirst || fromEmail || 'U').toUpperCase();
+  })();
 
   return (
     <>
@@ -38,14 +46,38 @@ export function ProfessionalNavigation() {
 
             {/* Auth Buttons */}
             <div className="hidden md:flex items-center gap-3">
-              <Button variant="ghost" onClick={() => setLoginOpen(true)}>
-                Log In
-              </Button>
-              <Link href="/auth">
-                <Button className="rounded-full bg-blue-600 hover:bg-blue-700">
-                  Get Started Free
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link href="/dashboard">
+                    <div
+                      className="h-9 w-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-sm font-semibold cursor-pointer"
+                      aria-label="User profile"
+                      title={user?.email || 'User'}
+                    >
+                      {avatarLetter}
+                    </div>
+                  </Link>
+                  <Link href="/dashboard">
+                    <Button className="rounded-full bg-blue-600 hover:bg-blue-700">
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <Button variant="outline" onClick={() => logout()} disabled={isLoggingOut}>
+                    Log Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" onClick={() => setLoginOpen(true)}>
+                    Log In
+                  </Button>
+                  <Link href="/auth">
+                    <Button className="rounded-full bg-blue-600 hover:bg-blue-700">
+                      Get Started Free
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -71,14 +103,29 @@ export function ProfessionalNavigation() {
                   Pricing
                 </a>
                 <div className="flex flex-col gap-2 pt-2">
-                  <Button variant="outline" onClick={() => setLoginOpen(true)}>
-                    Log In
-                  </Button>
-                  <Link href="/auth">
-                    <Button className="rounded-full bg-blue-600 hover:bg-blue-700 w-full">
-                      Get Started Free
-                    </Button>
-                  </Link>
+                  {isAuthenticated ? (
+                    <>
+                      <Link href="/dashboard">
+                        <Button className="rounded-full bg-blue-600 hover:bg-blue-700 w-full">
+                          Dashboard
+                        </Button>
+                      </Link>
+                      <Button variant="outline" onClick={() => logout()} disabled={isLoggingOut}>
+                        Log Out
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="outline" onClick={() => setLoginOpen(true)}>
+                        Log In
+                      </Button>
+                      <Link href="/auth">
+                        <Button className="rounded-full bg-blue-600 hover:bg-blue-700 w-full">
+                          Get Started Free
+                        </Button>
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -87,7 +134,7 @@ export function ProfessionalNavigation() {
       </nav>
 
       {/* Login Modal */}
-      <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
+      <Dialog open={!isAuthenticated && loginOpen} onOpenChange={setLoginOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Welcome Back</DialogTitle>

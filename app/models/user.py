@@ -13,6 +13,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     first_name = db.Column(db.String(100))
     last_name = db.Column(db.String(100))
+    username = db.Column(db.String(50), unique=True, index=True)
     profile_image_url = db.Column(db.String(500))
     
     # Subscription tier: 'free', 'starter', 'pro', 'lifetime'
@@ -44,6 +45,7 @@ class User(UserMixin, db.Model):
             'email': self.email,
             'firstName': self.first_name,
             'lastName': self.last_name,
+            'username': self.username,
             'profileImageUrl': self.profile_image_url,
             'tier': self.tier,
             'tierSource': self.tier_source,

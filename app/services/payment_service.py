@@ -14,13 +14,13 @@ from app.services.entitlements import get_starting_simcash
 
 class PaymentService:
     """Handles Stripe payment processing and subscription management"""
-    
-    # Price IDs for different plans (set these in your environment or Stripe dashboard)
+
+    # Back-compat mapping (actual values must be provided via env vars/config)
     PRICE_IDS = {
-        'starter_monthly': 'price_starter_monthly',  # Replace with actual Stripe price ID
-        'starter_yearly': 'price_starter_yearly',
-        'pro_monthly': 'price_pro_monthly',
-        'pro_yearly': 'price_pro_yearly',
+        'starter_monthly': None,
+        'starter_yearly': None,
+        'pro_monthly': None,
+        'pro_yearly': None,
     }
     
     def __init__(self):
@@ -32,6 +32,31 @@ class PaymentService:
         if key:
             self.stripe.api_key = key
         return key
+
+    def _get_stripe_price_id(self, plan: str, interval: str) -> str:
+        """Resolve Stripe Price ID for a subscription plan.
+
+        Expects env vars (via config):
+        - STRIPE_PRICE_STARTER_MONTHLY / STRIPE_PRICE_STARTER_YEARLY
+        - STRIPE_PRICE_PRO_MONTHLY / STRIPE_PRICE_PRO_YEARLY
+        """
+        interval = (interval or '').lower()
+        plan = (plan or '').lower()
+
+        if interval not in {'month', 'year'}:
+            raise ValueError(f'Invalid interval: {interval}')
+        if plan not in {'starter', 'pro'}:
+            raise ValueError(f'Invalid plan: {plan}')
+
+        key = f'STRIPE_PRICE_{plan.upper()}_{"MONTHLY" if interval == "month" else "YEARLY"}'
+        price_id = current_app.config.get(key)
+
+        if not price_id:
+            raise ValueError(
+                f'Missing Stripe Price ID. Set {key} in your environment.'
+            )
+
+        return price_id
 
     def _get_paypal_access_token(self):
         """Get PayPal access token using client credentials"""
@@ -272,12 +297,7 @@ class PaymentService:
             db.session.add(billing_account)
             db.session.commit()
         
-        # Get price ID
-        price_key = f'{plan}_{interval}ly'
-        price_id = self.PRICE_IDS.get(price_key)
-        
-        if not price_id:
-            raise ValueError(f'Invalid plan or interval: {plan} {interval}')
+        price_id = self._get_stripe_price_id(plan=plan, interval=interval)
         
         # Create checkout session
         frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:5173')

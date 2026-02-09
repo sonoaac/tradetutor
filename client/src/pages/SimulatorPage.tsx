@@ -38,7 +38,7 @@ const MOCK_ORDERS: Order[] = [
 ];
 
 export default function SimulatorPage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { tickId, simNowMs } = useSimTicker();
   const [positions, setPositions] = useState<Position[]>(MOCK_POSITIONS);
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
@@ -61,6 +61,8 @@ export default function SimulatorPage() {
 
   const [balance, setBalance] = useState(50000);
   const lastAppliedTickRef = useRef<number | null>(null);
+
+  const hasSimulatorAccess = isAuthenticated && !!user?.tier && user.tier !== 'free';
   
   // Calculate real-time portfolio values
   const totalPositionValue = positions.reduce((sum, pos) => {
@@ -85,7 +87,7 @@ export default function SimulatorPage() {
 
   // Live price simulation (synchronized 7s ticker)
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!hasSimulatorAccess) return;
     if (lastAppliedTickRef.current === tickId) return;
     if (lastAppliedTickRef.current == null) {
       lastAppliedTickRef.current = tickId;
@@ -109,11 +111,11 @@ export default function SimulatorPage() {
 
       return updated;
     });
-  }, [tickId, isAuthenticated]);
+  }, [tickId, hasSimulatorAccess]);
 
   // Update position P&L in real-time
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!hasSimulatorAccess) return;
     setPositions(prev => prev.map(pos => {
       const currentPrice = currentPrices[pos.symbol] || pos.currentPrice;
       const profitLoss = (currentPrice - pos.entryPrice) * pos.quantity * (pos.type === 'short' ? -1 : 1);
@@ -126,7 +128,7 @@ export default function SimulatorPage() {
         profitLossPercent
       };
     }));
-  }, [currentPrices, isAuthenticated]);
+  }, [currentPrices, hasSimulatorAccess]);
 
   const handlePlaceOrder = () => {
     setShowConfirmation(true);
@@ -232,6 +234,32 @@ export default function SimulatorPage() {
               <Link href="/pricing">
                 <a className="inline-flex items-center justify-center rounded-md border border-border bg-background h-11 px-6 text-sm font-medium">
                   View plans
+                </a>
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    ) : !hasSimulatorAccess ? (
+      <div className="flex items-center justify-center py-12">
+        <div className="max-w-xl w-full bg-card border border-border rounded-2xl p-6 text-center">
+          <h1 className="text-2xl font-bold font-display mb-2">Simulator</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Simulator trading is a paid feature. Upgrade to Starter to unlock full simulator access.
+          </p>
+
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Checking your plan…</p>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/pricing">
+                <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium">
+                  Upgrade to Starter
+                </a>
+              </Link>
+              <Link href="/market">
+                <a className="inline-flex items-center justify-center rounded-md border border-border bg-background h-11 px-6 text-sm font-medium">
+                  Browse markets
                 </a>
               </Link>
             </div>

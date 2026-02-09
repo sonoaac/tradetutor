@@ -10,7 +10,7 @@ interface Asset {
   sector: string;
   class: string;
   volatility: string;
-  tier: string;
+  tier: 'free' | 'starter' | 'pro';
 }
 
 interface Quote {
@@ -24,34 +24,34 @@ interface Quote {
 
 const FALLBACK_ASSETS: Asset[] = [
   // Tech Stocks
-  { symbol: 'SMBY', name: 'SmartBuy', sector: 'Retail Electronics', class: 'stock', volatility: 'medium', tier: 'free' },
-  { symbol: 'PRTC', name: 'PearTech', sector: 'Consumer Tech', class: 'stock', volatility: 'medium', tier: 'gold' },
-  { symbol: 'VLTR', name: 'Voltra Motors', sector: 'EV / Auto', class: 'stock', volatility: 'high', tier: 'gold' },
-  { symbol: 'NXTG', name: 'NextGen AI', sector: 'Artificial Intelligence', class: 'stock', volatility: 'very-high', tier: 'gold' },
-  { symbol: 'STRM', name: 'StreamFlix', sector: 'Entertainment', class: 'stock', volatility: 'medium', tier: 'free' },
-  { symbol: 'CYPH', name: 'CypherSec', sector: 'Cybersecurity', class: 'stock', volatility: 'high', tier: 'gold' },
+  { symbol: 'SMBY', name: 'SmartBuy', sector: 'Retail Electronics', class: 'stock', volatility: 'medium', tier: 'starter' },
+  { symbol: 'PRTC', name: 'PearTech', sector: 'Consumer Tech', class: 'stock', volatility: 'medium', tier: 'pro' },
+  { symbol: 'VLTR', name: 'Voltra Motors', sector: 'EV / Auto', class: 'stock', volatility: 'high', tier: 'pro' },
+  { symbol: 'NXTG', name: 'NextGen AI', sector: 'Artificial Intelligence', class: 'stock', volatility: 'very-high', tier: 'pro' },
+  { symbol: 'STRM', name: 'StreamFlix', sector: 'Entertainment', class: 'stock', volatility: 'medium', tier: 'starter' },
+  { symbol: 'CYPH', name: 'CypherSec', sector: 'Cybersecurity', class: 'stock', volatility: 'high', tier: 'pro' },
   
   // Financial & Energy
-  { symbol: 'GLBL', name: 'GlobalBank', sector: 'Banking', class: 'stock', volatility: 'low', tier: 'free' },
-  { symbol: 'FNXT', name: 'FinNext', sector: 'Fintech', class: 'stock', volatility: 'medium', tier: 'gold' },
-  { symbol: 'SOLX', name: 'SolarMax', sector: 'Clean Energy', class: 'stock', volatility: 'high', tier: 'gold' },
-  { symbol: 'OILX', name: 'OilCorp', sector: 'Energy', class: 'stock', volatility: 'medium', tier: 'free' },
+  { symbol: 'GLBL', name: 'GlobalBank', sector: 'Banking', class: 'stock', volatility: 'low', tier: 'starter' },
+  { symbol: 'FNXT', name: 'FinNext', sector: 'Fintech', class: 'stock', volatility: 'medium', tier: 'pro' },
+  { symbol: 'SOLX', name: 'SolarMax', sector: 'Clean Energy', class: 'stock', volatility: 'high', tier: 'pro' },
+  { symbol: 'OILX', name: 'OilCorp', sector: 'Energy', class: 'stock', volatility: 'medium', tier: 'starter' },
   
   // Consumer & Healthcare
-  { symbol: 'BITE', name: 'BiteFood', sector: 'Food Delivery', class: 'stock', volatility: 'high', tier: 'gold' },
-  { symbol: 'HLTH', name: 'HealthPlus', sector: 'Healthcare', class: 'stock', volatility: 'low', tier: 'free' },
-  { symbol: 'GENO', name: 'GenoBio', sector: 'Biotech', class: 'stock', volatility: 'very-high', tier: 'gold' },
+  { symbol: 'BITE', name: 'BiteFood', sector: 'Food Delivery', class: 'stock', volatility: 'high', tier: 'pro' },
+  { symbol: 'HLTH', name: 'HealthPlus', sector: 'Healthcare', class: 'stock', volatility: 'low', tier: 'starter' },
+  { symbol: 'GENO', name: 'GenoBio', sector: 'Biotech', class: 'stock', volatility: 'very-high', tier: 'pro' },
   
   // Crypto
   { symbol: 'BTN', name: 'Bitcoin', sector: 'Store of Value', class: 'crypto', volatility: 'very-high', tier: 'free' },
-  { symbol: 'ETHA', name: 'Ethereum', sector: 'Smart Contracts', class: 'crypto', volatility: 'very-high', tier: 'free' },
-  { symbol: 'SOLR', name: 'Solana', sector: 'Fast L1 Blockchain', class: 'crypto', volatility: 'very-high', tier: 'gold' },
-  { symbol: 'ADA', name: 'Cardano', sector: 'Proof of Stake', class: 'crypto', volatility: 'very-high', tier: 'gold' },
-  { symbol: 'MATIC', name: 'Polygon', sector: 'L2 Scaling', class: 'crypto', volatility: 'very-high', tier: 'gold' },
+  { symbol: 'ETHA', name: 'Ethereum', sector: 'Smart Contracts', class: 'crypto', volatility: 'very-high', tier: 'starter' },
+  { symbol: 'SOLR', name: 'Solana', sector: 'Fast L1 Blockchain', class: 'crypto', volatility: 'very-high', tier: 'pro' },
+  { symbol: 'ADA', name: 'Cardano', sector: 'Proof of Stake', class: 'crypto', volatility: 'very-high', tier: 'pro' },
+  { symbol: 'MATIC', name: 'Polygon', sector: 'L2 Scaling', class: 'crypto', volatility: 'very-high', tier: 'pro' },
   
   // Indices
-  { symbol: 'TOP500', name: 'S&P 500', sector: 'Large Cap Index', class: 'index', volatility: 'low', tier: 'free' },
-  { symbol: 'TCH100', name: 'NASDAQ 100', sector: 'Tech Index', class: 'index', volatility: 'medium', tier: 'gold' },
+  { symbol: 'TOP500', name: 'S&P 500', sector: 'Large Cap Index', class: 'index', volatility: 'low', tier: 'starter' },
+  { symbol: 'TCH100', name: 'NASDAQ 100', sector: 'Tech Index', class: 'index', volatility: 'medium', tier: 'pro' },
 ];
 
 export default function MarketPage() {

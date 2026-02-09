@@ -8,13 +8,21 @@ import {
 import { AuthModal } from "@/components/AuthModal";
 import { ASSETS } from "@/lib/assets";
 import { SiteFooter } from "@/components/SiteFooter";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Landing() {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const { user, isAuthenticated } = useAuth();
   const scrollRefs = {
     markets: useRef<HTMLDivElement>(null),
     lessons: useRef<HTMLDivElement>(null),
   };
+
+  const avatarLetter = (() => {
+    const fromFirst = user?.firstName?.trim()?.[0];
+    const fromEmail = user?.email?.trim()?.[0];
+    return (fromFirst || fromEmail || "U").toUpperCase();
+  })();
 
   const scroll = (ref: React.RefObject<HTMLDivElement>, direction: 'left' | 'right') => {
     if (ref.current) {
@@ -41,17 +49,38 @@ export default function Landing() {
               <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition">Pricing</a>
             </div>
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setShowAuthModal(true)}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
-              >
-                Log In
-              </button>
-              <Link href="/market">
-                <button className="bg-primary hover:bg-primary/90 text-white px-4 sm:px-5 py-2 rounded-full font-medium text-sm transition-all shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5">
-                  Get Started Free
-                </button>
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link href="/dashboard">
+                    <button
+                      className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-secondary/40 text-sm font-semibold"
+                      aria-label="User profile"
+                      title={user?.email || "User"}
+                    >
+                      {avatarLetter}
+                    </button>
+                  </Link>
+                  <Link href="/dashboard">
+                    <button className="bg-primary hover:bg-primary/90 text-white px-4 sm:px-5 py-2 rounded-full font-medium text-sm transition-all shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5">
+                      Dashboard
+                    </button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => setShowAuthModal(true)}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
+                  >
+                    Log In
+                  </button>
+                  <Link href="/market">
+                    <button className="bg-primary hover:bg-primary/90 text-white px-4 sm:px-5 py-2 rounded-full font-medium text-sm transition-all shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5">
+                      Get Started Free
+                    </button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ export type User = {
   email?: string | null;
   firstName?: string | null;
   lastName?: string | null;
+  username?: string | null;
   profileImageUrl?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;

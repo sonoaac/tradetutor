@@ -27,8 +27,8 @@ const LEVEL_CONFIG = {
 
 const MOCK_LESSONS: Lesson[] = [
   // Beginner Level
-  { id: '1', title: 'Trading Basics 101', description: 'Learn the fundamentals of stock trading', level: 'beginner', points: 50, duration: '10 min', questions: 5, completed: true, locked: false, score: 50 },
-  { id: '2', title: 'Understanding Market Orders', description: 'Master different order types', level: 'beginner', points: 50, duration: '12 min', questions: 5, completed: true, locked: false, score: 45 },
+  { id: '1', title: 'Trading Basics 101', description: 'Learn the fundamentals of stock trading', level: 'beginner', points: 50, duration: '10 min', questions: 5, completed: false, locked: false },
+  { id: '2', title: 'Understanding Market Orders', description: 'Master different order types', level: 'beginner', points: 50, duration: '12 min', questions: 5, completed: false, locked: false },
   { id: '3', title: 'Reading Stock Charts', description: 'Interpret candlesticks and trends', level: 'beginner', points: 60, duration: '15 min', questions: 6, completed: false, locked: false },
   
   // Insider Level
@@ -66,7 +66,7 @@ export default function LessonsPage() {
   const [, navigate] = useLocation();
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
   
-  const totalPoints = 145; // User's current points (based on completed lessons)
+  const totalPoints = 0;
   const totalPossible = MOCK_LESSONS.reduce((sum, lesson) => sum + lesson.points, 0);
   const completedCount = MOCK_LESSONS.filter(l => l.completed).length;
 

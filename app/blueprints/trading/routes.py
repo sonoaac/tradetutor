@@ -4,7 +4,10 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.portfolio import Portfolio
 from app.models.trade import Trade
-from app.services.entitlements import get_starting_simcash
+from app.services.entitlements import (
+    get_starting_simcash,
+    get_user_entitlements,
+)
 from datetime import datetime
 from decimal import Decimal
 
@@ -19,8 +22,15 @@ _TIER_RANK = {
 }
 
 
+def _effective_tier() -> str:
+    try:
+        return get_user_entitlements(current_user).get('tier', 'free')
+    except Exception:
+        return getattr(current_user, 'tier', 'free') or 'free'
+
+
 def _has_min_tier(min_tier: str) -> bool:
-    current = getattr(current_user, 'tier', 'free') or 'free'
+    current = _effective_tier()
     return _TIER_RANK.get(current, 0) >= _TIER_RANK.get(min_tier, 0)
 
 
@@ -30,7 +40,45 @@ def _require_min_tier(min_tier: str, message: str):
     return jsonify({
         'message': message,
         'requiredTier': min_tier,
-        'currentTier': getattr(current_user, 'tier', 'free') or 'free'
+        'currentTier': _effective_tier(),
+    }), 403
+
+
+def _require_asset_access(symbol: str):
+    entitlements = get_user_entitlements(current_user)
+    allowed = entitlements.get('assets_allowed', [])
+    if allowed == 'all':
+        return None
+
+    if isinstance(allowed, list) and symbol in allowed:
+        return None
+
+    # For now, anything not in Starter's list requires Pro.
+    required_tier = 'starter' if entitlements.get('tier', 'free') == 'free' else 'pro'
+    return jsonify({
+        'message': 'This asset is locked for your plan. Upgrade to unlock more markets.',
+        'requiredTier': required_tier,
+        'currentTier': entitlements.get('tier', 'free'),
+        'allowedAssets': allowed,
+    }), 403
+
+
+def _require_trade_limit():
+    entitlements = get_user_entitlements(current_user)
+    max_trades = entitlements.get('max_trades')
+    if max_trades is None:
+        return None
+
+    # max_trades is total trades ever for the account
+    current_count = Trade.query.filter_by(user_id=current_user.id).count()
+    if current_count < int(max_trades):
+        return None
+
+    return jsonify({
+        'message': 'You have reached your trade limit for Learn Mode. Upgrade to Starter for unlimited practice trades.',
+        'requiredTier': 'starter',
+        'currentTier': entitlements.get('tier', 'free'),
+        'maxTrades': max_trades,
     }), 403
 
 
@@ -41,7 +89,7 @@ def _tier_starting_balance_decimal() -> Decimal:
 
 
 def _get_or_create_portfolio() -> Portfolio:
-    """Get the user's portfolio, creating it if missing (Starter+ only)."""
+    """Get the user's portfolio, creating it if missing."""
     portfolio = Portfolio.query.filter_by(user_id=current_user.id).first()
     if portfolio:
         return portfolio
@@ -64,10 +112,6 @@ def _get_or_create_portfolio() -> Portfolio:
 @login_required
 def get_wallet():
     """Get user's wallet/portfolio"""
-    denied = _require_min_tier('starter', 'Your portfolio unlocks when you start trading. Upgrade to Starter to track P&L, positions, and performance stats.')
-    if denied:
-        return denied
-
     portfolio = _get_or_create_portfolio()
     
     return jsonify(portfolio.to_dict()), 200
@@ -77,10 +121,6 @@ def get_wallet():
 @login_required
 def onboard_portfolio():
     """Create portfolio during onboarding"""
-    denied = _require_min_tier('starter', 'Trading is locked in Learn Mode. Upgrade to Starter to place trades and unlock your portfolio.')
-    if denied:
-        return denied
-
     data = request.get_json()
     
     # Check if portfolio already exists
@@ -105,10 +145,6 @@ def onboard_portfolio():
 @login_required
 def reset_portfolio():
     """Reset portfolio balance to tier-based starting SimCash"""
-    denied = _require_min_tier('starter', 'Portfolio tools are locked in Learn Mode. Upgrade to Starter to reset and track your portfolio.')
-    if denied:
-        return denied
-
     portfolio = _get_or_create_portfolio()
     portfolio.balance = _tier_starting_balance_decimal()
     db.session.commit()
@@ -123,10 +159,6 @@ def reset_portfolio():
 @login_required
 def get_trades():
     """Get user's trades"""
-    denied = _require_min_tier('starter', 'Trading history unlocks when you start trading. Upgrade to Starter to view trades and positions.')
-    if denied:
-        return denied
-
     # Ensure the portfolio exists so Starter+ users don't get stuck on a missing wallet.
     _get_or_create_portfolio()
     trades = Trade.query.filter_by(user_id=current_user.id).order_by(Trade.created_at.desc()).all()
@@ -137,12 +169,19 @@ def get_trades():
 @login_required
 def create_trade():
     """Place a new trade"""
-    denied = _require_min_tier('starter', 'Trading is locked in Learn Mode. Upgrade to Starter to place trades, track performance, and practice safely.')
+    data = request.get_json()
+    
+    # Validate symbol access + trade limits by tier
+    denied = _require_trade_limit()
     if denied:
         return denied
 
-    data = request.get_json()
-    
+    symbol = data.get('symbol')
+    if symbol:
+        denied = _require_asset_access(symbol)
+        if denied:
+            return denied
+
     # Get portfolio
     portfolio = _get_or_create_portfolio()
     
@@ -213,10 +252,6 @@ def create_trade():
 @login_required
 def close_trade(trade_id):
     """Close an open trade"""
-    denied = _require_min_tier('starter', 'Trading is locked in Learn Mode. Upgrade to Starter to manage and close positions.')
-    if denied:
-        return denied
-
     trade = Trade.query.get_or_404(trade_id)
     
     # Verify ownership
