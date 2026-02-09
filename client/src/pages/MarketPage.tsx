@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { SimpleTradingChart } from '@/components/SimpleTradingChart';
+import { useSimTicker } from '@/hooks/use-sim-ticker';
 import { Search, TrendingUp, TrendingDown, BarChart3, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 interface Asset {
@@ -16,6 +17,7 @@ interface Quote {
   price: number;
   bid: number;
   ask: number;
+  basePrice?: number;
   change?: number;
   changePercent?: number;
 }
@@ -54,12 +56,14 @@ const FALLBACK_ASSETS: Asset[] = [
 
 export default function MarketPage() {
   const [, navigate] = useLocation();
+  const { tickId, simNowMs } = useSimTicker();
   const [allAssets, setAllAssets] = useState<Asset[]>(FALLBACK_ASSETS);
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSymbol, setSelectedSymbol] = useState('BTN');
   const [activeTab, setActiveTab] = useState<'all' | 'stocks' | 'crypto' | 'forex' | 'indices'>('all');
   const [mobileTab, setMobileTab] = useState<'chart' | 'assets' | 'overview'>('chart');
+  const lastAppliedTickRef = useRef<number | null>(null);
 
   const filteredAssets = useMemo(() => {
     const classMap = { all: "all", stocks: "stock", crypto: "crypto", forex: "forex", indices: "index" };
@@ -88,6 +92,7 @@ export default function MarketPage() {
         price: basePrice, 
         bid: basePrice * 0.9995, 
         ask: basePrice * 1.0005, 
+        basePrice,
         change, 
         changePercent: (change / basePrice) * 100 
       };
@@ -95,45 +100,53 @@ export default function MarketPage() {
     setQuotes(initialPrices);
   }, []);
 
-  // Live price updates - realistic simulation
+  // Live price updates - synchronized 7s simulation ticker
   useEffect(() => {
-    const interval = setInterval(() => {
-      setQuotes(prev => {
-        const updated = { ...prev };
-        
-        // Update prices for visible assets
-        filteredAssets.slice(0, 30).forEach(asset => {
-          if (updated[asset.symbol]) {
-            const current = updated[asset.symbol];
-            const volatilityMap: Record<string, number> = {
-              'low': 0.0002,
-              'medium': 0.0005,
-              'high': 0.001,
-              'very-high': 0.002
-            };
-            const volatility = volatilityMap[asset.volatility] || 0.0005;
-            
-            // Random walk with slight upward drift
-            const priceChange = (Math.random() - 0.48) * current.price * volatility;
-            const newPrice = Math.max(current.price + priceChange, 0.01);
-            const newChange = newPrice - (current.price - (current.change || 0));
-            
-            updated[asset.symbol] = {
-              price: newPrice,
-              bid: newPrice * 0.9995,
-              ask: newPrice * 1.0005,
-              change: newChange,
-              changePercent: (newChange / (newPrice - newChange)) * 100
-            };
-          }
-        });
-        
-        return updated;
-      });
-    }, 1000); // Update every second
+    if (lastAppliedTickRef.current === tickId) return;
+    if (lastAppliedTickRef.current == null) {
+      lastAppliedTickRef.current = tickId;
+      return;
+    }
+    lastAppliedTickRef.current = tickId;
 
-    return () => clearInterval(interval);
-  }, [filteredAssets]);
+    setQuotes(prev => {
+      const updated = { ...prev };
+
+      const MIN_MOVE = 0.01;
+      const maxMoveByVolatility: Record<string, number> = {
+        'low': 0.5,
+        'medium': 1,
+        'high': 2,
+        'very-high': 3,
+      };
+
+      // Update prices for visible assets
+      filteredAssets.slice(0, 30).forEach(asset => {
+        const current = updated[asset.symbol];
+        if (!current) return;
+
+        const maxMove = Math.max(MIN_MOVE, Math.min(3, maxMoveByVolatility[asset.volatility] ?? 1));
+        const absDelta = MIN_MOVE + Math.random() * (maxMove - MIN_MOVE);
+        const direction = Math.random() > 0.5 ? 1 : -1;
+
+        const newPrice = Math.max(current.price + direction * absDelta, 0.01);
+        const basePrice = current.basePrice ?? current.price;
+        const change = newPrice - basePrice;
+
+        updated[asset.symbol] = {
+          ...current,
+          price: newPrice,
+          bid: newPrice * 0.9995,
+          ask: newPrice * 1.0005,
+          basePrice,
+          change,
+          changePercent: (change / basePrice) * 100,
+        };
+      });
+
+      return updated;
+    });
+  }, [tickId, filteredAssets]);
 
   const selectedAsset = allAssets.find(a => a.symbol === selectedSymbol);
   const selectedQuote = quotes[selectedSymbol];
@@ -309,6 +322,7 @@ export default function MarketPage() {
                 <SimpleTradingChart
                   symbol={selectedSymbol}
                   currentPrice={selectedQuote?.price || 100}
+                  simNowMs={simNowMs}
                 />
               </div>
 

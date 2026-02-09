@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,20 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthModalProps) {
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const nextPath = (() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get('next');
+      if (!next) return null;
+      if (!next.startsWith('/')) return null;
+      if (next.startsWith('/api/')) return null;
+      return next;
+    } catch {
+      return null;
+    }
+  })();
   const [mode, setMode] = useState<'login' | 'register'>(defaultMode);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -61,8 +75,8 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthMod
       // Close modal and navigate
       onClose();
       setTimeout(() => {
-        navigate('/dashboard');
-        window.location.reload(); // Refresh to update auth state
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        navigate(nextPath || '/dashboard');
       }, 300);
 
     } catch (error: any) {

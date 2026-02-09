@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,20 @@ import { apiUrl } from '@/lib/api';
 
 export default function Auth() {
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const nextPath = (() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get('next');
+      if (!next) return null;
+      if (!next.startsWith('/')) return null;
+      if (next.startsWith('/api/')) return null;
+      return next;
+    } catch {
+      return null;
+    }
+  })();
   const [mode, setMode] = useState<'login' | 'register'>('register');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -52,7 +66,8 @@ export default function Auth() {
 
       // Small delay for UX
       setTimeout(() => {
-        navigate('/dashboard');
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        navigate(nextPath || '/dashboard');
       }, 500);
 
     } catch (error: any) {

@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'wouter';
 import { SimpleTradingChart } from '@/components/SimpleTradingChart';
 import { DollarSign, TrendingUp, TrendingDown, Activity, Wallet, ArrowUpRight, ArrowDownRight, X } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { useSimTicker } from '@/hooks/use-sim-ticker';
 
 interface Position {
   id: string;
@@ -35,6 +38,8 @@ const MOCK_ORDERS: Order[] = [
 ];
 
 export default function SimulatorPage() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const { tickId, simNowMs } = useSimTicker();
   const [positions, setPositions] = useState<Position[]>(MOCK_POSITIONS);
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [selectedSymbol, setSelectedSymbol] = useState('SMBY');
@@ -55,6 +60,7 @@ export default function SimulatorPage() {
   });
 
   const [balance, setBalance] = useState(50000);
+  const lastAppliedTickRef = useRef<number | null>(null);
   
   // Calculate real-time portfolio values
   const totalPositionValue = positions.reduce((sum, pos) => {
@@ -77,25 +83,37 @@ export default function SimulatorPage() {
 
   const currentPrice = currentPrices[selectedSymbol] || 100;
 
-  // Live price simulation
+  // Live price simulation (synchronized 7s ticker)
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentPrices(prev => {
-        const updated = { ...prev };
-        Object.keys(updated).forEach(symbol => {
-          const volatility = symbol.includes('BT') || symbol.includes('ETH') || symbol.includes('SOL') ? 0.001 : 0.0003;
-          const change = (Math.random() - 0.48) * updated[symbol] * volatility;
-          updated[symbol] = Math.max(updated[symbol] + change, 0.01);
-        });
-        return updated;
-      });
-    }, 1000);
+    if (!isAuthenticated) return;
+    if (lastAppliedTickRef.current === tickId) return;
+    if (lastAppliedTickRef.current == null) {
+      lastAppliedTickRef.current = tickId;
+      return;
+    }
+    lastAppliedTickRef.current = tickId;
 
-    return () => clearInterval(interval);
-  }, []);
+    setCurrentPrices(prev => {
+      const updated = { ...prev };
+      const MIN_MOVE = 0.01;
+
+      Object.keys(updated).forEach(symbol => {
+        const isCrypto = symbol.includes('BT') || symbol.includes('ETH') || symbol.includes('SOL') || symbol === 'BTN';
+        const maxMove = isCrypto ? 3 : 1.5;
+        const clampedMax = Math.max(MIN_MOVE, Math.min(3, maxMove));
+        const absDelta = MIN_MOVE + Math.random() * (clampedMax - MIN_MOVE);
+        const direction = Math.random() > 0.5 ? 1 : -1;
+
+        updated[symbol] = Math.max(updated[symbol] + direction * absDelta, 0.01);
+      });
+
+      return updated;
+    });
+  }, [tickId, isAuthenticated]);
 
   // Update position P&L in real-time
   useEffect(() => {
+    if (!isAuthenticated) return;
     setPositions(prev => prev.map(pos => {
       const currentPrice = currentPrices[pos.symbol] || pos.currentPrice;
       const profitLoss = (currentPrice - pos.entryPrice) * pos.quantity * (pos.type === 'short' ? -1 : 1);
@@ -108,7 +126,7 @@ export default function SimulatorPage() {
         profitLossPercent
       };
     }));
-  }, [currentPrices]);
+  }, [currentPrices, isAuthenticated]);
 
   const handlePlaceOrder = () => {
     setShowConfirmation(true);
@@ -194,7 +212,34 @@ export default function SimulatorPage() {
   };
 
   return (
-    <div className="space-y-6">
+    !isAuthenticated ? (
+      <div className="flex items-center justify-center py-12">
+        <div className="max-w-xl w-full bg-card border border-border rounded-2xl p-6 text-center">
+          <h1 className="text-2xl font-bold font-display mb-2">Simulator</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            You need an account to place simulated trades and track performance.
+          </p>
+
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Checking your session…</p>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/auth">
+                <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium">
+                  Log in / Create account
+                </a>
+              </Link>
+              <Link href="/pricing">
+                <a className="inline-flex items-center justify-center rounded-md border border-border bg-background h-11 px-6 text-sm font-medium">
+                  View plans
+                </a>
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    ) : (
+      <div className="space-y-6">
         {/* Portfolio Stats Bar */}
         <div className="bg-gradient-to-r from-gray-800 to-gray-900 border-b-2 border-gray-700 px-6 py-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -390,6 +435,7 @@ export default function SimulatorPage() {
                 <SimpleTradingChart
                   symbol={selectedSymbol}
                   currentPrice={currentPrice}
+                  simNowMs={simNowMs}
                 />
               </div>
             </div>
@@ -762,6 +808,7 @@ export default function SimulatorPage() {
               <SimpleTradingChart
                 symbol={selectedSymbol}
                 currentPrice={currentPrice}
+                simNowMs={simNowMs}
               />
             </div>
           </div>
@@ -821,5 +868,6 @@ export default function SimulatorPage() {
         </div>
       )}
     </div>
+    )
   );
 }

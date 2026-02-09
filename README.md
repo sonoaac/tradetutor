@@ -1,52 +1,61 @@
-# TradeTutor - Trading Simulator & Education Platform
+# TradeTutor
 
-TradeTutor is a professional-grade trading simulator designed to teach users the fundamentals of Stocks, Crypto, and Forex trading through risk-free "SimCash" practice and AI-powered coaching.
+TradeTutor is a trading education + simulator app that teaches fundamentals (stocks/crypto/forex concepts) using guided lessons and simulated “SimCash” practice.
+
+## Tech Stack
+
+- Frontend: React + TypeScript + Vite, Tailwind, shadcn/ui
+- Backend: Flask + SQLAlchemy (API under `/api/*`)
+- Payments: Stripe (Checkout + Billing Portal + webhooks). PayPal code may exist, but the user-facing UI is provider-neutral.
 
 ## Project Structure
 
-- **`client/`**: React + Vite frontend using Shadcn UI and Tailwind CSS.
-- **`server/`**: Express backend handling trading logic, portfolio management, and AI integrations.
-  - `storage.ts`: Database interface for CRUD operations.
-  - `routes.ts`: API endpoints for trades, onboarding, and lessons.
-- **`shared/`**: Shared TypeScript types and Zod schemas.
-  - `schema.ts`: Drizzle ORM models for Portfolios, Trades, and Lessons.
-  - `routes.ts`: Type-safe API route definitions.
+- `client/`: Frontend
+- `app/`: Flask app (config, models, services, blueprints)
+- `api/`: Deployment entry (Vercel serverless adapter)
+- `migrations/`: Database migrations
 
-## Key Features
+## Local Development
 
-- **Local Authentication**: Secure login with email and password using Passport.js.
-- **SimCash Portfolio**: Start with a $10,000 simulated balance.
-- **Educational Tracks**: Structured lessons for different asset classes.
-- **AI Trade Coach**: Feedback on your trade execution and risk management using OpenAI.
-- **Risk Metrics**: Automatic calculation of Risk/Reward (R:R) ratios and dollar risk.
+Backend:
 
-## Current Setup
+```powershell
+./.venv/Scripts/Activate.ps1
+python run.py
+```
 
-- **Database**: PostgreSQL (Neon-backed) managed via Drizzle ORM.
-- **AI**: OpenAI integration configured for "Coach" feedback.
-- **Authentication**: Local email/password authentication with Passport.js.
-- **Onboarding**: Backend support for track and experience selection.
+Frontend (separate terminal):
 
-## Roadmap & Missing Features
+```powershell
+cd client
+npm install
+npm run dev
+```
 
-### 1. Frontend Onboarding
-Implement the UI for the `POST /api/portfolio/onboard` flow where users select their track and experience level.
+## Deployment Notes (Vercel)
 
-### 2. Trade Receipt Component
-Enhance the trading terminal with a detailed confirmation screen showing:
-- Fill Price
-- Stop Loss / Take Profit levels
-- Total Risk ($)
-- Calculated R:R Ratio
+SPA routing requires a fallback rewrite to `/index.html`, and API proxying requires a rewrite for `/api/*`.
 
-### 3. Real-time Simulation
-Mocked price movement on the frontend to simulate live trading PnL (unrealized profit/loss).
+This repo includes both:
 
-### 4. Advanced Coaching
-Expand the AI prompts to analyze specific mistakes like "chasing the market" or "tight stop losses" based on market volatility.
+- `vercel.json` (use when Vercel project root is the repo root)
+- `client/vercel.json` (use when Vercel project root is `client/`)
 
-## Getting Started
+## Payments (Stripe)
 
-1. Run `npm run dev` to start the development server.
-2. Visit the app and log in to begin the onboarding process.
-3. Use the **Simulator** tab to place your first SimTrade.
+Once you add Stripe keys, the backend supports:
+
+- Create Checkout Session
+- Billing Portal
+- Webhooks
+- PaymentIntent + SetupIntent endpoints (for future custom payment flows)
+
+See `PAYMENT_SETUP.md` for the exact env vars and endpoints.
+
+## Legal / Risk Disclosure
+
+TradeTutor is for educational use only.
+
+- Not financial, investment, tax, or legal advice.
+- Trading involves risk and can result in loss.
+- Any performance examples are hypothetical and for demonstration purposes.

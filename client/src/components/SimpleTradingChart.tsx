@@ -16,9 +16,10 @@ interface SimpleTradingChartProps {
   symbol: string;
   currentPrice: number;
   timeframe?: '1m' | '5m' | '15m' | '1h' | '4h' | '1d';
+  simNowMs?: number;
 }
 
-export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m' }: SimpleTradingChartProps) {
+export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m', simNowMs }: SimpleTradingChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [candleData, setCandleData] = useState<Candle[]>([]);
   const [selectedTimeframe, setSelectedTimeframe] = useState(timeframe);
@@ -44,7 +45,7 @@ export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m' }: S
   // Initialize candle data
   useEffect(() => {
     const candles: Candle[] = [];
-    const now = Date.now();
+    const now = simNowMs ?? Date.now();
     const pointCount = getPointCount(selectedPeriod);
     
     // Generate historical data with realistic OHLC movement
@@ -99,7 +100,7 @@ export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m' }: S
   useEffect(() => {
     if (candleData.length === 0) return;
 
-    const now = Date.now();
+    const now = simNowMs ?? Date.now();
     const lastCandle = candleData[candleData.length - 1];
     
     // Create a new candle with the current price
@@ -124,7 +125,7 @@ export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m' }: S
       
       return updated;
     });
-  }, [currentPrice]);
+  }, [currentPrice, simNowMs]);
 
   // Draw chart (supports both line and candlestick)
   useEffect(() => {
@@ -417,7 +418,7 @@ export function SimpleTradingChart({ symbol, currentPrice, timeframe = '1m' }: S
             <span>Live Market Data</span>
           </div>
           <div className="text-gray-500">
-            Last updated: {new Date().toLocaleTimeString()}
+            Last updated: {new Date(simNowMs ?? Date.now()).toLocaleTimeString()}
           </div>
         </div>
       </div>

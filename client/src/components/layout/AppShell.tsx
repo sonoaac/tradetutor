@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthModal } from "@/components/AuthModal";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
@@ -112,6 +113,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6 pb-24 md:pb-10">
           {children}
         </main>
+
+        <SiteFooter />
       </div>
 
       <MobileNav />

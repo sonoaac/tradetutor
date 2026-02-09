@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { AuthModal } from "@/components/AuthModal";
 import { ASSETS } from "@/lib/assets";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export default function Landing() {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -475,57 +476,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 bg-secondary/5 py-12 md:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8 md:mb-12">
-            <div>
-              <h3 className="font-bold mb-4">Product</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition">Trading Platform</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Simulator</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Lessons</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold mb-4">Learn</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition">Getting Started</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Guides</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Blog</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold mb-4">Community</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition">Discord</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Twitter</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Forum</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold mb-4">Legal</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition">Privacy</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Terms</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Contact</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
-                <TrendingUp className="text-white w-3 h-3" />
-              </div>
-              <span className="font-display font-bold text-muted-foreground">TradeTutor</span>
-            </div>
-            <p className="text-xs md:text-sm text-muted-foreground text-center md:text-right">
-              © {new Date().getFullYear()} TradeTutor. Built for traders, by traders.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
 
       {showAuthModal && <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />}
     </div>
