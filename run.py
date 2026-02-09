@@ -8,8 +8,10 @@ if __name__ == '__main__':
     load_dotenv()
     
     # Create app
-    app = create_app(config_name='development')
+    # Default to development for local use, but allow overriding via FLASK_ENV.
+    config_name = os.environ.get('FLASK_ENV', 'development')
+    app = create_app(config_name=config_name)
     
     # Run development server
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=(config_name == 'development'))
