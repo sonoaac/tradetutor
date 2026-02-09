@@ -1,5 +1,6 @@
 """Flask extensions initialization"""
 import os
+from flask import jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
@@ -21,6 +22,19 @@ bcrypt = Bcrypt()
 # Configure login manager
 login_manager.login_view = 'auth.login'
 login_manager.login_message = 'Please log in to access this page.'
+
+
+@login_manager.unauthorized_handler
+def _unauthorized():
+    """Return JSON 401 for API requests instead of redirecting.
+
+    This API is consumed by a SPA; redirects cause confusing 405/HTML responses
+    when the login route is POST-only.
+    """
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'Authentication required'}), 401
+
+    return jsonify({'error': 'Authentication required'}), 401
 
 
 @login_manager.user_loader
