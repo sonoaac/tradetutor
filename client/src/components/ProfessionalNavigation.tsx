@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { TrendingUp, Menu, X } from 'lucide-react';
 import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Link } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
+import { AuthModal } from '@/components/AuthModal';
 
 export function ProfessionalNavigation() {
   const [loginOpen, setLoginOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isAuthenticated, logout, isLoggingOut } = useAuth();
 
@@ -68,14 +69,24 @@ export function ProfessionalNavigation() {
                 </>
               ) : (
                 <>
-                  <Button variant="ghost" onClick={() => setLoginOpen(true)}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setAuthMode('login');
+                      setLoginOpen(true);
+                    }}
+                  >
                     Log In
                   </Button>
-                  <Link href="/auth">
-                    <Button className="rounded-full bg-blue-600 hover:bg-blue-700">
-                      Get Started Free
-                    </Button>
-                  </Link>
+                  <Button
+                    className="rounded-full bg-blue-600 hover:bg-blue-700"
+                    onClick={() => {
+                      setAuthMode('register');
+                      setLoginOpen(true);
+                    }}
+                  >
+                    Get Started Free
+                  </Button>
                 </>
               )}
             </div>
@@ -116,14 +127,24 @@ export function ProfessionalNavigation() {
                     </>
                   ) : (
                     <>
-                      <Button variant="outline" onClick={() => setLoginOpen(true)}>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setAuthMode('login');
+                          setLoginOpen(true);
+                        }}
+                      >
                         Log In
                       </Button>
-                      <Link href="/auth">
-                        <Button className="rounded-full bg-blue-600 hover:bg-blue-700 w-full">
-                          Get Started Free
-                        </Button>
-                      </Link>
+                      <Button
+                        className="rounded-full bg-blue-600 hover:bg-blue-700 w-full"
+                        onClick={() => {
+                          setAuthMode('register');
+                          setLoginOpen(true);
+                        }}
+                      >
+                        Get Started Free
+                      </Button>
                     </>
                   )}
                 </div>
@@ -133,25 +154,11 @@ export function ProfessionalNavigation() {
         </div>
       </nav>
 
-      {/* Login Modal */}
-      <Dialog open={!isAuthenticated && loginOpen} onOpenChange={setLoginOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Welcome Back</DialogTitle>
-            <DialogDescription>
-              Sign in to your TradeTutor account to continue your learning journey.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 py-4">
-            <Link href="/auth">
-              <Button className="w-full">Sign In</Button>
-            </Link>
-            <p className="text-center text-sm text-gray-600">
-              Don't have an account? <Link href="/auth" className="text-blue-600 hover:underline">Sign up</Link>
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AuthModal
+        isOpen={!isAuthenticated && loginOpen}
+        onClose={() => setLoginOpen(false)}
+        defaultMode={authMode}
+      />
     </>
   );
 }

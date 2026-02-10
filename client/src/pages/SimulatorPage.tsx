@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
+import { AuthModal } from "@/components/AuthModal";
 import { SimpleTradingChart } from '@/components/SimpleTradingChart';
 import { DollarSign, TrendingUp, TrendingDown, Activity, Wallet, ArrowUpRight, ArrowDownRight, X } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
@@ -214,7 +215,7 @@ export default function SimulatorPage() {
   };
 
   return (
-    !isAuthenticated ? (
+    !isAuthenticated ? ( 
       <div className="flex items-center justify-center py-12">
         <div className="max-w-xl w-full bg-card border border-border rounded-2xl p-6 text-center">
           <h1 className="text-2xl font-bold font-display mb-2">Simulator</h1>
@@ -226,11 +227,13 @@ export default function SimulatorPage() {
             <p className="text-sm text-muted-foreground">Checking your session…</p>
           ) : (
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/auth">
-                <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium">
-                  Log in / Create account
-                </a>
-              </Link>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium"
+                onClick={() => setShowAuthModal(true)}
+              >
+                Log in / Create account
+              </button>
               <Link href="/pricing">
                 <a className="inline-flex items-center justify-center rounded-md border border-border bg-background h-11 px-6 text-sm font-medium">
                   View plans
@@ -238,6 +241,12 @@ export default function SimulatorPage() {
               </Link>
             </div>
           )}
+
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            disableRedirectOnSuccess
+          />
         </div>
       </div>
     ) : !hasSimulatorAccess ? (

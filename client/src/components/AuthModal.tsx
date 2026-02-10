@@ -13,6 +13,8 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultMode?: 'login' | 'register';
+  disableRedirectOnSuccess?: boolean;
+  successRedirectTo?: string;
 }
 
 export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthModalProps) {

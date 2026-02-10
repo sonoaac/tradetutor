@@ -6,9 +6,12 @@ import { Wallet, TrendingUp, Activity, BarChart2, AlertCircle } from "lucide-rea
 import { Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { AuthModal } from "@/components/AuthModal";
+import { useState } from "react";
 
 export default function Dashboard() {
   const { user, isAuthenticated } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const { data: portfolio, isLoading: isPortfolioLoading, isError: isPortfolioError, error: portfolioError } = usePortfolio();
   const { data: trades, isLoading: isTradesLoading, isError: isTradesError, error: tradesError } = useTrades();
 
@@ -21,17 +24,26 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold font-display mb-2">Trading Dashboard</h1>
           <p className="text-muted-foreground mb-6">Log in to view your portfolio, trade history, and performance stats.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/auth">
-              <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium">
-                Log in
-              </a>
-            </Link>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium"
+              onClick={() => setShowAuthModal(true)}
+            >
+              Log in
+            </button>
             <Link href="/pricing">
               <a className="inline-flex items-center justify-center rounded-md border border-border bg-background h-11 px-6 text-sm font-medium">
                 View plans
               </a>
             </Link>
           </div>
+
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            defaultMode="login"
+            disableRedirectOnSuccess
+          />
         </div>
       </div>
     );

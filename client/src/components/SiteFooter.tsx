@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Link } from "wouter";
+import { AuthModal } from "@/components/AuthModal";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   return (
     <footer className="border-t border-border bg-background">
@@ -26,9 +29,13 @@ export function SiteFooter() {
               <Link href="/pricing">
                 <a className="text-muted-foreground hover:text-foreground">Plans</a>
               </Link>
-              <Link href="/auth">
-                <a className="text-muted-foreground hover:text-foreground">Log in / Create account</a>
-              </Link>
+              <button
+                type="button"
+                className="text-left text-muted-foreground hover:text-foreground"
+                onClick={() => setShowAuthModal(true)}
+              >
+                Log in / Create account
+              </button>
             </div>
           </div>
 
@@ -48,6 +55,8 @@ export function SiteFooter() {
           </p>
         </div>
       </div>
+
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </footer>
   );
 }

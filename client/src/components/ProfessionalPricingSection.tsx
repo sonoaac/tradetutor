@@ -1,7 +1,10 @@
 import { Check, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
+import { AuthModal } from '@/components/AuthModal';
 
 const pricingPlans = [
   {
@@ -59,8 +62,19 @@ const pricingPlans = [
 ];
 
 export function ProfessionalPricingSection() {
-  return (
-    <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+  const { isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handleGetStarted = () => {
+    if (isAuthenticated) {
+      navigate('/pricing');
+      return;
+    }
+    setShowAuthModal(true);
+  };
+
+  return (    <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4">Simple Pricing</h2>
@@ -105,18 +119,17 @@ export function ProfessionalPricingSection() {
                   </li>
                 ))}
               </ul>
-
-              <Link href="/auth">
-                <Button
-                  className={`w-full rounded-full ${
+              <Button
+                className={`w-full rounded-full ${
                     plan.popular
                       ? 'bg-blue-600 hover:bg-blue-700'
                       : 'bg-gray-900 hover:bg-gray-800'
                   }`}
-                >
-                  Get Started
-                </Button>
-              </Link>
+                
+                onClick={handleGetStarted}
+              >
+                Get Started
+              </Button>
             </div>
           ))}
         </div>
