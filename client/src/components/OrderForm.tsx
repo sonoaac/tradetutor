@@ -83,7 +83,11 @@ export function OrderForm({ symbol, currentPrice }: OrderFormProps) {
             stopLoss: data.stopLoss,
             takeProfit: data.takeProfit,
           });
-          setNewBalance(updatedPortfolio.data?.balance || portfolio?.balance || 0);
+          const nextBalanceRaw =
+            updatedPortfolio.data?.balance ?? portfolio?.balance ?? 0;
+          const nextBalance =
+            typeof nextBalanceRaw === "string" ? Number(nextBalanceRaw) : nextBalanceRaw;
+          setNewBalance(Number.isFinite(nextBalance) ? nextBalance : 0);
           setShowConfirmation(true);
           
           form.reset({ symbol, size: 1 });

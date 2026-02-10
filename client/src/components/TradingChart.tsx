@@ -65,6 +65,9 @@ export function TradingChart({ data, symbol, isLoading }: TradingChartProps) {
         type: "volume",
       },
       priceScaleId: "",
+    });
+
+    volumeSeries.priceScale().applyOptions({
       scaleMargins: {
         top: 0.8,
         bottom: 0,

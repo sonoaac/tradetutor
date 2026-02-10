@@ -9,6 +9,7 @@
     "build": "cd client && npm run build",
     "preview": "cd client && npm run preview",
     "client:install": "cd client && npm install",
+    "typecheck": "tsc -p tsconfig.json",
     "backend": "python run.py"
   },
   "dependencies": {
