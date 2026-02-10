@@ -1,7 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { ArrowLeft, CheckCircle, XCircle, Trophy, Star, Target, ChevronRight, BookOpen, Lightbulb, TrendingUp, AlertCircle } from 'lucide-react';
 import LESSONS_DATABASE from '@/data/lessonsData';
+
+function hashStringToSeed(value: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function mulberry32(seed: number) {
+  return function next() {
+    let t = (seed += 0x6D2B79F5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function shuffleIndices(length: number, rng: () => number): number[] {
+  const indices = Array.from({ length }, (_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  return indices;
+}
 
 interface Question {
   id: number;
@@ -29,14 +56,42 @@ export default function LessonDetailPage() {
   const [, params] = useRoute('/lessons/:id');
   const [, navigate] = useLocation();
   const lessonId = params?.id || '1';
-  
-  const lesson = LESSONS_DATABASE[lessonId] || LESSONS_DATABASE['1'];
+
+  const baseLesson = LESSONS_DATABASE[lessonId] || LESSONS_DATABASE['1'];
+  const lesson = useMemo(() => {
+    const seedBase = hashStringToSeed(String(lessonId));
+    const questions = (baseLesson.questions || []).map((q, idx) => {
+      const rng = mulberry32(seedBase ^ hashStringToSeed(`${q.id}:${idx}:${q.question}`));
+      const order = shuffleIndices(q.options.length, rng);
+      const correctAnswer = order.indexOf(q.correctAnswer);
+      const options = order.map((i) => q.options[i]);
+      return {
+        ...q,
+        options,
+        correctAnswer: correctAnswer < 0 ? q.correctAnswer : correctAnswer,
+      };
+    });
+
+    return {
+      ...baseLesson,
+      questions,
+      totalQuestions: baseLesson.totalQuestions || questions.length,
+    };
+  }, [baseLesson, lessonId]);
   
   const [currentStep, setCurrentStep] = useState<'intro' | 'quiz' | 'results'>('intro');
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [showExplanation, setShowExplanation] = useState(false);
   const [quizComplete, setQuizComplete] = useState(false);
+
+  useEffect(() => {
+    setCurrentStep('intro');
+    setCurrentQuestion(0);
+    setSelectedAnswers([]);
+    setShowExplanation(false);
+    setQuizComplete(false);
+  }, [lessonId]);
 
   const handleSelectAnswer = (answerIndex: number) => {
     const newAnswers = [...selectedAnswers];
