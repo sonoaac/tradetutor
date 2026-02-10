@@ -140,9 +140,9 @@ Create test accounts at: https://developer.paypal.com/dashboard/accounts
 | Test Case | PayPal Button | Card Fields | Expected Result |
 |-----------|---------------|-------------|-----------------|
 | Starter Monthly | ✅ | ✅ | $9.99 charged, tier=starter |
-| Starter Yearly | ✅ | ✅ | $99 charged, tier=starter |
+| Starter Yearly | ✅ | ✅ | $99.99 charged, tier=starter |
 | Pro Monthly | ✅ | ✅ | $19.99 charged, tier=pro, RTT enabled |
-| Pro Yearly | ✅ | ✅ | $199 charged, tier=pro, RTT enabled |
+| Pro Yearly | ✅ | ✅ | $179.99 charged, tier=pro, RTT enabled |
 | Cancel Payment | ✅ | ❌ | Return to pricing page |
 | Declined Card | ❌ | ✅ | Show error, allow retry |
 | 3DS Auth | ❌ | ✅ | Show 3DS popup, then complete |

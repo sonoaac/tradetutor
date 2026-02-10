@@ -159,7 +159,7 @@ export function RTTCoach({ symbol, side = 'buy', enabled, onToggle }: RTTCoachPr
             <div className="flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-yellow-900 leading-relaxed">
-                RTT Coach is a Pro feature ($19.99/mo or $199/year). Upgrade to unlock AI-powered coaching and point rewards.
+                RTT Coach is a Pro feature ($19.99/mo or $179.99/year). Upgrade to unlock AI-powered coaching and point rewards.
               </p>
             </div>
           </div>

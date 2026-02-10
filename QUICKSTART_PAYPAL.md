@@ -36,7 +36,7 @@ Go to https://www.paypal.com/billing/plans (or Dashboard > Billing Plans)
 - [ ] Create new plan
 - [ ] Name: "Starter Yearly"  
 - [ ] Billing cycle: Every 1 year
-- [ ] Price: $99.00 USD
+- [ ] Price: $99.99 USD
 - [ ] Click **Save**
 - [ ] Copy Plan ID
 
@@ -52,7 +52,7 @@ Go to https://www.paypal.com/billing/plans (or Dashboard > Billing Plans)
 - [ ] Create new plan
 - [ ] Name: "Pro Yearly"
 - [ ] Billing cycle: Every 1 year
-- [ ] Price: $199.00 USD
+- [ ] Price: $179.99 USD
 - [ ] Click **Save**
 - [ ] Copy Plan ID
 

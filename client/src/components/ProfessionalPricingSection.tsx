@@ -18,7 +18,7 @@ const pricingPlans = [
   },
   {
     name: 'Starter Yearly',
-    price: '$99',
+    price: '$99.99',
     period: '/year',
     savings: 'Save $20',
     features: [
@@ -44,9 +44,9 @@ const pricingPlans = [
   },
   {
     name: 'Pro Yearly',
-    price: '$199',
+    price: '$179.99',
     period: '/year',
-    savings: 'Save $40',
+    savings: 'Save $60',
     features: [
       'Unlimited trading',
       'All markets & assets',

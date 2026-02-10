@@ -455,7 +455,7 @@ export default function Landing() {
             />
             <PricingCard 
               name="Starter Yearly"
-              price="$99"
+              price="$99.99"
               period="/year"
               features={['Full simulator access', '10 lessons', 'Basic market data', 'Portfolio tracking', 'Mobile access']}
             />
@@ -468,7 +468,7 @@ export default function Landing() {
             />
             <PricingCard 
               name="Pro Yearly"
-              price="$199"
+              price="$179.99"
               period="/year"
               features={['Everything in Starter', 'Real-Time Tutor (RTT)', 'Advanced analysis', 'Priority support', 'Exclusive strategies']}
             />

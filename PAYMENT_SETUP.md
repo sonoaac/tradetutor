@@ -50,14 +50,14 @@ You need to create products in Stripe Dashboard for your subscription plans:
   ```
 
 **For Starter Plan (Yearly):**
-- Add another price: $99/year
-- Update the price ID in `payment_service.py`
+- Add another price: $99.99/year
+- Copy the yearly Price ID (starts with `price_`)
 
 **For Pro Plan:**
 - Create another product: "Pro Trader Plan"
 - Monthly: $19.99
-- Yearly: $199
-- Update both price IDs in `payment_service.py`
+- Yearly: $179.99
+- Copy both Price IDs (starts with `price_`)
 
 ### Option B: Using Stripe CLI
 
@@ -76,21 +76,23 @@ stripe products create --name="Pro Trader Plan" --description="For serious trade
 stripe prices create --product=prod_YYY --unit-amount=1999 --currency=usd --recurring[interval]=month
 
 # Create Pro Yearly
-stripe prices create --product=prod_YYY --unit-amount=19900 --currency=usd --recurring[interval]=year
+stripe prices create --product=prod_YYY --unit-amount=17999 --currency=usd --recurring[interval]=year
 ```
 
 ## Step 4: Update Price IDs
 
-Edit `app/services/payment_service.py` and update the `PRICE_IDS` dictionary:
+Set these environment variables (local `.env.flask` / `.env`, or hosting provider env vars):
 
-```python
-PRICE_IDS = {
-    'starter_monthly': 'price_XXX',  # Your actual price ID
-    'starter_yearly': 'price_YYY',
-    'pro_monthly': 'price_ZZZ',
-    'pro_yearly': 'price_AAA',
-}
+```env
+STRIPE_PRICE_STARTER_MONTHLY=price_...
+STRIPE_PRICE_STARTER_YEARLY=price_...
+STRIPE_PRICE_PRO_MONTHLY=price_...
+STRIPE_PRICE_PRO_YEARLY=price_...
 ```
+
+Notes:
+- These values must be **Stripe Price IDs** (they start with `price_`), not Product IDs.
+- The backend reads them from env vars via `app/config.py`.
 
 ## Step 5: Run Database Migrations
 

@@ -52,9 +52,9 @@ PAYPAL_PLAN_PRO_YEARLY=P-XXXXXXXXXXXXXXXXXXXX
 1. Go to PayPal Dashboard > Billing Plans
 2. Create 4 subscription plans:
    - **Starter Monthly**: $9.99/month
-   - **Starter Yearly**: $99/year
+   - **Starter Yearly**: $99.99/year
    - **Pro Monthly**: $19.99/month
-   - **Pro Yearly**: $199/year
+   - **Pro Yearly**: $179.99/year
 3. Copy each Plan ID (format: `P-XXXXXXXXXXXXXXXXXXXX`)
 4. Paste into `.env` file
 

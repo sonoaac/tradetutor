@@ -6,6 +6,8 @@ import { Check, Zap, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { apiUrl } from "@/lib/api";
+import { useAuth } from "@/hooks/use-auth";
+import { AuthModal } from "@/components/AuthModal";
 
 type PlanInterval = "month" | "year";
 
@@ -91,8 +93,10 @@ const plans: PricingPlan[] = [
 
 export default function PricingPage() {
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const [billingInterval, setBillingInterval] = useState<PlanInterval>("month");
   const [checkoutLoadingPlanId, setCheckoutLoadingPlanId] = useState<string | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const formatPrice = (plan: PricingPlan) => {
     const period = plan.interval === "month" ? "month" : "year";
@@ -129,6 +133,16 @@ export default function PricingPage() {
   );
 
   const handleCheckout = async (plan: PricingPlan) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to continue.",
+        variant: "destructive",
+      });
+      setShowAuthModal(true);
+      return;
+    }
+
     setCheckoutLoadingPlanId(plan.id);
 
     try {
@@ -150,7 +164,7 @@ export default function PricingPage() {
           description: "Please sign in to continue.",
           variant: "destructive",
         });
-        window.location.href = "/auth";
+        setShowAuthModal(true);
         return;
       }
 
@@ -318,6 +332,8 @@ export default function PricingPage() {
           </p>
         </div>
       </div>
+
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   );
 }
