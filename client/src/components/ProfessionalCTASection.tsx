@@ -1,8 +1,23 @@
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from './ui/button';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
+import { AuthModal } from '@/components/AuthModal';
 
 export function ProfessionalCTASection() {
+  const { isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handleCreateAccount = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+      return;
+    }
+    setShowAuthModal(true);
+  };
+
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Gradient Background */}
@@ -33,16 +48,17 @@ export function ProfessionalCTASection() {
               <ArrowRight className="ml-2 size-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
-          <Link href="/auth">
-            <Button
-              size="lg"
-              variant="outline"
-              className="rounded-full border-2 border-white text-white hover:bg-white/10"
-            >
-              Create Account
-            </Button>
-          </Link>
+          <Button
+            size="lg"
+            variant="outline"
+            className="rounded-full border-2 border-white text-white hover:bg-white/10"
+            onClick={handleCreateAccount}
+          >
+            Create Account
+          </Button>
         </div>
+
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
         <p className="text-white/80 mt-6 text-sm">
           No credit card required • Start trading in minutes

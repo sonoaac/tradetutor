@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Zap, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
 import { apiUrl } from "@/lib/api";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthModal } from "@/components/AuthModal";
@@ -93,7 +92,7 @@ const plans: PricingPlan[] = [
 
 export default function PricingPage() {
   const { toast } = useToast();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading, refetchUser, user } = useAuth();
   const [billingInterval, setBillingInterval] = useState<PlanInterval>("month");
   const [checkoutLoadingPlanId, setCheckoutLoadingPlanId] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -151,22 +150,19 @@ export default function PricingPage() {
   );
 
   const handleCheckout = async (plan: PricingPlan) => {
+    if (isAuthLoading) {
+      return;
+    }
+
     if (!isAuthenticated) {
-      toast({
-        title: "Sign in required",
-        description: "Please sign in to continue.",
-        variant: "destructive",
-      });
       setShowAuthModal(true);
       return;
     }
 
-    const fallbackUrl = getFallbackPaymentLink(plan);
-
     setCheckoutLoadingPlanId(plan.id);
 
-    try {
-      const response = await fetch(apiUrl("/api/payment/create-checkout-session"), {
+    const createCheckout = () =>
+      fetch(apiUrl("/api/payment/create-checkout-session"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -178,12 +174,28 @@ export default function PricingPage() {
         }),
       });
 
+    try {
+      let response = await createCheckout();
+
+      let hadUser = false;
+
       if (response.status === 401) {
-        toast({
-          title: "Sign in required",
-          description: "Please sign in to continue.",
-          variant: "destructive",
-        });
+        const refreshed = await refetchUser();
+        hadUser = !!refreshed.data;
+        if (hadUser) {
+          response = await createCheckout();
+        }
+      }
+
+      if (response.status === 401) {
+        if (hadUser) {
+          toast({
+            title: "Session not recognized",
+            description:
+              "You're signed in, but checkout couldn't verify your session. Try refreshing the page and retry.",
+            variant: "destructive",
+          });
+        }
         setShowAuthModal(true);
         return;
       }
@@ -210,7 +222,6 @@ export default function PricingPage() {
       setCheckoutLoadingPlanId(null);
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="container mx-auto px-4 py-16">
@@ -278,11 +289,13 @@ export default function PricingPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Link href="/auth">
-                <a className="w-full inline-flex items-center justify-center rounded-md border border-border bg-background min-h-10 px-8 text-sm font-medium hover:bg-secondary/40 transition-colors">
-                  Create free account
-                </a>
-              </Link>
+              <button
+                type="button"
+                className="w-full inline-flex items-center justify-center rounded-md border border-border bg-background min-h-10 px-8 text-sm font-medium hover:bg-secondary/40 transition-colors"
+                onClick={() => setShowAuthModal(true)}
+              >
+                Create free account
+              </button>
             </CardFooter>
           </Card>
 
@@ -332,7 +345,7 @@ export default function PricingPage() {
                   className="w-full"
                   size="lg"
                   onClick={() => handleCheckout(plan)}
-                  disabled={checkoutLoadingPlanId !== null}
+                  disabled={checkoutLoadingPlanId !== null || isAuthLoading}
                 >
                   {checkoutLoadingPlanId === plan.id ? "Redirecting..." : "Continue to checkout"}
                 </Button>
@@ -357,3 +370,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+

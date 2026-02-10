@@ -1,10 +1,25 @@
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { Activity, ArrowRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
+import { AuthModal } from '@/components/AuthModal';
 
 export function ProfessionalHeroSection() {
+  const { isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handleSignUp = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+      return;
+    }
+    setShowAuthModal(true);
+  };
+
   return (
     <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden bg-gradient-to-b from-blue-50 to-white">
       {/* Background Glows */}
@@ -43,12 +58,12 @@ export function ProfessionalHeroSection() {
                   <ArrowRight className="ml-2 size-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link href="/auth">
-                <Button size="lg" variant="outline" className="rounded-full">
-                  Sign Up Free
-                </Button>
-              </Link>
+              <Button size="lg" variant="outline" className="rounded-full" onClick={handleSignUp}>
+                Sign Up Free
+              </Button>
             </div>
+
+            <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
             <div className="flex items-center gap-8 mt-12 text-sm text-gray-600">
               <div className="flex items-center gap-2">
