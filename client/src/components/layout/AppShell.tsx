@@ -10,14 +10,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import { AuthModal } from "@/components/AuthModal";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
 import { SiteFooter } from "@/components/SiteFooter";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { user, isAuthenticated, logout, isLoggingOut } = useAuth();
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     document.documentElement.classList.contains("dark") ? "dark" : "light"
   );
@@ -41,7 +39,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground">
-      <Sidebar onRequestAuth={() => setShowAuthModal(true)} />
+      <Sidebar />
 
       <div className="md:pl-64">
         <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
@@ -116,15 +114,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </DropdownMenu>
                 </div>
               ) : (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => setShowAuthModal(true)}
-                  className="gap-2"
-                >
-                  <LogIn className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sign in</span>
-                </Button>
+                <Link href={`/auth?mode=login&next=${encodeURIComponent(location)}`}>
+                  <a className="inline-flex">
+                    <Button variant="default" size="sm" className="gap-2">
+                      <LogIn className="h-4 w-4" />
+                      <span className="hidden sm:inline">Sign in</span>
+                    </Button>
+                  </a>
+                </Link>
               )}
             </div>
           </div>
@@ -138,8 +135,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <MobileNav />
-
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   );
 }

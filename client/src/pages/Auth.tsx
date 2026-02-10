@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,17 @@ export default function Auth() {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const getModeFromSearch = () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const m = params.get('mode');
+      return m === 'login' ? 'login' : m === 'register' ? 'register' : null;
+    } catch {
+      return null;
+    }
+  };
+
   const nextPath = (() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -25,7 +36,8 @@ export default function Auth() {
       return null;
     }
   })();
-  const [mode, setMode] = useState<'login' | 'register'>('register');
+
+  const [mode, setMode] = useState<'login' | 'register'>(() => getModeFromSearch() || 'register');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -35,6 +47,12 @@ export default function Auth() {
     lastName: ''
   });
 
+  useEffect(() => {
+    const m = getModeFromSearch();
+    if (m) setMode(m);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -42,7 +60,7 @@ export default function Auth() {
 
     try {
       const endpoint = apiUrl(mode === 'login' ? '/api/auth/login' : '/api/auth/register');
-      const body = mode === 'login' 
+      const body = mode === 'login'
         ? { email: formData.email, password: formData.password }
         : formData;
 
@@ -60,7 +78,6 @@ export default function Auth() {
         return;
       }
 
-      // Update cached session immediately so the UI reflects logged-in state right away
       if (data?.user) {
         queryClient.setQueryData(["/api/auth/user"], data.user);
       } else {
@@ -69,12 +86,11 @@ export default function Auth() {
 
       toast({
         title: mode === 'login' ? 'Welcome back!' : 'Account created!',
-        description: mode === 'login' 
-          ? 'Redirecting to dashboard...' 
+        description: mode === 'login'
+          ? 'Redirecting to dashboard...'
           : 'Your account has been created successfully.',
       });
 
-      // Small delay for UX
       setTimeout(() => {
         navigate(nextPath || '/dashboard');
       }, 500);
@@ -104,8 +120,8 @@ export default function Auth() {
             {mode === 'login' ? 'Welcome Back' : 'Get Started Free'}
           </CardTitle>
           <CardDescription className="text-sm sm:text-base">
-            {mode === 'login' 
-              ? 'Enter your credentials to continue' 
+            {mode === 'login'
+              ? 'Enter your credentials to continue'
               : 'Create your account and start trading'}
           </CardDescription>
         </CardHeader>
@@ -126,7 +142,7 @@ export default function Auth() {
                       id="firstName"
                       placeholder="John"
                       value={formData.firstName}
-                      onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                       className="bg-background text-sm sm:text-base p-2 sm:p-2.5"
                     />
                   </div>
@@ -136,7 +152,7 @@ export default function Auth() {
                       id="lastName"
                       placeholder="Doe"
                       value={formData.lastName}
-                      onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                       className="bg-background text-sm sm:text-base p-2 sm:p-2.5"
                     />
                   </div>
@@ -151,7 +167,7 @@ export default function Auth() {
                 type="email"
                 placeholder="you@example.com"
                 value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
                 className="bg-background text-sm sm:text-base p-2 sm:p-2.5"
               />
@@ -162,9 +178,9 @@ export default function Auth() {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder=""
                 value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
                 className="bg-background text-sm sm:text-base p-2 sm:p-2.5"
               />

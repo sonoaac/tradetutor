@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   LayoutDashboard,
   CandlestickChart,
@@ -12,13 +12,11 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AuthModal } from "@/components/AuthModal";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 
-export function Sidebar({ onRequestAuth }: { onRequestAuth?: () => void }) {
+export function Sidebar() {
   const [location] = useLocation();
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const { isAuthenticated, logout, isLoggingOut } = useAuth();
 
   const navItems = useMemo(
@@ -85,17 +83,14 @@ export function Sidebar({ onRequestAuth }: { onRequestAuth?: () => void }) {
             Log out
           </Button>
         ) : (
-          <Button
-            className="w-full justify-start gap-2"
-            onClick={() => (onRequestAuth ? onRequestAuth() : setShowAuthModal(true))}
-          >
-            <LogIn className="h-4 w-4" />
-            Sign in
+          <Button className="w-full justify-start gap-2" asChild>
+            <a href={`/auth?mode=login&next=${encodeURIComponent(location)}`}>
+              <LogIn className="h-4 w-4" />
+              Sign in
+            </a>
           </Button>
         )}
       </div>
-
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </aside>
   );
 }

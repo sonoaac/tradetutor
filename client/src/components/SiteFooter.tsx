@@ -1,10 +1,7 @@
-import { useState } from "react";
-import { Link } from "wouter";
-import { AuthModal } from "@/components/AuthModal";
+﻿import { Link } from "wouter";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
-  const [showAuthModal, setShowAuthModal] = useState(false);
 
   return (
     <footer className="border-t border-border bg-background">
@@ -29,13 +26,9 @@ export function SiteFooter() {
               <Link href="/pricing">
                 <a className="text-muted-foreground hover:text-foreground">Plans</a>
               </Link>
-              <button
-                type="button"
-                className="text-left text-muted-foreground hover:text-foreground"
-                onClick={() => setShowAuthModal(true)}
-              >
-                Log in / Create account
-              </button>
+              <Link href="/auth?mode=login&next=%2Fdashboard">
+                <a className="text-muted-foreground hover:text-foreground">Log in / Create account</a>
+              </Link>
             </div>
           </div>
 
@@ -49,14 +42,10 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">© {year} TradeTutor. All rights reserved.</p>
-          <p className="text-xs text-muted-foreground">
-            Simulated trading uses virtual currency (“SimCash”).
-          </p>
+          <p className="text-xs text-muted-foreground"> {year} TradeTutor. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground">Simulated trading uses virtual currency (SimCash).</p>
         </div>
       </div>
-
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </footer>
   );
 }
