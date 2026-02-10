@@ -177,24 +177,43 @@ def cancel_paypal_subscription():
 def stripe_webhook():
     """Handle Stripe webhook events"""
     payload = request.get_data()
-    sig_header = request.headers.get('Stripe-Signature')
+    sig_header = request.headers.get('Stripe-Signature') or request.headers.get('stripe-signature')
     
     try:
         event = payment_service.verify_webhook(payload, sig_header)
+
+        # Basic idempotency: record the event id and skip already-processed events.
+        user_id = None
+        try:
+            if event['type'] == 'checkout.session.completed':
+                user_id = (event['data']['object'].get('metadata') or {}).get('user_id')
+        except Exception:
+            user_id = None
+
+        billing_event, should_process = payment_service.upsert_stripe_billing_event(event, user_id=user_id)
+        if not should_process:
+            return jsonify({'success': True}), 200
         
-        # Handle the event
-        if event['type'] == 'checkout.session.completed':
-            payment_service.handle_checkout_completed(event['data']['object'])
-        elif event['type'] == 'customer.subscription.updated':
-            payment_service.handle_subscription_updated(event['data']['object'])
-        elif event['type'] == 'customer.subscription.deleted':
-            payment_service.handle_subscription_deleted(event['data']['object'])
-        elif event['type'] == 'invoice.payment_succeeded':
-            payment_service.handle_payment_succeeded(event['data']['object'])
-        elif event['type'] == 'invoice.payment_failed':
-            payment_service.handle_payment_failed(event['data']['object'])
-        
-        return jsonify({'success': True}), 200
+        try:
+            # Handle the event
+            if event['type'] == 'checkout.session.completed':
+                payment_service.handle_checkout_completed(event['data']['object'])
+            elif event['type'] == 'customer.subscription.updated':
+                payment_service.handle_subscription_updated(event['data']['object'])
+            elif event['type'] == 'customer.subscription.deleted':
+                payment_service.handle_subscription_deleted(event['data']['object'])
+            elif event['type'] == 'invoice.payment_succeeded':
+                payment_service.handle_payment_succeeded(event['data']['object'])
+            elif event['type'] == 'invoice.payment_failed':
+                payment_service.handle_payment_failed(event['data']['object'])
+            else:
+                current_app.logger.info(f"Unhandled Stripe event type: {event['type']}")
+
+            payment_service.mark_billing_event_processed(billing_event)
+            return jsonify({'success': True}), 200
+        except Exception as e:
+            payment_service.mark_billing_event_error(billing_event, str(e))
+            raise
         
     except ValueError as e:
         current_app.logger.error(f'Invalid webhook payload: {str(e)}')

@@ -4,6 +4,7 @@ from decimal import Decimal
 import requests
 import stripe
 from flask import current_app
+from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models.billing import BillingAccount, BillingSubscription, BillingEvent
 from app.models.payment import Payment
@@ -402,6 +403,121 @@ class PaymentService:
         )
         
         return event
+
+    def _stripe_event_id(self, event) -> str | None:
+        try:
+            return event.id
+        except Exception:
+            try:
+                return event.get('id')
+            except Exception:
+                return None
+
+    def _stripe_event_type(self, event) -> str | None:
+        try:
+            return event.type
+        except Exception:
+            try:
+                return event.get('type')
+            except Exception:
+                return None
+
+    def _stripe_event_payload(self, event) -> dict:
+        """Convert stripe.Event into a JSON-serializable dict."""
+        try:
+            return event.to_dict_recursive()
+        except Exception:
+            pass
+
+        try:
+            return event.to_dict()
+        except Exception:
+            pass
+
+        try:
+            return dict(event)
+        except Exception:
+            return {'raw': str(event)}
+
+    def upsert_stripe_billing_event(self, event, user_id: str | None = None) -> tuple[BillingEvent, bool]:
+        """Create/update BillingEvent record and return (record, should_process).
+
+        Stripe retries webhooks and users can replay events; this prevents double-processing.
+        """
+        event_id = self._stripe_event_id(event)
+        event_type = self._stripe_event_type(event) or 'unknown'
+        payload = self._stripe_event_payload(event)
+
+        if not event_id:
+            # If there's no event id, we can't dedupe. Process it but don't persist.
+            temp = BillingEvent(
+                provider='stripe',
+                event_id=f'unknown-{datetime.utcnow().timestamp()}',
+                event_type=event_type,
+                user_id=user_id,
+                payload=payload,
+                processed=False,
+            )
+            return temp, True
+
+        existing = BillingEvent.query.filter_by(provider='stripe', event_id=event_id).first()
+        if existing:
+            # If already processed successfully, skip.
+            if existing.processed:
+                return existing, False
+
+            # Not processed previously (or errored) – allow retry.
+            existing.event_type = event_type
+            existing.user_id = existing.user_id or user_id
+            existing.payload = payload
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+            return existing, True
+
+        billing_event = BillingEvent(
+            provider='stripe',
+            event_id=event_id,
+            event_type=event_type,
+            user_id=user_id,
+            payload=payload,
+            processed=False,
+        )
+        db.session.add(billing_event)
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            existing = BillingEvent.query.filter_by(provider='stripe', event_id=event_id).first()
+            if existing and existing.processed:
+                return existing, False
+            return existing or billing_event, True
+
+        return billing_event, True
+
+    def mark_billing_event_processed(self, billing_event: BillingEvent):
+        """Mark a BillingEvent as processed successfully."""
+        try:
+            if billing_event.id is None:
+                return
+            billing_event.processed = True
+            billing_event.processed_at = datetime.utcnow()
+            billing_event.error_message = None
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    def mark_billing_event_error(self, billing_event: BillingEvent, error_message: str):
+        """Persist an error for a BillingEvent; event remains unprocessed so Stripe can retry."""
+        try:
+            if billing_event.id is None:
+                return
+            billing_event.processed = False
+            billing_event.error_message = (error_message or '')[:2000]
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
     
     def handle_checkout_completed(self, session):
         """Handle successful checkout session"""

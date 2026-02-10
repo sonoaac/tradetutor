@@ -6,6 +6,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from pathlib import Path
+
+dotenv_flask = Path(__file__).with_name('.env.flask')
+if dotenv_flask.exists():
+    load_dotenv(dotenv_flask)
+else:
+    load_dotenv()
+
 from app import create_app, db
 from flask_migrate import Migrate, upgrade
 
