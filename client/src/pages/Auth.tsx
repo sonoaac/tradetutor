@@ -14,6 +14,13 @@ export default function Auth() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const isValidPassword = (password: string) => {
+    if (password.length < 7) return false;
+    if (!/[A-Z]/.test(password)) return false;
+    if (!/[0-9]/.test(password)) return false;
+    return true;
+  };
+
   const getModeFromSearch = () => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -41,8 +48,10 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [formData, setFormData] = useState({
+    identifier: '',
     email: '',
     password: '',
+    username: '',
     firstName: '',
     lastName: ''
   });
@@ -58,11 +67,23 @@ export default function Auth() {
     setLoading(true);
     setErrorMessage('');
 
+    if (mode === 'register' && !isValidPassword(formData.password)) {
+      setLoading(false);
+      setErrorMessage('Password must be at least 7 characters and include 1 uppercase letter and 1 number.');
+      return;
+    }
+
     try {
       const endpoint = apiUrl(mode === 'login' ? '/api/auth/login' : '/api/auth/register');
       const body = mode === 'login'
-        ? { email: formData.email, password: formData.password }
-        : formData;
+        ? { identifier: (formData.identifier || '').trim(), password: formData.password }
+        : {
+          email: formData.email,
+          password: formData.password,
+          username: (formData.username || '').trim() || undefined,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+        };
 
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -157,21 +178,46 @@ export default function Auth() {
                     />
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-xs sm:text-sm font-medium">Username</Label>
+                  <Input
+                    id="username"
+                    placeholder="yourname"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    className="bg-background text-sm sm:text-base p-2 sm:p-2.5"
+                  />
+                </div>
               </>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs sm:text-sm font-medium">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-                className="bg-background text-sm sm:text-base p-2 sm:p-2.5"
-              />
-            </div>
+            {mode === 'login' ? (
+              <div className="space-y-2">
+                <Label htmlFor="identifier" className="text-xs sm:text-sm font-medium">Email or Username</Label>
+                <Input
+                  id="identifier"
+                  placeholder="you@example.com"
+                  value={formData.identifier}
+                  onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
+                  required
+                  className="bg-background text-sm sm:text-base p-2 sm:p-2.5"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-xs sm:text-sm font-medium">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                  className="bg-background text-sm sm:text-base p-2 sm:p-2.5"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-xs sm:text-sm font-medium">Password</Label>
@@ -184,6 +230,11 @@ export default function Auth() {
                 required
                 className="bg-background text-sm sm:text-base p-2 sm:p-2.5"
               />
+              {mode === 'register' ? (
+                <p className="text-xs text-muted-foreground">
+                  Password must be at least 7 characters, include 1 uppercase letter, and 1 number.
+                </p>
+              ) : null}
             </div>
 
             <Button

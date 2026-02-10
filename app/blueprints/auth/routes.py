@@ -5,11 +5,14 @@ from app.extensions import db, bcrypt, limiter
 from app.models.user import User
 from app.models.portfolio import Portfolio
 from decimal import Decimal
+from app.services.payment_service import PaymentService
 import re
 import random
 import uuid
 
 auth_bp = Blueprint('auth', __name__)
+
+payment_service = PaymentService()
 
 
 def _username_part(value: str | None) -> str:
@@ -51,6 +54,33 @@ def _ensure_username(user: User) -> None:
     db.session.commit()
 
 
+def _is_valid_password(password: str) -> bool:
+    if not password or len(password) < 7:
+        return False
+    if not re.search(r'[A-Z]', password):
+        return False
+    if not re.search(r'\d', password):
+        return False
+    return True
+
+
+def _normalize_username(value: str | None) -> str | None:
+    if not value:
+        return None
+    value = value.strip()
+    if not value:
+        return None
+    return value
+
+
+def _is_valid_username(username: str) -> bool:
+    if not username:
+        return False
+    if len(username) < 3 or len(username) > 20:
+        return False
+    return bool(re.fullmatch(r'[A-Za-z0-9_]+', username))
+
+
 @auth_bp.route('/register', methods=['POST'])
 @limiter.limit("5 per hour")
 def register():
@@ -58,11 +88,21 @@ def register():
     data = request.get_json()
     
     # Validate required fields
-    email = data.get('email')
+    email = (data.get('email') or '').strip().lower()
     password = data.get('password')
+    username = _normalize_username(data.get('username'))
     
     if not email or not password:
         return jsonify({'message': 'Email and password are required'}), 400
+
+    if not _is_valid_password(password):
+        return jsonify({'message': 'Password must be at least 7 characters and include 1 uppercase letter and 1 number'}), 400
+
+    if username:
+        if not _is_valid_username(username):
+            return jsonify({'message': 'Username must be 3–20 characters and use only letters, numbers, or underscore'}), 400
+        if User.query.filter_by(username=username).first():
+            return jsonify({'message': 'Username is already taken'}), 400
     
     # Check if user exists
     if User.query.filter_by(email=email).first():
@@ -75,7 +115,8 @@ def register():
         password_hash=password_hash,
         first_name=data.get('firstName'),
         last_name=data.get('lastName'),
-        username=_generate_unique_username(
+        username=username
+        or _generate_unique_username(
             first_name=data.get('firstName'),
             last_name=data.get('lastName'),
             email=email,
@@ -87,6 +128,14 @@ def register():
     
     # Automatically log in the user after registration
     login_user(user, remember=True)
+
+    # If the user paid via Payment Link before creating an account,
+    # grant access now based on email.
+    try:
+        payment_service.apply_pending_entitlement_for_user(user)
+    except Exception:
+        # Non-fatal
+        pass
     
     return jsonify({
         'message': 'User created successfully',
@@ -100,14 +149,17 @@ def login():
     """Login user"""
     data = request.get_json()
     
-    email = data.get('email')
+    identifier = (data.get('identifier') or data.get('email') or '').strip()
     password = data.get('password')
     
-    if not email or not password:
-        return jsonify({'message': 'Email and password are required'}), 400
+    if not identifier or not password:
+        return jsonify({'message': 'Email/username and password are required'}), 400
     
     # Find user
-    user = User.query.filter_by(email=email).first()
+    if '@' in identifier:
+        user = User.query.filter_by(email=identifier.lower()).first()
+    else:
+        user = User.query.filter_by(username=identifier).first()
     
     if not user or not bcrypt.check_password_hash(user.password_hash, password):
         return jsonify({'message': 'Invalid credentials'}), 401
@@ -117,6 +169,12 @@ def login():
 
     # Backfill username for older accounts
     _ensure_username(user)
+
+    # If the user paid via Payment Link, grant access now.
+    try:
+        payment_service.apply_pending_entitlement_for_user(user)
+    except Exception:
+        pass
     
     return jsonify({
         'message': 'Logged in successfully',

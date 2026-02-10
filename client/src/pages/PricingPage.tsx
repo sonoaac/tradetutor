@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Zap, TrendingUp } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 type PlanInterval = "month" | "year";
 
@@ -89,6 +90,7 @@ const plans: PricingPlan[] = [
 
 export default function PricingPage() {
   const [billingInterval, setBillingInterval] = useState<PlanInterval>("month");
+  const { isAuthenticated } = useAuth();
 
   const getPaymentLink = (plan: PricingPlan) => {
     const key =
@@ -197,11 +199,19 @@ export default function PricingPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Link href="/auth?mode=register&next=%2Fdashboard">
-                <a className="w-full inline-flex items-center justify-center rounded-md border border-border bg-background min-h-10 px-8 text-sm font-medium hover:bg-secondary/40 transition-colors">
-                  Create free account
-                </a>
-              </Link>
+              {isAuthenticated ? (
+                <Link href="/dashboard">
+                  <a className="w-full inline-flex items-center justify-center rounded-md border border-border bg-background min-h-10 px-8 text-sm font-medium hover:bg-secondary/40 transition-colors">
+                    Go to dashboard
+                  </a>
+                </Link>
+              ) : (
+                <Link href="/auth?mode=register&next=%2Fdashboard">
+                  <a className="w-full inline-flex items-center justify-center rounded-md border border-border bg-background min-h-10 px-8 text-sm font-medium hover:bg-secondary/40 transition-colors">
+                    Create free account
+                  </a>
+                </Link>
+              )}
             </CardFooter>
           </Card>
 

@@ -5,6 +5,7 @@ from app.models.trade import Trade
 from app.models.lesson import Lesson, LessonProgress
 from app.models.payment import Payment
 from app.models.billing import BillingAccount, BillingSubscription, BillingEvent
+from app.models.pending_entitlement import PendingEntitlement
 
 __all__ = [
     'User', 
@@ -15,5 +16,6 @@ __all__ = [
     'Payment',
     'BillingAccount',
     'BillingSubscription',
-    'BillingEvent'
+    'BillingEvent',
+    'PendingEntitlement'
 ]
