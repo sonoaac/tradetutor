@@ -59,6 +59,28 @@ class PaymentService:
 
         return price_id
 
+    def _resolve_plan_interval_from_price_id(self, price_id: str | None) -> tuple[str | None, str | None]:
+        """Reverse-map a Stripe Price ID to (plan, interval).
+
+        Useful for Stripe Payment Links or other flows where our Checkout Session
+        metadata isn't available.
+        """
+        if not price_id:
+            return None, None
+
+        candidates = [
+            ('starter', 'month', current_app.config.get('STRIPE_PRICE_STARTER_MONTHLY')),
+            ('starter', 'year', current_app.config.get('STRIPE_PRICE_STARTER_YEARLY')),
+            ('pro', 'month', current_app.config.get('STRIPE_PRICE_PRO_MONTHLY')),
+            ('pro', 'year', current_app.config.get('STRIPE_PRICE_PRO_YEARLY')),
+        ]
+
+        for plan, interval, configured_price_id in candidates:
+            if configured_price_id and configured_price_id == price_id:
+                return plan, interval
+
+        return None, None
+
     def _get_paypal_access_token(self):
         """Get PayPal access token using client credentials"""
         client_id = current_app.config.get('PAYPAL_CLIENT_ID')

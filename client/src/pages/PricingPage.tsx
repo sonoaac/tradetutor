@@ -46,7 +46,7 @@ const plans: PricingPlan[] = [
     name: "Starter (Trader Mode)",
     description: "2 months free with annual billing",
     interval: "year",
-    price: 99,
+    price: 99.99,
     icon: <Zap className="h-6 w-6" />,
     features: [
       "Trading simulator (Buy/Sell)",
@@ -79,7 +79,7 @@ const plans: PricingPlan[] = [
     name: "Pro (Mentored Trader)",
     description: "Best value with annual billing",
     interval: "year",
-    price: 199,
+    price: 179.99,
     icon: <TrendingUp className="h-6 w-6" />,
     features: [
       "Everything in Starter",
@@ -93,10 +93,28 @@ const plans: PricingPlan[] = [
 
 export default function PricingPage() {
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [billingInterval, setBillingInterval] = useState<PlanInterval>("month");
   const [checkoutLoadingPlanId, setCheckoutLoadingPlanId] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const getFallbackPaymentLink = (plan: PricingPlan) => {
+    if (!isAuthenticated) return null;
+    const email = (user as any)?.email as string | undefined;
+    if (!email) return null;
+
+    const key = "VITE_STRIPE_PAYMENT_LINK_" + plan.baseId.toUpperCase() + "_" + (plan.interval === "month" ? "MONTHLY" : "YEARLY");
+    const baseUrl = (import.meta as any)?.env?.[key] as string | undefined;
+    if (!baseUrl) return null;
+
+    try {
+      const url = new URL(baseUrl);
+      url.searchParams.set("prefilled_email", email);
+      return url.toString();
+    } catch {
+      return baseUrl;
+    }
+  };
 
   const formatPrice = (plan: PricingPlan) => {
     const period = plan.interval === "month" ? "month" : "year";
@@ -142,6 +160,8 @@ export default function PricingPage() {
       setShowAuthModal(true);
       return;
     }
+
+    const fallbackUrl = getFallbackPaymentLink(plan);
 
     setCheckoutLoadingPlanId(plan.id);
 
