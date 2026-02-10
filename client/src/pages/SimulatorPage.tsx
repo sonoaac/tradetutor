@@ -41,6 +41,7 @@ const MOCK_ORDERS: Order[] = [
 export default function SimulatorPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { tickId, simNowMs } = useSimTicker();
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [positions, setPositions] = useState<Position[]>(MOCK_POSITIONS);
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [selectedSymbol, setSelectedSymbol] = useState('SMBY');

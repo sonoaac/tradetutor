@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -93,6 +94,7 @@ const plans: PricingPlan[] = [
 export default function PricingPage() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading: isAuthLoading, refetchUser, user } = useAuth();
+  const [, navigate] = useLocation();
   const [billingInterval, setBillingInterval] = useState<PlanInterval>("month");
   const [checkoutLoadingPlanId, setCheckoutLoadingPlanId] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -190,11 +192,13 @@ export default function PricingPage() {
       if (response.status === 401) {
         if (hadUser) {
           toast({
+
             title: "Session not recognized",
             description:
               "You're signed in, but checkout couldn't verify your session. Try refreshing the page and retry.",
             variant: "destructive",
           });
+          return;
         }
         setShowAuthModal(true);
         return;
@@ -292,7 +296,13 @@ export default function PricingPage() {
               <button
                 type="button"
                 className="w-full inline-flex items-center justify-center rounded-md border border-border bg-background min-h-10 px-8 text-sm font-medium hover:bg-secondary/40 transition-colors"
-                onClick={() => setShowAuthModal(true)}
+                onClick={() => {
+                  if (isAuthenticated) {
+                    navigate("/dashboard");
+                    return;
+                  }
+                  setShowAuthModal(true);
+                }}
               >
                 Create free account
               </button>
@@ -366,7 +376,7 @@ export default function PricingPage() {
         </div>
       </div>
 
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} successRedirectTo="/pricing" />
     </div>
   );
 }

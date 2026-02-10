@@ -17,10 +17,22 @@ interface AuthModalProps {
   successRedirectTo?: string;
 }
 
-export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthModalProps) {
+export function AuthModal({
+  isOpen,
+  onClose,
+  defaultMode = 'register',
+  disableRedirectOnSuccess = false,
+  successRedirectTo,
+}: AuthModalProps) {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const sanitizedSuccessRedirectTo = (() => {
+    if (!successRedirectTo) return null;
+    if (!successRedirectTo.startsWith('/')) return null;
+    if (successRedirectTo.startsWith('/api/')) return null;
+    return successRedirectTo;
+  })();
   const nextPath = (() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -88,18 +100,22 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'register' }: AuthMod
         queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       }
 
+      const willRedirect = !disableRedirectOnSuccess;
+
       toast({
         title: mode === 'login' ? 'Welcome back!' : 'Account created!',
         description: mode === 'login' 
-          ? 'Redirecting to dashboard...' 
+          ? (willRedirect ? 'Redirecting...' : 'You are now signed in.')
           : 'Your account has been created successfully.',
       });
 
       // Close modal and navigate
       onClose();
-      setTimeout(() => {
-        navigate(nextPath || '/dashboard');
-      }, 300);
+      if (!disableRedirectOnSuccess) {
+        setTimeout(() => {
+          navigate(sanitizedSuccessRedirectTo || nextPath || '/dashboard');
+        }, 300);
+      }
 
     } catch (error: any) {
       setErrorMessage(error?.message || 'Something went wrong');
