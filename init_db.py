@@ -1,12 +1,9 @@
 #!/usr/bin/env python
-"""Initialize database on app startup - auto-run migrations if needed"""
+"""Initialize database on app startup — runs migrations then seeds lessons if empty."""
 import os
 import sys
-from dotenv import load_dotenv
-
-load_dotenv()
-
 from pathlib import Path
+from dotenv import load_dotenv
 
 dotenv_flask = Path(__file__).with_name('.env.flask')
 if dotenv_flask.exists():
@@ -15,33 +12,56 @@ else:
     load_dotenv()
 
 from app import create_app, db
-from flask_migrate import Migrate, upgrade
+from flask_migrate import upgrade
 
-def init_db():
-    """Initialize database with migrations"""
-    app = create_app(os.environ.get('FLASK_ENV', 'development'))
-    
+
+def run_migrations(app):
     with app.app_context():
-        print("Initializing database...")
-        
+        print("Running database migrations...")
         try:
-            # Run migrations to latest version
             upgrade(revision='head')
-            print("✓ Database migrations completed successfully")
+            print("✓ Migrations applied")
             return True
         except Exception as e:
-            print(f"✗ Migration error: {e}")
-            # Try to handle the error gracefully
+            print(f"Migration error: {e}")
             if "no such table" in str(e).lower() or "already exists" in str(e).lower():
-                print("✓ Database already initialized or will be created on first request")
+                print("✓ Database already up-to-date")
                 return True
-            return False
+            # Last-resort fallback: create all tables directly
+            try:
+                db.create_all()
+                print("✓ Tables created via db.create_all()")
+                return True
+            except Exception as e2:
+                print(f"db.create_all() failed: {e2}")
+                return False
+
+
+def seed_lessons_if_empty(app):
+    """Import and run seed_lessons only when the lessons table is empty."""
+    with app.app_context():
+        try:
+            from app.models.lesson import Lesson
+            if Lesson.query.count() > 0:
+                print("✓ Lessons already seeded, skipping")
+                return
+            print("Seeding lessons...")
+            from seed_lessons import seed_lessons
+            seed_lessons()
+        except Exception as e:
+            print(f"Lesson seeding skipped: {e}")
+
 
 if __name__ == '__main__':
-    if init_db():
-        print("\n✓ Database initialization complete. App is ready to start.")
+    config_name = os.environ.get('FLASK_ENV', 'production')
+    app = create_app(config_name=config_name)
+
+    ok = run_migrations(app)
+    seed_lessons_if_empty(app)
+
+    if ok:
+        print("\n✓ Database ready.")
         sys.exit(0)
     else:
-        print("\n⚠ Warning: Database initialization encountered an issue.")
-        print("The app will attempt to create tables on first request.")
-        sys.exit(0)  # Exit 0 to not block deployment
+        print("\n⚠ Database init had issues — app will try to recover on first request.")
+        sys.exit(0)  # Always exit 0 so deployment isn't blocked

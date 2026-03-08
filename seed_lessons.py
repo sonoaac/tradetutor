@@ -492,7 +492,8 @@ Remember: **Protect your capital. Trading is a marathon, not a sprint.**
     print("✨ Lesson seeding complete!")
 
 if __name__ == "__main__":
-    app = create_app()
+    import os
+    app = create_app(os.environ.get('FLASK_ENV', 'development'))
     with app.app_context():
         # Create all database tables
         db.create_all()
