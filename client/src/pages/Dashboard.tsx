@@ -327,7 +327,7 @@ function GuestDashboard() {
   const prices = useLivePrices();
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="w-full px-4 py-6">
       {/* Hero */}
       <div
         className="rounded-2xl p-6 sm:p-8 mb-6 text-center"
@@ -405,7 +405,7 @@ export default function Dashboard() {
   const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-4 pb-24 space-y-4">
+    <div className="w-full px-4 py-4 pb-24 space-y-4">
 
       {/* ── Welcome header ──────────────────────────────────────────────── */}
       <div className="rounded-2xl p-4 sm:p-5" style={{ background: TV.card, border: `1px solid ${TV.border}` }}>
@@ -442,7 +442,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Quick stats ──────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-4 gap-3">
         <StatCard label="Lessons Done"  value={`${completedLessons.length}/21`} sub="lessons completed"  color={TV.green}  icon={BookOpen} />
         <StatCard label="Sim Level"     value={`Lv${simLevel}`}                  sub="simulator rank"    color={TV.orange} icon={Trophy} />
         <StatCard label="Streak"        value={`${lessonStreak}d`}               sub="days in a row"     color={TV.red}    icon={Flame} />
@@ -450,7 +450,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Learning + Sim cards ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <LearningCard completed={completedLessons.length} xp={lessonXp} streak={lessonStreak} />
         <SimCard />
       </div>
@@ -459,7 +459,7 @@ export default function Dashboard() {
       <MarketPulse prices={prices} />
 
       {/* ── Quick lessons + why sim ───────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <QuickLessonsCard completed={completedLessons} />
         <WhySimCard />
       </div>

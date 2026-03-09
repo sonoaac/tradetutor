@@ -447,7 +447,7 @@ export default function MarketPage() {
 
   // ─── Layout ────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-screen" style={{ background: TV.bg, color: TV.text }}>
+    <div className="flex flex-col h-full" style={{ background: TV.bg, color: TV.text }}>
       {/* Ticker bar */}
       <TickerBar prices={livePrices} basePrices={basePrices} />
 

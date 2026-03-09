@@ -245,7 +245,7 @@ export default function LessonsPage() {
   function isCompleted(id: LessonId) { return progress.completed.includes(id); }
 
   return (
-    <div className="max-w-2xl mx-auto px-3 py-4 pb-24">
+    <div className="max-w-5xl mx-auto px-3 py-4 pb-24">
 
       {/* ── XP / Level header ──────────────────────────────────────────────── */}
       <div className="rounded-2xl p-5 mb-6" style={{ background: '#1e2230', border: '1px solid #2a2e3e' }}>
@@ -346,7 +346,7 @@ export default function LessonsPage() {
       </div>
 
       {/* ── Module path ────────────────────────────────────────────────────── */}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {MODULES.map((mod, modIdx) => {
           const modCompleted = mod.lessons.every(l => isCompleted(l.id));
           const modStarted   = mod.lessons.some(l => isCompleted(l.id));

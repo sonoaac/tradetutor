@@ -522,7 +522,7 @@ export default function SimulatorPage() {
 
   // ─── Desktop layout (3 columns) ───────────────────────────────────────────
   return (
-    <div className="flex flex-col h-screen" style={{ background: TV.bg, color: TV.text }}>
+    <div className="flex flex-col h-full" style={{ background: TV.bg, color: TV.text }}>
 
       {/* ── Mobile tab bar ───────────────────────────────────────────────── */}
       <div className="flex md:hidden border-b" style={{ borderColor: TV.border }}>

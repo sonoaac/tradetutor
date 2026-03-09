@@ -37,13 +37,17 @@ export function AppShell({ children }: { children: ReactNode }) {
     return "TradeTutor";
   }, [location]);
 
+  // Full-bleed pages get no padding/max-width so they can own their full layout
+  const isFullBleed = location.startsWith('/simulator') || location.startsWith('/market');
+
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground">
+    <div className="flex flex-col min-h-[100dvh] bg-background text-foreground">
       <Sidebar />
 
-      <div className="md:pl-64">
-        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-          <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
+      <div className="md:pl-64 flex flex-col flex-1 min-h-0">
+        {/* Header — h-14 = 56px */}
+        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70 flex-shrink-0">
+          <div className="mx-auto flex h-14 max-w-[100%] items-center justify-between px-4 sm:px-6">
             <div className="flex items-center gap-3">
               <Link href="/">
                 <a className="inline-flex items-center gap-2 rounded-md px-2 py-1 hover:bg-accent">
@@ -74,11 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   setTheme(next);
                   if (next === "dark") document.documentElement.classList.add("dark");
                   else document.documentElement.classList.remove("dark");
-                  try {
-                    localStorage.setItem("theme", next);
-                  } catch {
-                    // ignore
-                  }
+                  try { localStorage.setItem("theme", next); } catch { /* ignore */ }
                 }}
                 title={theme === "dark" ? "Switch to light" : "Switch to dark"}
               >
@@ -101,10 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          logout();
-                        }}
+                        onSelect={(e) => { e.preventDefault(); logout(); }}
                         disabled={isLoggingOut}
                       >
                         <LogOut className="h-4 w-4" />
@@ -127,11 +124,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6 pb-24 md:pb-10">
-          {children}
-        </main>
-
-        <SiteFooter />
+        {/* Full-bleed pages (simulator, market) get no wrapper padding */}
+        {isFullBleed ? (
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {children}
+          </div>
+        ) : (
+          <>
+            <main className="w-full flex-1 px-4 sm:px-6 py-6 pb-24 md:pb-10">
+              {children}
+            </main>
+            <SiteFooter />
+          </>
+        )}
       </div>
 
       <MobileNav />
