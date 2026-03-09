@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-"""Initialize database on app startup — runs migrations then seeds lessons if empty."""
+# -*- coding: utf-8 -*-
+"""Initialize database on app startup - runs migrations then seeds lessons if empty."""
 import os
 import sys
 from pathlib import Path
@@ -20,17 +21,17 @@ def run_migrations(app):
         print("Running database migrations...")
         try:
             upgrade(revision='head')
-            print("✓ Migrations applied")
+            print("[ok] Migrations applied")
             return True
         except Exception as e:
             print(f"Migration error: {e}")
             if "no such table" in str(e).lower() or "already exists" in str(e).lower():
-                print("✓ Database already up-to-date")
+                print("[ok] Database already up-to-date")
                 return True
             # Last-resort fallback: create all tables directly
             try:
                 db.create_all()
-                print("✓ Tables created via db.create_all()")
+                print("[ok] Tables created via db.create_all()")
                 return True
             except Exception as e2:
                 print(f"db.create_all() failed: {e2}")
@@ -43,7 +44,7 @@ def seed_lessons_if_empty(app):
         try:
             from app.models.lesson import Lesson
             if Lesson.query.count() > 0:
-                print("✓ Lessons already seeded, skipping")
+                print("[ok] Lessons already seeded, skipping")
                 return
             print("Seeding lessons...")
             from seed_lessons import seed_lessons
@@ -60,8 +61,8 @@ if __name__ == '__main__':
     seed_lessons_if_empty(app)
 
     if ok:
-        print("\n✓ Database ready.")
+        print("\n[ok] Database ready.")
         sys.exit(0)
     else:
-        print("\n⚠ Database init had issues — app will try to recover on first request.")
+        print("\n[!] Database init had issues - app will try to recover on first request.")
         sys.exit(0)  # Always exit 0 so deployment isn't blocked

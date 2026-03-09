@@ -465,15 +465,15 @@ Remember: **Protect your capital. Trading is a marathon, not a sprint.**
         }
     ]
     
-    print("🌱 Seeding lessons...")
-    
+    print("Seeding lessons...")
+
     for lesson_data in lessons_data:
         # Check if lesson already exists
         existing = Lesson.query.filter_by(slug=lesson_data['slug']).first()
         if existing:
-            print(f"   ⏭️  Lesson '{lesson_data['title']}' already exists, skipping.")
+            print(f"   [skip] Lesson '{lesson_data['title']}' already exists.")
             continue
-        
+
         # Create new lesson
         lesson = Lesson(
             title=lesson_data['title'],
@@ -486,10 +486,10 @@ Remember: **Protect your capital. Trading is a marathon, not a sprint.**
             quiz_data=lesson_data['quiz_data']
         )
         db.session.add(lesson)
-        print(f"   ✅ Created: {lesson_data['title']}")
-    
+        print(f"   [ok] Created: {lesson_data['title']}")
+
     db.session.commit()
-    print("✨ Lesson seeding complete!")
+    print("Lesson seeding complete!")
 
 if __name__ == "__main__":
     import os
@@ -497,5 +497,5 @@ if __name__ == "__main__":
     with app.app_context():
         # Create all database tables
         db.create_all()
-        print("✅ Database tables created")
+        print("[ok] Database tables created")
         seed_lessons()
