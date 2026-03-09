@@ -1,49 +1,49 @@
+/**
+ * Dashboard / Home — unified page for guests and logged-in users.
+ * Routes: / and /dashboard both render this.
+ * Guest:     marketing hero + live markets + features + pricing
+ * Logged in: personalized stats + progress + market pulse
+ */
 import { useState } from 'react';
 import { Link } from 'wouter';
 import {
   TrendingUp, TrendingDown, BookOpen, Flame, Zap, Activity,
   BarChart2, ArrowRight, Play, CheckCircle, GraduationCap,
-  Trophy, Target, ChevronRight,
+  ShieldCheck, Target, Award, ChevronRight,
 } from 'lucide-react';
-import { ASSET_MAP, formatPrice } from '@/hooks/use-simulator';
+import { ASSET_MAP, ASSETS, formatPrice } from '@/hooks/use-simulator';
 import { useLivePrices } from '@/hooks/use-live-prices';
 import { AuthModal } from '@/components/AuthModal';
 import { useAuth } from '@/hooks/use-auth';
 
-// ─── localStorage helpers ─────────────────────────────────────────────────────
-
-const LS_LESSONS = 'tt_lessons_v2';
-const LS_GAMIFY  = 'tt_gamification_v1';
+// ─── localStorage ─────────────────────────────────────────────────────────────
 
 function loadLessonProgress() {
-  try { const r = localStorage.getItem(LS_LESSONS); return r ? JSON.parse(r) : null; } catch { return null; }
+  try { const r = localStorage.getItem('tt_lessons_v2'); return r ? JSON.parse(r) : null; } catch { return null; }
 }
 function loadGamification() {
-  try { const r = localStorage.getItem(LS_GAMIFY); return r ? JSON.parse(r) : null; } catch { return null; }
+  try { const r = localStorage.getItem('tt_gamification_v1'); return r ? JSON.parse(r) : null; } catch { return null; }
 }
 
 function xpToLevel(xp: number) {
-  const thresholds = [0, 200, 500, 900, 1400, 2000, 2700, 3500];
-  const titles     = ['Rookie', 'Student', 'Trader', 'Analyst', 'Strategist', 'Pro Trader', 'Expert', 'Master'];
-  let level = 1;
-  for (let i = thresholds.length - 1; i >= 0; i--) {
-    if (xp >= thresholds[i]) { level = i + 1; break; }
-  }
-  const curr = thresholds[level - 1];
-  const next = level < thresholds.length ? thresholds[level] : 9999;
-  return { level, title: titles[level - 1], pct: Math.min(100, ((xp - curr) / (next - curr)) * 100) };
+  const t = [0, 200, 500, 900, 1400, 2000, 2700, 3500];
+  const n = ['Rookie','Student','Trader','Analyst','Strategist','Pro Trader','Expert','Master'];
+  let l = 0;
+  for (let i = t.length - 1; i >= 0; i--) { if (xp >= t[i]) { l = i; break; } }
+  const curr = t[l], next = l < t.length - 1 ? t[l + 1] : 9999;
+  return { level: l + 1, title: n[l], pct: Math.min(100, ((xp - curr) / (next - curr)) * 100) };
 }
 
-const ALL_LESSON_COUNT = 21;
+const ALL_LESSONS = 21;
 
-// ─── Market ticker strip ──────────────────────────────────────────────────────
+// ─── Shared live ticker ───────────────────────────────────────────────────────
 
-const TICKER_SYMBOLS = ['ZYNC', 'AXPC', 'NRVA', 'AETR', 'VLTR', 'TITAN500', 'SLIX', 'MXST'];
+const TICKER_SYMS = ['ZYNC','AXPC','NRVA','AETR','VLTR','TITAN500','SLIX','MXST'];
 
-function TickerStrip({ prices }: { prices: Record<string, number> }) {
+function LiveTicker({ prices }: { prices: Record<string, number> }) {
   return (
-    <div className="flex items-center gap-0 overflow-x-auto border-b border-border">
-      {TICKER_SYMBOLS.map((sym, i) => {
+    <div className="flex items-center gap-0 overflow-x-auto border-b border-border bg-background shrink-0 scrollbar-hide">
+      {TICKER_SYMS.map(sym => {
         const asset = ASSET_MAP.get(sym);
         if (!asset) return null;
         const price = prices[sym] ?? asset.basePrice;
@@ -51,16 +51,12 @@ function TickerStrip({ prices }: { prices: Record<string, number> }) {
         const up    = chg >= 0;
         return (
           <Link key={sym} href="/market">
-            <a className="flex items-center gap-3 px-5 py-3 border-r border-border hover:bg-muted transition-colors shrink-0">
+            <a className="flex items-center gap-3 px-4 py-2.5 border-r border-border hover:bg-muted/50 transition shrink-0">
               <div>
-                <p className="text-sm font-semibold text-foreground leading-tight">{sym}</p>
-                <p className="text-xs text-muted-foreground font-mono">{formatPrice(price, asset)}</p>
+                <p className="text-xs font-semibold text-foreground leading-none">{sym}</p>
+                <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{formatPrice(price, asset)}</p>
               </div>
-              <span
-                className="text-xs font-semibold font-mono flex items-center gap-0.5"
-                style={{ color: up ? '#16a34a' : '#dc2626' }}
-              >
-                {up ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+              <span className="text-[11px] font-semibold font-mono" style={{ color: up ? '#16a34a' : '#dc2626' }}>
                 {up ? '+' : ''}{chg.toFixed(2)}%
               </span>
             </a>
@@ -68,223 +64,275 @@ function TickerStrip({ prices }: { prices: Record<string, number> }) {
         );
       })}
       <Link href="/market">
-        <a className="flex items-center gap-1 px-5 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 whitespace-nowrap">
-          All markets <ArrowRight size={13} />
+        <a className="flex items-center gap-1 px-4 py-2.5 text-xs text-muted-foreground hover:text-foreground shrink-0 whitespace-nowrap transition">
+          All markets <ArrowRight size={12} />
         </a>
       </Link>
     </div>
   );
 }
 
-// ─── Quick lessons list ───────────────────────────────────────────────────────
+// ─── Section divider ──────────────────────────────────────────────────────────
 
-const QUICK_LESSONS = [
-  { id: 'f1', title: 'What is Trading?',          module: 'Foundations', accent: '#16a34a' },
-  { id: 'c1', title: 'Candlestick Basics',         module: 'Charts',      accent: '#2563eb' },
-  { id: 'r1', title: 'Stop Loss & Take Profit',    module: 'Risk',        accent: '#dc2626' },
-  { id: 'i2', title: 'RSI Explained',              module: 'Indicators',  accent: '#7c3aed' },
-  { id: 'c2', title: 'Support & Resistance',       module: 'Charts',      accent: '#2563eb' },
-  { id: 'r2', title: 'Risk / Reward Ratio',        module: 'Risk',        accent: '#dc2626' },
-];
-
-// ─── Divider with label ───────────────────────────────────────────────────────
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function Divider({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-3 mb-5">
-      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
-        {children}
-      </p>
+    <div className="flex items-center gap-4 mb-6">
+      <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">{label}</span>
       <div className="flex-1 h-px bg-border" />
     </div>
   );
 }
 
-// ─── Guest landing ────────────────────────────────────────────────────────────
+// ─── Quick lessons ────────────────────────────────────────────────────────────
 
-function GuestDashboard() {
-  const [showAuth, setShowAuth] = useState(false);
+const QUICK_LESSONS = [
+  { id: 'f1', title: 'What is Trading?',        module: 'Foundations', accent: '#16a34a' },
+  { id: 'c1', title: 'Candlestick Basics',       module: 'Charts',      accent: '#2563eb' },
+  { id: 'r1', title: 'Stop Loss & Take Profit',  module: 'Risk',        accent: '#dc2626' },
+  { id: 'i2', title: 'RSI Explained',            module: 'Indicators',  accent: '#7c3aed' },
+  { id: 'c2', title: 'Support & Resistance',     module: 'Charts',      accent: '#2563eb' },
+  { id: 'r2', title: 'Risk / Reward Ratio',      module: 'Risk',        accent: '#dc2626' },
+];
+
+// ─── GUEST HOME ───────────────────────────────────────────────────────────────
+
+function GuestHome({ onSignUp }: { onSignUp: () => void }) {
   const prices = useLivePrices();
 
   return (
     <div className="w-full">
-      <TickerStrip prices={prices} />
+      <LiveTicker prices={prices} />
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        {/* Hero */}
-        <div className="mb-14 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground mb-5">
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <section className="px-6 pt-14 pb-16 max-w-5xl mx-auto">
+        <div className="mb-5">
+          <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full border border-border bg-muted text-muted-foreground">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            Simulator live — 26 fake assets updating now
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-foreground tracking-tight mb-4">
-            Learn to trade.<br />
-            <span className="text-primary">Risk nothing.</span>
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-            Gamified lessons, a live-looking simulator, and real trading concepts — all free to start.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={() => setShowAuth(true)}
-              className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition"
-            >
-              Get started free
-            </button>
-            <Link href="/lessons">
-              <a className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg border border-border bg-background text-foreground font-semibold text-sm hover:bg-muted transition">
-                Browse lessons
-              </a>
-            </Link>
-          </div>
+            Simulator live — 26 assets updating now
+          </span>
         </div>
-
-        {/* Feature row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-14">
-          {[
-            { icon: GraduationCap, title: '21 Structured Lessons', body: 'Six modules from trading basics to advanced strategy — unlock as you progress.', color: '#2563eb' },
-            { icon: BarChart2,     title: 'Live-Looking Simulator', body: '26 fictional assets with realistic price action. Practice entries, exits, and SL/TP.', color: '#16a34a' },
-            { icon: Trophy,        title: 'XP & Achievements',      body: 'Earn XP every lesson and trade. Level up through Rookie to Master trader.', color: '#d97706' },
-          ].map(f => {
-            const Icon = f.icon;
-            return (
-              <div key={f.title} className="p-6 rounded-xl border border-border bg-card">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
-                  style={{ background: f.color + '15' }}
-                >
-                  <Icon size={20} style={{ color: f.color }} />
-                </div>
-                <h3 className="font-semibold text-foreground mb-1">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.body}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Lessons preview */}
-        <SectionLabel>Start Learning</SectionLabel>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-14">
-          {QUICK_LESSONS.map(l => (
-            <Link key={l.id} href="/lessons">
-              <a className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-muted transition-colors group">
-                <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: l.accent + '15' }}
-                >
-                  <Play size={14} style={{ color: l.accent }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground text-sm">{l.title}</p>
-                  <p className="text-xs text-muted-foreground">{l.module}</p>
-                </div>
-                <ChevronRight size={16} className="text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-              </a>
-            </Link>
-          ))}
-        </div>
-
-        {/* Sim CTA */}
-        <div className="rounded-xl border border-border bg-card p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div>
-            <h3 className="text-xl font-bold text-foreground mb-1">Try the Simulator</h3>
-            <p className="text-sm text-muted-foreground max-w-md">
-              Open a position on ZYNC, AXPC, AETR and 23 more fictional assets. SL/TP, live charts, win streak — all in your browser.
-            </p>
-          </div>
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground tracking-tight leading-tight mb-5">
+          Master Trading.<br />
+          <span className="text-primary">Risk Nothing.</span>
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-2xl mb-8 leading-relaxed">
+          Practice with a live-looking simulator, complete gamified lessons, and build real trading skills — before you risk a single dollar.
+        </p>
+        <div className="flex flex-wrap gap-3">
           <Link href="/simulator">
-            <a className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm whitespace-nowrap hover:opacity-90 transition shrink-0">
-              Open Simulator <ArrowRight size={14} />
+            <a className="inline-flex items-center gap-2 px-7 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition">
+              Start Simulator <ArrowRight size={15} />
             </a>
           </Link>
+          <button
+            onClick={onSignUp}
+            className="inline-flex items-center gap-2 px-7 py-3 rounded-lg border border-border bg-background text-foreground font-semibold hover:bg-muted transition"
+          >
+            Sign Up Free
+          </button>
         </div>
-      </div>
+      </section>
 
-      {showAuth && <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />}
+      {/* ── Live market preview ───────────────────────────────────────────── */}
+      <section className="border-t border-border px-6 py-12">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Live Markets</h2>
+              <p className="text-sm text-muted-foreground mt-1">26 fictional assets across stocks, crypto, forex &amp; indices</p>
+            </div>
+            <Link href="/market">
+              <a className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                Explore all <ArrowRight size={13} />
+              </a>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {['ZYNC','AXPC','NRVA','AETR','VLTR','TITAN500','SLIX','MXST'].map(sym => {
+              const asset = ASSET_MAP.get(sym);
+              if (!asset) return null;
+              const price = prices[sym] ?? asset.basePrice;
+              const chg   = ((price - asset.basePrice) / asset.basePrice) * 100;
+              const up    = chg >= 0;
+              const catColors: Record<string, string> = { Stocks: '#2563eb', Crypto: '#d97706', Forex: '#16a34a', Indices: '#7c3aed' };
+              return (
+                <Link key={sym} href="/market">
+                  <a className="p-4 rounded-xl border border-border bg-card hover:bg-muted transition block">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-bold text-foreground">{sym}</span>
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ background: catColors[asset.category] + '18', color: catColors[asset.category] }}>
+                        {asset.category}
+                      </span>
+                    </div>
+                    <p className="text-base font-mono font-semibold text-foreground">{formatPrice(price, asset)}</p>
+                    <p className="text-xs font-mono font-semibold mt-0.5" style={{ color: up ? '#16a34a' : '#dc2626' }}>
+                      {up ? '+' : ''}{chg.toFixed(2)}%
+                    </p>
+                  </a>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Features ─────────────────────────────────────────────────────── */}
+      <section className="border-t border-border px-6 py-12 bg-muted/30">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-bold text-foreground mb-2">Everything you need to learn</h2>
+          <p className="text-muted-foreground mb-8">Built for beginners, powerful enough for serious practice.</p>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { icon: ShieldCheck, title: 'Risk-Free Simulator',    body: '26 fictional assets with live-looking price action. Practice with SimCash — zero real money.',          color: '#16a34a' },
+              { icon: BookOpen,    title: '21 Structured Lessons',   body: 'Six modules from trading basics to advanced strategy. XP, levels, and streak tracking built in.',       color: '#2563eb' },
+              { icon: Zap,         title: 'XP & Achievements',       body: 'Earn XP every time you trade or complete a lesson. Level up from Rookie to Master.',                    color: '#d97706' },
+              { icon: BarChart2,   title: 'Live Candlestick Charts', body: 'MA9, MA21, MA50, Bollinger Bands, RSI, volume — all updating in real time on every asset.',             color: '#7c3aed' },
+              { icon: Target,      title: 'Stop Loss & Take Profit', body: 'Set SL/TP on every trade. The simulator auto-executes them — just like real brokers.',                  color: '#dc2626' },
+              { icon: Activity,    title: 'Win Streak Tracking',     body: 'Track your win rate, streak, and R:R ratio. See exactly where your strategy needs work.',               color: '#0891b2' },
+            ].map(f => {
+              const Icon = f.icon;
+              return (
+                <div key={f.title} className="p-5 rounded-xl border border-border bg-card">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: f.color + '15' }}>
+                    <Icon size={18} style={{ color: f.color }} />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1">{f.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{f.body}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Lessons preview ───────────────────────────────────────────────── */}
+      <section className="border-t border-border px-6 py-12">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Start Learning</h2>
+              <p className="text-sm text-muted-foreground mt-1">21 lessons across 6 modules — unlock as you progress</p>
+            </div>
+            <Link href="/lessons">
+              <a className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                All lessons <ArrowRight size={13} />
+              </a>
+            </Link>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {QUICK_LESSONS.map(l => (
+              <Link key={l.id} href="/lessons">
+                <a className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:bg-muted transition group">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: l.accent + '15' }}>
+                    <Play size={13} style={{ color: l.accent }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground leading-tight">{l.title}</p>
+                    <p className="text-xs text-muted-foreground">{l.module}</p>
+                  </div>
+                  <ChevronRight size={15} className="text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </a>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA banner ────────────────────────────────────────────────────── */}
+      <section className="border-t border-border px-6 py-12 bg-muted/30">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div>
+            <h3 className="text-xl font-bold text-foreground mb-1">Ready to start?</h3>
+            <p className="text-sm text-muted-foreground">Free account unlocks lessons, the simulator, and XP tracking.</p>
+          </div>
+          <div className="flex gap-3 shrink-0">
+            <button
+              onClick={onSignUp}
+              className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition"
+            >
+              Create Free Account
+            </button>
+            <Link href="/pricing">
+              <a className="px-6 py-3 rounded-lg border border-border text-foreground font-semibold text-sm hover:bg-muted transition">
+                View Plans
+              </a>
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-// ─── Main dashboard ───────────────────────────────────────────────────────────
+// ─── LOGGED-IN DASHBOARD ──────────────────────────────────────────────────────
 
-export default function Dashboard() {
-  const { user } = useAuth();
-  const prices   = useLivePrices();
+function UserDashboard({ user }: { user: NonNullable<ReturnType<typeof useAuth>['user']> }) {
+  const prices = useLivePrices();
 
   const lessonData   = loadLessonProgress();
   const gamifyData   = loadGamification();
-
-  const completedLessons: string[] = lessonData?.completed ?? [];
-  const lessonXp     = lessonData?.xp     ?? 0;
-  const lessonStreak = lessonData?.streak  ?? 0;
-  const simXp        = gamifyData?.xp ?? 0;
-  const totalXp      = lessonXp + simXp;
-
-  if (!user) return <GuestDashboard />;
-
+  const completed: string[] = lessonData?.completed ?? [];
+  const lessonXp    = lessonData?.xp     ?? 0;
+  const streak      = lessonData?.streak  ?? 0;
+  const simXp       = gamifyData?.xp ?? 0;
+  const totalXp     = lessonXp + simXp;
   const { level, title: levelTitle, pct: levelPct } = xpToLevel(totalXp);
-  const userName  = (user as any).username || user.email?.split('@')[0] || 'Trader';
-  const tier      = (user as any).tier || 'free';
-  const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
-  const pctDone   = Math.round((completedLessons.length / ALL_LESSON_COUNT) * 100);
+  const pctDone     = Math.round((completed.length / ALL_LESSONS) * 100);
+  const userName    = (user as any).username || user.email?.split('@')[0] || 'Trader';
+  const tier        = (user as any).tier || 'free';
+  const tierLabel   = tier.charAt(0).toUpperCase() + tier.slice(1);
+  const nextLevelXp = [200,500,900,1400,2000,2700,3500][level - 1] ?? 9999;
 
   return (
     <div className="w-full">
-      {/* Live ticker */}
-      <TickerStrip prices={prices} />
+      <LiveTicker prices={prices} />
 
-      <div className="w-full px-6 py-8 pb-24">
+      <div className="w-full px-6 pt-8 pb-24">
 
-        {/* ── Hero row ───────────────────────────────────────────────────── */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
+        {/* ── Welcome ────────────────────────────────────────────────────── */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10 pb-8 border-b border-border">
           <div>
-            <p className="text-sm text-muted-foreground mb-1">Welcome back</p>
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
-              {userName}
-            </h1>
-            <div className="flex items-center gap-3 mt-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
-                {tierLabel} Plan
-              </span>
+            <p className="text-sm text-muted-foreground mb-1">Good to see you</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">{userName}</h1>
+            <div className="flex flex-wrap items-center gap-3 mt-2.5">
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary">{tierLabel}</span>
               <span className="text-sm text-muted-foreground">Level {level} · {levelTitle}</span>
-              {lessonStreak > 0 && (
+              {streak > 0 && (
                 <span className="flex items-center gap-1 text-sm font-semibold" style={{ color: '#dc2626' }}>
-                  <Flame size={14} /> {lessonStreak} day streak
+                  <Flame size={14} />{streak}-day streak
                 </span>
               )}
             </div>
           </div>
 
-          {/* XP bar */}
-          <div className="lg:w-72">
+          {/* XP progress */}
+          <div className="lg:w-64">
             <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
-              <span className="flex items-center gap-1 font-medium">
-                <Zap size={12} className="text-yellow-500" />
-                {totalXp.toLocaleString()} XP
+              <span className="flex items-center gap-1 font-medium text-foreground">
+                <Zap size={11} className="text-yellow-500" />{totalXp.toLocaleString()} XP
               </span>
-              <span>Level {level + 1} in {Math.max(0, (level < 8 ? [200,500,900,1400,2000,2700,3500,9999][level] : 9999) - totalXp).toLocaleString()} XP</span>
+              <span>{Math.max(0, nextLevelXp - totalXp).toLocaleString()} to Lv{level + 1}</span>
             </div>
             <div className="h-2 rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-700"
-                style={{ width: `${levelPct}%` }}
-              />
+              <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${levelPct}%` }} />
             </div>
           </div>
         </div>
 
-        {/* ── Four stats ─────────────────────────────────────────────────── */}
+        {/* ── Stats row ─────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {[
-            { label: 'Lessons completed', value: `${completedLessons.length} / ${ALL_LESSON_COUNT}`, sub: `${pctDone}% of curriculum`, Icon: BookOpen,      accent: '#16a34a' },
-            { label: 'Learning level',    value: levelTitle,                                          sub: `Level ${level}`,          Icon: GraduationCap, accent: '#2563eb' },
-            { label: 'Day streak',        value: `${lessonStreak}`,                                   sub: 'consecutive days',        Icon: Flame,         accent: '#dc2626' },
-            { label: 'Total XP',          value: totalXp.toLocaleString(),                            sub: 'experience points',       Icon: Zap,           accent: '#d97706' },
-          ].map(({ label, value, sub, Icon, accent }) => (
+            { label: 'Lessons completed', value: `${completed.length}/${ALL_LESSONS}`, sub: `${pctDone}% done`, Icon: BookOpen,      color: '#16a34a' },
+            { label: 'Level',             value: levelTitle,                            sub: `Level ${level}`,   Icon: GraduationCap, color: '#2563eb' },
+            { label: 'Day streak',        value: `${streak}`,                           sub: 'in a row',         Icon: Flame,         color: '#dc2626' },
+            { label: 'Total XP',          value: totalXp.toLocaleString(),              sub: 'experience',       Icon: Zap,           color: '#d97706' },
+          ].map(({ label, value, sub, Icon, color }) => (
             <div key={label} className="p-5 rounded-xl border border-border bg-card">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm text-muted-foreground">{label}</p>
-                <Icon size={16} style={{ color: accent }} />
+                <Icon size={15} style={{ color }} />
               </div>
               <p className="text-2xl font-bold text-foreground leading-none mb-1">{value}</p>
               <p className="text-xs text-muted-foreground">{sub}</p>
@@ -292,54 +340,43 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* ── Main two-column ────────────────────────────────────────────── */}
+        {/* ── Main grid ─────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-10">
 
-          {/* Learning path (3 cols) */}
+          {/* Lesson progress — 3 cols */}
           <div className="lg:col-span-3">
-            <SectionLabel>Your Learning Path</SectionLabel>
+            <Divider label="Learning path" />
 
-            {/* Progress bar */}
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-muted-foreground">{pctDone}% complete</p>
+              <p className="text-sm text-muted-foreground">{pctDone}% complete · {completed.length} of {ALL_LESSONS} lessons</p>
               <Link href="/lessons">
                 <a className="text-sm font-medium text-primary flex items-center gap-1 hover:underline">
-                  View all lessons <ArrowRight size={13} />
+                  View all <ArrowRight size={12} />
                 </a>
               </Link>
             </div>
-            <div className="h-2 rounded-full bg-muted mb-6 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-700"
-                style={{ width: `${pctDone}%` }}
-              />
+            <div className="h-2 rounded-full bg-muted overflow-hidden mb-6">
+              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pctDone}%` }} />
             </div>
 
-            {/* Lesson list */}
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
               {QUICK_LESSONS.map(l => {
-                const done = completedLessons.includes(l.id);
+                const done = completed.includes(l.id);
                 return (
                   <Link key={l.id} href="/lessons">
-                    <a className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-muted transition-colors group">
-                      <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ background: done ? l.accent + '20' : undefined }}
-                        data-done={done}
-                      >
+                    <a className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-muted transition group">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: l.accent + '18' }}>
                         {done
-                          ? <CheckCircle size={18} style={{ color: l.accent }} />
-                          : <Play size={15} className="text-muted-foreground" />
-                        }
+                          ? <CheckCircle size={17} style={{ color: l.accent }} />
+                          : <Play size={14} className="text-muted-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground text-sm leading-tight">{l.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{l.module}</p>
+                        <p className="text-sm font-semibold text-foreground">{l.title}</p>
+                        <p className="text-xs text-muted-foreground">{l.module}</p>
                       </div>
                       {done
-                        ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: l.accent + '15', color: l.accent }}>Done</span>
-                        : <ChevronRight size={16} className="text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-                      }
+                        ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ background: l.accent + '18', color: l.accent }}>Done</span>
+                        : <ChevronRight size={15} className="text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />}
                     </a>
                   </Link>
                 );
@@ -347,19 +384,19 @@ export default function Dashboard() {
             </div>
 
             <Link href="/lessons">
-              <a className="flex items-center justify-center gap-2 w-full mt-4 py-3 rounded-xl border border-border text-sm font-semibold text-foreground hover:bg-muted transition">
-                Continue Learning <ArrowRight size={14} />
+              <a className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border text-sm font-semibold text-foreground hover:bg-muted transition">
+                Continue Learning <ArrowRight size={13} />
               </a>
             </Link>
           </div>
 
-          {/* Right column (2 cols) */}
+          {/* Right column — 2 cols */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Market Pulse */}
+            {/* Market pulse */}
             <div>
-              <SectionLabel>Market Pulse</SectionLabel>
-              <div className="divide-y divide-border rounded-xl border border-border overflow-hidden bg-card">
-                {TICKER_SYMBOLS.slice(0, 6).map(sym => {
+              <Divider label="Market pulse" />
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                {TICKER_SYMS.slice(0, 6).map((sym, i) => {
                   const asset = ASSET_MAP.get(sym);
                   if (!asset) return null;
                   const price = prices[sym] ?? asset.basePrice;
@@ -367,7 +404,10 @@ export default function Dashboard() {
                   const up    = chg >= 0;
                   return (
                     <Link key={sym} href="/market">
-                      <a className="flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors">
+                      <a
+                        className="flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors"
+                        style={{ borderBottom: i < 5 ? '1px solid var(--border)' : undefined }}
+                      >
                         <div>
                           <p className="text-sm font-semibold text-foreground">{sym}</p>
                           <p className="text-xs text-muted-foreground">{asset.name}</p>
@@ -384,38 +424,33 @@ export default function Dashboard() {
                 })}
               </div>
               <Link href="/market">
-                <a className="flex items-center gap-1 mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  View all 26 markets <ArrowRight size={13} />
+                <a className="flex items-center gap-1 mt-3 text-sm text-muted-foreground hover:text-foreground transition">
+                  All 26 markets <ArrowRight size={12} />
                 </a>
               </Link>
             </div>
 
-            {/* Sim CTA */}
+            {/* Sim card */}
             <div>
-              <SectionLabel>Practice Simulator</SectionLabel>
+              <Divider label="Simulator" />
               <div className="rounded-xl border border-border bg-card p-5">
                 <div className="flex items-start gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <Activity size={18} className="text-primary" />
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">26 Assets · Always Live</p>
                     <p className="text-sm text-muted-foreground mt-0.5 leading-snug">
-                      Stocks, crypto, forex & indices with realistic price action. Zero real money.
+                      Stocks, crypto, forex &amp; indices. Realistic price action, zero real money.
                     </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
-                  {[
-                    ['Stocks', '10', '#2563eb'],
-                    ['Crypto', '8',  '#d97706'],
-                    ['Forex',  '4',  '#16a34a'],
-                    ['Indices','4',  '#7c3aed'],
-                  ].map(([label, count, color]) => (
-                    <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted">
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color as string }} />
-                      <span className="text-foreground font-medium">{label}</span>
-                      <span className="text-muted-foreground ml-auto">{count}</span>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {[['Stocks','10','#2563eb'],['Crypto','8','#d97706'],['Forex','4','#16a34a'],['Indices','4','#7c3aed']].map(([l, c, col]) => (
+                    <div key={l} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted text-xs">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: col }} />
+                      <span className="font-medium text-foreground">{l}</span>
+                      <span className="text-muted-foreground ml-auto">{c}</span>
                     </div>
                   ))}
                 </div>
@@ -429,22 +464,39 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Bottom CTA ─────────────────────────────────────────────────── */}
+        {/* ── Upgrade banner (free only) ─────────────────────────────────── */}
         {tier === 'free' && (
           <div className="rounded-xl border border-border bg-card p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Upgrade</p>
               <h3 className="text-lg font-bold text-foreground">Unlock more SimCash &amp; positions</h3>
-              <p className="text-sm text-muted-foreground mt-1">Starter gives you $25,000 SimCash and 15 open positions. Pro gives $100,000.</p>
+              <p className="text-sm text-muted-foreground mt-1">Starter: $25k SimCash, 15 positions. Pro: $100k SimCash, 50 positions.</p>
             </div>
             <Link href="/pricing">
-              <a className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold whitespace-nowrap hover:opacity-90 transition shrink-0">
-                View Plans <ArrowRight size={14} />
+              <a className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold shrink-0 hover:opacity-90 transition">
+                View Plans <ArrowRight size={13} />
               </a>
             </Link>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Root export ──────────────────────────────────────────────────────────────
+
+export default function Dashboard() {
+  const { user } = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
+
+  return (
+    <>
+      {user
+        ? <UserDashboard user={user} />
+        : <GuestHome onSignUp={() => setShowAuth(true)} />
+      }
+      {showAuth && <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />}
+    </>
   );
 }
