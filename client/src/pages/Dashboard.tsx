@@ -1,22 +1,16 @@
-/**
- * Dashboard — Learning hub overview.
- * Combines lesson progress, simulator stats, live market pulse,
- * daily challenges, and achievements in one place.
- * 100% frontend — no backend required.
- */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'wouter';
 import {
-  TrendingUp, TrendingDown, BookOpen, Target, Trophy, Flame,
-  Zap, Activity, BarChart2, ArrowRight, Play, CheckCircle,
-  GraduationCap, Crown, Star, DollarSign, Wallet,
+  TrendingUp, TrendingDown, BookOpen, Flame, Zap, Activity,
+  BarChart2, ArrowRight, Play, CheckCircle, GraduationCap,
+  Trophy, Target, ChevronRight,
 } from 'lucide-react';
-import { ASSETS, ASSET_MAP, formatPrice } from '@/hooks/use-simulator';
+import { ASSET_MAP, formatPrice } from '@/hooks/use-simulator';
 import { useLivePrices } from '@/hooks/use-live-prices';
 import { AuthModal } from '@/components/AuthModal';
 import { useAuth } from '@/hooks/use-auth';
 
-// ─── Lesson progress (mirrors LessonsPage localStorage) ──────────────────────
+// ─── localStorage helpers ─────────────────────────────────────────────────────
 
 const LS_LESSONS = 'tt_lessons_v2';
 const LS_GAMIFY  = 'tt_gamification_v1';
@@ -40,428 +34,416 @@ function xpToLevel(xp: number) {
   return { level, title: titles[level - 1], pct: Math.min(100, ((xp - curr) / (next - curr)) * 100) };
 }
 
-// ─── TV colour tokens ─────────────────────────────────────────────────────────
+const ALL_LESSON_COUNT = 21;
 
-const TV = {
-  bg:     '#0f1117',
-  card:   '#1e2230',
-  border: '#2a2e3e',
-  text:   '#d1d4dc',
-  muted:  '#6b7280',
-  green:  '#26a69a',
-  red:    '#ef5350',
-  blue:   '#2196f3',
-  yellow: '#f5c842',
-  orange: '#ff9800',
-  purple: '#9c27b0',
-};
+// ─── Market ticker strip ──────────────────────────────────────────────────────
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const TICKER_SYMBOLS = ['ZYNC', 'AXPC', 'NRVA', 'AETR', 'VLTR', 'TITAN500', 'SLIX', 'MXST'];
 
-const fmt$ = (n: number) =>
-  `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-// ─── Small stat card ──────────────────────────────────────────────────────────
-
-function StatCard({ label, value, sub, color, icon: Icon }: {
-  label: string; value: string; sub?: string; color: string; icon: React.ElementType;
-}) {
+function TickerStrip({ prices }: { prices: Record<string, number> }) {
   return (
-    <div className="rounded-xl p-4" style={{ background: TV.card, border: `1px solid ${TV.border}` }}>
-      <div className="flex items-center gap-2 mb-2">
-        <Icon size={14} style={{ color }} />
-        <span className="text-xs" style={{ color: TV.muted }}>{label}</span>
-      </div>
-      <p className="text-xl font-bold font-mono" style={{ color }}>{value}</p>
-      {sub && <p className="text-[11px] mt-0.5" style={{ color: TV.muted }}>{sub}</p>}
-    </div>
-  );
-}
-
-// ─── Market pulse ticker ──────────────────────────────────────────────────────
-
-const PULSE_SYMBOLS = ['ZYNC', 'AXPC', 'NRVA', 'AETR', 'TITAN500', 'VLTR'];
-
-function MarketPulse({ prices }: { prices: Record<string, number> }) {
-  return (
-    <div className="rounded-xl overflow-hidden" style={{ background: TV.card, border: `1px solid ${TV.border}` }}>
-      <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ borderColor: TV.border }}>
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <Activity size={14} style={{ color: TV.green }} /> Market Pulse
-        </h3>
-        <Link href="/market">
-          <a className="text-xs flex items-center gap-1" style={{ color: TV.blue }}>
-            All Markets <ArrowRight size={12} />
-          </a>
-        </Link>
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-0">
-        {PULSE_SYMBOLS.map((sym, i) => {
-          const asset = ASSET_MAP.get(sym);
-          if (!asset) return null;
-          const price  = prices[sym] ?? asset.basePrice;
-          const chg    = ((price - asset.basePrice) / asset.basePrice) * 100;
-          const up     = chg >= 0;
-          const Icon   = up ? TrendingUp : TrendingDown;
-          return (
-            <Link key={sym} href="/market">
-              <a
-                className="flex items-center justify-between px-3 py-3 transition-colors"
-                style={{
-                  borderRight: i % 3 !== 2 ? `1px solid ${TV.border}` : undefined,
-                  borderBottom: i < 3 ? `1px solid ${TV.border}` : undefined,
-                }}
-              >
-                <div>
-                  <p className="text-xs font-bold text-white">{sym}</p>
-                  <p className="text-[10px]" style={{ color: TV.muted }}>{formatPrice(price, asset)}</p>
-                </div>
-                <span className="text-[11px] font-mono flex items-center gap-0.5" style={{ color: up ? TV.green : TV.red }}>
-                  <Icon size={11} />{up ? '+' : ''}{chg.toFixed(2)}%
-                </span>
-              </a>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ─── Learning path progress card ──────────────────────────────────────────────
-
-const ALL_LESSON_COUNT = 21; // from LessonsPage data
-
-function LearningCard({ completed, xp, streak }: { completed: number; xp: number; streak: number }) {
-  const { level, title, pct } = xpToLevel(xp);
-  const pctDone = Math.round((completed / ALL_LESSON_COUNT) * 100);
-
-  return (
-    <div className="rounded-xl overflow-hidden" style={{ background: TV.card, border: `1px solid ${TV.border}` }}>
-      <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ borderColor: TV.border }}>
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <GraduationCap size={14} style={{ color: TV.blue }} /> Your Learning Path
-        </h3>
-        <Link href="/lessons">
-          <a className="text-xs flex items-center gap-1" style={{ color: TV.blue }}>
-            View all <ArrowRight size={12} />
-          </a>
-        </Link>
-      </div>
-
-      <div className="p-4">
-        {/* Level */}
-        <div className="flex items-center gap-3 mb-4">
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0"
-            style={{ background: TV.blue, color: '#fff' }}
-          >
-            {level}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-1">
-              <p className="font-bold text-white">{title}</p>
-              <div className="flex items-center gap-1">
-                <Flame size={13} style={{ color: streak > 0 ? TV.red : TV.muted }} />
-                <span className="text-xs font-bold" style={{ color: streak > 0 ? TV.red : TV.muted }}>{streak} day streak</span>
-              </div>
-            </div>
-            <div className="h-2 rounded-full" style={{ background: TV.border }}>
-              <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: TV.blue }} />
-            </div>
-          </div>
-        </div>
-
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {[
-            { label: 'Lessons Done', value: `${completed}/${ALL_LESSON_COUNT}`, color: TV.green },
-            { label: 'Total XP',     value: xp.toLocaleString(),                color: TV.yellow },
-            { label: 'Complete',     value: `${pctDone}%`,                      color: TV.blue },
-          ].map(s => (
-            <div key={s.label} className="text-center p-2 rounded-lg" style={{ background: TV.bg }}>
-              <p className="font-bold text-sm" style={{ color: s.color }}>{s.value}</p>
-              <p className="text-[10px] mt-0.5" style={{ color: TV.muted }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <Link href="/lessons">
-          <a
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold transition-colors"
-            style={{ background: TV.blue, color: '#fff' }}
-          >
-            <Play size={14} fill="#fff" /> Continue Learning
-          </a>
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-// ─── Sim snapshot card ─────────────────────────────────────────────────────────
-
-function SimCard() {
-  return (
-    <div className="rounded-xl overflow-hidden" style={{ background: TV.card, border: `1px solid ${TV.border}` }}>
-      <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ borderColor: TV.border }}>
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <BarChart2 size={14} style={{ color: TV.orange }} /> Practice Simulator
-        </h3>
-        <Link href="/simulator">
-          <a className="text-xs flex items-center gap-1" style={{ color: TV.blue }}>Open <ArrowRight size={12} /></a>
-        </Link>
-      </div>
-      <div className="p-4">
-        <p className="text-sm mb-3" style={{ color: TV.muted }}>
-          Trade 26 fake assets across stocks, crypto, forex & indices with zero real risk. Practice strategies, earn XP, and build your skills.
-        </p>
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          {[
-            { label: 'Stocks',  count: '10 assets', color: TV.blue },
-            { label: 'Crypto',  count: '8 assets',  color: TV.orange },
-            { label: 'Forex',   count: '4 pairs',   color: TV.green },
-            { label: 'Indices', count: '4 indices', color: TV.purple },
-          ].map(c => (
-            <div key={c.label} className="p-2 rounded-lg flex items-center gap-2" style={{ background: TV.bg }}>
-              <div className="w-2 h-2 rounded-full" style={{ background: c.color }} />
+    <div className="flex items-center gap-0 overflow-x-auto border-b border-border">
+      {TICKER_SYMBOLS.map((sym, i) => {
+        const asset = ASSET_MAP.get(sym);
+        if (!asset) return null;
+        const price = prices[sym] ?? asset.basePrice;
+        const chg   = ((price - asset.basePrice) / asset.basePrice) * 100;
+        const up    = chg >= 0;
+        return (
+          <Link key={sym} href="/market">
+            <a className="flex items-center gap-3 px-5 py-3 border-r border-border hover:bg-muted transition-colors shrink-0">
               <div>
-                <p className="text-xs font-bold text-white">{c.label}</p>
-                <p className="text-[10px]" style={{ color: TV.muted }}>{c.count}</p>
+                <p className="text-sm font-semibold text-foreground leading-tight">{sym}</p>
+                <p className="text-xs text-muted-foreground font-mono">{formatPrice(price, asset)}</p>
               </div>
-            </div>
-          ))}
-        </div>
-        <Link href="/simulator">
-          <a
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold"
-            style={{ background: TV.orange + '22', color: TV.orange, border: `1px solid ${TV.orange}44` }}
-          >
-            <Play size={14} /> Start Trading
-          </a>
-        </Link>
-      </div>
+              <span
+                className="text-xs font-semibold font-mono flex items-center gap-0.5"
+                style={{ color: up ? '#16a34a' : '#dc2626' }}
+              >
+                {up ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                {up ? '+' : ''}{chg.toFixed(2)}%
+              </span>
+            </a>
+          </Link>
+        );
+      })}
+      <Link href="/market">
+        <a className="flex items-center gap-1 px-5 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 whitespace-nowrap">
+          All markets <ArrowRight size={13} />
+        </a>
+      </Link>
     </div>
   );
 }
 
-// ─── Quick lessons ─────────────────────────────────────────────────────────────
+// ─── Quick lessons list ───────────────────────────────────────────────────────
 
 const QUICK_LESSONS = [
-  { id: 'f1', title: 'What is Trading?',         module: 'Foundations', color: '#26a69a' },
-  { id: 'c1', title: 'Candlestick Basics',        module: 'Charts',      color: '#2196f3' },
-  { id: 'r1', title: 'Stop Loss & Take Profit',   module: 'Risk',        color: '#ef5350' },
-  { id: 'i2', title: 'RSI — Overbought/Oversold', module: 'Indicators',  color: '#9c27b0' },
+  { id: 'f1', title: 'What is Trading?',          module: 'Foundations', accent: '#16a34a' },
+  { id: 'c1', title: 'Candlestick Basics',         module: 'Charts',      accent: '#2563eb' },
+  { id: 'r1', title: 'Stop Loss & Take Profit',    module: 'Risk',        accent: '#dc2626' },
+  { id: 'i2', title: 'RSI Explained',              module: 'Indicators',  accent: '#7c3aed' },
+  { id: 'c2', title: 'Support & Resistance',       module: 'Charts',      accent: '#2563eb' },
+  { id: 'r2', title: 'Risk / Reward Ratio',        module: 'Risk',        accent: '#dc2626' },
 ];
 
-function QuickLessonsCard({ completed }: { completed: string[] }) {
+// ─── Divider with label ───────────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: TV.card, border: `1px solid ${TV.border}` }}>
-      <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ borderColor: TV.border }}>
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <BookOpen size={14} style={{ color: TV.green }} /> Lessons to Try
-        </h3>
-        <Link href="/lessons">
-          <a className="text-xs flex items-center gap-1" style={{ color: TV.blue }}>All <ArrowRight size={12} /></a>
-        </Link>
-      </div>
-      <div className="divide-y" style={{ borderColor: TV.border }}>
-        {QUICK_LESSONS.map(l => {
-          const done = completed.includes(l.id);
-          return (
-            <Link key={l.id} href="/lessons">
-              <a className="flex items-center gap-3 px-4 py-3 transition-colors" style={{ background: 'transparent' }}>
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: done ? l.color + '33' : TV.bg, border: `1.5px solid ${done ? l.color : TV.border}` }}
-                >
-                  {done
-                    ? <CheckCircle size={14} style={{ color: l.color }} />
-                    : <Play size={12} style={{ color: TV.muted }} />
-                  }
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-white truncate">{l.title}</p>
-                  <p className="text-[10px]" style={{ color: l.color }}>{l.module}</p>
-                </div>
-                <ChevronRight size={14} style={{ color: TV.muted }} />
-              </a>
-            </Link>
-          );
-        })}
-      </div>
+    <div className="flex items-center gap-3 mb-5">
+      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+        {children}
+      </p>
+      <div className="flex-1 h-px bg-border" />
     </div>
   );
 }
 
-// ─── Why use a simulator info card ────────────────────────────────────────────
-
-function WhySimCard() {
-  return (
-    <div className="rounded-xl p-4" style={{ background: '#2196f310', border: `1px solid #2196f330` }}>
-      <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-        <Star size={14} style={{ color: TV.yellow }} /> Why Practice with a Sim?
-      </h4>
-      <ul className="space-y-2">
-        {[
-          'Make mistakes risk-free before trading real money',
-          'Learn order types, stop losses, and position sizing',
-          'Build muscle memory for reading live charts',
-          'Test strategies against live-looking price action',
-        ].map((item, i) => (
-          <li key={i} className="flex items-start gap-2 text-xs" style={{ color: TV.text }}>
-            <CheckCircle size={12} style={{ color: TV.green, flexShrink: 0, marginTop: 1 }} />
-            {item}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-// ─── Unauthenticated hero ─────────────────────────────────────────────────────
+// ─── Guest landing ────────────────────────────────────────────────────────────
 
 function GuestDashboard() {
   const [showAuth, setShowAuth] = useState(false);
   const prices = useLivePrices();
 
   return (
-    <div className="w-full px-4 py-6">
-      {/* Hero */}
-      <div
-        className="rounded-2xl p-6 sm:p-8 mb-6 text-center"
-        style={{ background: 'linear-gradient(135deg, #1e2230 0%, #131722 100%)', border: `1px solid ${TV.border}` }}
-      >
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: TV.blue }}>
-          <GraduationCap size={32} style={{ color: '#fff' }} />
+    <div className="w-full">
+      <TickerStrip prices={prices} />
+
+      <div className="max-w-5xl mx-auto px-6 py-12">
+        {/* Hero */}
+        <div className="mb-14 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground mb-5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            Simulator live — 26 fake assets updating now
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-bold text-foreground tracking-tight mb-4">
+            Learn to trade.<br />
+            <span className="text-primary">Risk nothing.</span>
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
+            Gamified lessons, a live-looking simulator, and real trading concepts — all free to start.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => setShowAuth(true)}
+              className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition"
+            >
+              Get started free
+            </button>
+            <Link href="/lessons">
+              <a className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg border border-border bg-background text-foreground font-semibold text-sm hover:bg-muted transition">
+                Browse lessons
+              </a>
+            </Link>
+          </div>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Learn to Trade</h1>
-        <p className="text-sm sm:text-base mb-6 max-w-md mx-auto" style={{ color: TV.muted }}>
-          Practice with fake SimCash, complete gamified lessons, and build real trading skills — all before risking a single dollar.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
-            onClick={() => setShowAuth(true)}
-            className="px-6 py-3 rounded-xl font-bold text-sm"
-            style={{ background: TV.blue, color: '#fff' }}
-          >
-            Get Started Free
-          </button>
-          <Link href="/lessons">
-            <a className="px-6 py-3 rounded-xl font-bold text-sm" style={{ background: TV.card, color: TV.text, border: `1px solid ${TV.border}` }}>
-              Browse Lessons
+
+        {/* Feature row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-14">
+          {[
+            { icon: GraduationCap, title: '21 Structured Lessons', body: 'Six modules from trading basics to advanced strategy — unlock as you progress.', color: '#2563eb' },
+            { icon: BarChart2,     title: 'Live-Looking Simulator', body: '26 fictional assets with realistic price action. Practice entries, exits, and SL/TP.', color: '#16a34a' },
+            { icon: Trophy,        title: 'XP & Achievements',      body: 'Earn XP every lesson and trade. Level up through Rookie to Master trader.', color: '#d97706' },
+          ].map(f => {
+            const Icon = f.icon;
+            return (
+              <div key={f.title} className="p-6 rounded-xl border border-border bg-card">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
+                  style={{ background: f.color + '15' }}
+                >
+                  <Icon size={20} style={{ color: f.color }} />
+                </div>
+                <h3 className="font-semibold text-foreground mb-1">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.body}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Lessons preview */}
+        <SectionLabel>Start Learning</SectionLabel>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-14">
+          {QUICK_LESSONS.map(l => (
+            <Link key={l.id} href="/lessons">
+              <a className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-muted transition-colors group">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: l.accent + '15' }}
+                >
+                  <Play size={14} style={{ color: l.accent }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground text-sm">{l.title}</p>
+                  <p className="text-xs text-muted-foreground">{l.module}</p>
+                </div>
+                <ChevronRight size={16} className="text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+              </a>
+            </Link>
+          ))}
+        </div>
+
+        {/* Sim CTA */}
+        <div className="rounded-xl border border-border bg-card p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div>
+            <h3 className="text-xl font-bold text-foreground mb-1">Try the Simulator</h3>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Open a position on ZYNC, AXPC, AETR and 23 more fictional assets. SL/TP, live charts, win streak — all in your browser.
+            </p>
+          </div>
+          <Link href="/simulator">
+            <a className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm whitespace-nowrap hover:opacity-90 transition shrink-0">
+              Open Simulator <ArrowRight size={14} />
             </a>
           </Link>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <LearningCard completed={0} xp={0} streak={0} />
-        <SimCard />
-      </div>
-
-      <MarketPulse prices={prices} />
-      <div className="mt-4"><WhySimCard /></div>
 
       {showAuth && <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />}
     </div>
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-
-const ChevronRight = ({ size, style }: { size: number; style?: React.CSSProperties }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={style}>
-    <polyline points="9 18 15 12 9 6" />
-  </svg>
-);
+// ─── Main dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const prices = useLivePrices();
+  const prices   = useLivePrices();
 
-  // Load local progress
   const lessonData   = loadLessonProgress();
   const gamifyData   = loadGamification();
 
   const completedLessons: string[] = lessonData?.completed ?? [];
-  const lessonXp     = lessonData?.xp ?? 0;
-  const lessonStreak = lessonData?.streak ?? 0;
+  const lessonXp     = lessonData?.xp     ?? 0;
+  const lessonStreak = lessonData?.streak  ?? 0;
   const simXp        = gamifyData?.xp ?? 0;
   const totalXp      = lessonXp + simXp;
-  const simLevel     = gamifyData ? (() => {
-    let l = 1;
-    const t = [0, 100, 300, 700, 1500, 3000, 6000, 10000];
-    for (let i = t.length - 1; i >= 0; i--) { if (simXp >= t[i]) { l = i + 1; break; } }
-    return l;
-  })() : 1;
 
   if (!user) return <GuestDashboard />;
 
   const { level, title: levelTitle, pct: levelPct } = xpToLevel(totalXp);
-  const userName = user.username || user.email?.split('@')[0] || 'Trader';
-  const tier = user.tier || 'free';
+  const userName  = (user as any).username || user.email?.split('@')[0] || 'Trader';
+  const tier      = (user as any).tier || 'free';
   const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
+  const pctDone   = Math.round((completedLessons.length / ALL_LESSON_COUNT) * 100);
 
   return (
-    <div className="w-full px-4 py-4 pb-24 space-y-4">
+    <div className="w-full">
+      {/* Live ticker */}
+      <TickerStrip prices={prices} />
 
-      {/* ── Welcome header ──────────────────────────────────────────────── */}
-      <div className="rounded-2xl p-4 sm:p-5" style={{ background: TV.card, border: `1px solid ${TV.border}` }}>
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-base flex-shrink-0"
-              style={{ background: TV.blue, color: '#fff' }}
-            >
-              {userName.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <h1 className="font-bold text-white text-lg leading-tight">Welcome back, {userName}!</h1>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: TV.blue + '22', color: TV.blue }}>
-                  {tierLabel} Plan
+      <div className="w-full px-6 py-8 pb-24">
+
+        {/* ── Hero row ───────────────────────────────────────────────────── */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Welcome back</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
+              {userName}
+            </h1>
+            <div className="flex items-center gap-3 mt-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                {tierLabel} Plan
+              </span>
+              <span className="text-sm text-muted-foreground">Level {level} · {levelTitle}</span>
+              {lessonStreak > 0 && (
+                <span className="flex items-center gap-1 text-sm font-semibold" style={{ color: '#dc2626' }}>
+                  <Flame size={14} /> {lessonStreak} day streak
                 </span>
-                <span className="text-xs" style={{ color: TV.muted }}>Level {level} {levelTitle}</span>
-              </div>
+              )}
             </div>
           </div>
 
           {/* XP bar */}
-          <div className="flex items-center gap-3 min-w-[180px]">
-            <div className="flex items-center gap-1">
-              <Zap size={14} style={{ color: TV.yellow }} />
-              <span className="text-sm font-bold font-mono" style={{ color: TV.yellow }}>{totalXp.toLocaleString()} XP</span>
+          <div className="lg:w-72">
+            <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+              <span className="flex items-center gap-1 font-medium">
+                <Zap size={12} className="text-yellow-500" />
+                {totalXp.toLocaleString()} XP
+              </span>
+              <span>Level {level + 1} in {Math.max(0, (level < 8 ? [200,500,900,1400,2000,2700,3500,9999][level] : 9999) - totalXp).toLocaleString()} XP</span>
             </div>
-            <div className="flex-1 h-2 rounded-full" style={{ background: TV.border }}>
-              <div className="h-full rounded-full" style={{ width: `${levelPct}%`, background: TV.yellow }} />
+            <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-700"
+                style={{ width: `${levelPct}%` }}
+              />
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Quick stats ──────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-4 gap-3">
-        <StatCard label="Lessons Done"  value={`${completedLessons.length}/21`} sub="lessons completed"  color={TV.green}  icon={BookOpen} />
-        <StatCard label="Sim Level"     value={`Lv${simLevel}`}                  sub="simulator rank"    color={TV.orange} icon={Trophy} />
-        <StatCard label="Streak"        value={`${lessonStreak}d`}               sub="days in a row"     color={TV.red}    icon={Flame} />
-        <StatCard label="Total XP"      value={totalXp.toLocaleString()}         sub="experience points" color={TV.yellow} icon={Zap} />
-      </div>
+        {/* ── Four stats ─────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+          {[
+            { label: 'Lessons completed', value: `${completedLessons.length} / ${ALL_LESSON_COUNT}`, sub: `${pctDone}% of curriculum`, Icon: BookOpen,      accent: '#16a34a' },
+            { label: 'Learning level',    value: levelTitle,                                          sub: `Level ${level}`,          Icon: GraduationCap, accent: '#2563eb' },
+            { label: 'Day streak',        value: `${lessonStreak}`,                                   sub: 'consecutive days',        Icon: Flame,         accent: '#dc2626' },
+            { label: 'Total XP',          value: totalXp.toLocaleString(),                            sub: 'experience points',       Icon: Zap,           accent: '#d97706' },
+          ].map(({ label, value, sub, Icon, accent }) => (
+            <div key={label} className="p-5 rounded-xl border border-border bg-card">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-muted-foreground">{label}</p>
+                <Icon size={16} style={{ color: accent }} />
+              </div>
+              <p className="text-2xl font-bold text-foreground leading-none mb-1">{value}</p>
+              <p className="text-xs text-muted-foreground">{sub}</p>
+            </div>
+          ))}
+        </div>
 
-      {/* ── Learning + Sim cards ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <LearningCard completed={completedLessons.length} xp={lessonXp} streak={lessonStreak} />
-        <SimCard />
-      </div>
+        {/* ── Main two-column ────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-10">
 
-      {/* ── Market pulse ─────────────────────────────────────────────────── */}
-      <MarketPulse prices={prices} />
+          {/* Learning path (3 cols) */}
+          <div className="lg:col-span-3">
+            <SectionLabel>Your Learning Path</SectionLabel>
 
-      {/* ── Quick lessons + why sim ───────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <QuickLessonsCard completed={completedLessons} />
-        <WhySimCard />
+            {/* Progress bar */}
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-muted-foreground">{pctDone}% complete</p>
+              <Link href="/lessons">
+                <a className="text-sm font-medium text-primary flex items-center gap-1 hover:underline">
+                  View all lessons <ArrowRight size={13} />
+                </a>
+              </Link>
+            </div>
+            <div className="h-2 rounded-full bg-muted mb-6 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-700"
+                style={{ width: `${pctDone}%` }}
+              />
+            </div>
+
+            {/* Lesson list */}
+            <div className="space-y-2">
+              {QUICK_LESSONS.map(l => {
+                const done = completedLessons.includes(l.id);
+                return (
+                  <Link key={l.id} href="/lessons">
+                    <a className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-muted transition-colors group">
+                      <div
+                        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: done ? l.accent + '20' : undefined }}
+                        data-done={done}
+                      >
+                        {done
+                          ? <CheckCircle size={18} style={{ color: l.accent }} />
+                          : <Play size={15} className="text-muted-foreground" />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground text-sm leading-tight">{l.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{l.module}</p>
+                      </div>
+                      {done
+                        ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: l.accent + '15', color: l.accent }}>Done</span>
+                        : <ChevronRight size={16} className="text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                      }
+                    </a>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <Link href="/lessons">
+              <a className="flex items-center justify-center gap-2 w-full mt-4 py-3 rounded-xl border border-border text-sm font-semibold text-foreground hover:bg-muted transition">
+                Continue Learning <ArrowRight size={14} />
+              </a>
+            </Link>
+          </div>
+
+          {/* Right column (2 cols) */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Market Pulse */}
+            <div>
+              <SectionLabel>Market Pulse</SectionLabel>
+              <div className="divide-y divide-border rounded-xl border border-border overflow-hidden bg-card">
+                {TICKER_SYMBOLS.slice(0, 6).map(sym => {
+                  const asset = ASSET_MAP.get(sym);
+                  if (!asset) return null;
+                  const price = prices[sym] ?? asset.basePrice;
+                  const chg   = ((price - asset.basePrice) / asset.basePrice) * 100;
+                  const up    = chg >= 0;
+                  return (
+                    <Link key={sym} href="/market">
+                      <a className="flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{sym}</p>
+                          <p className="text-xs text-muted-foreground">{asset.name}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-mono text-foreground">{formatPrice(price, asset)}</p>
+                          <p className="text-xs font-mono font-semibold" style={{ color: up ? '#16a34a' : '#dc2626' }}>
+                            {up ? '+' : ''}{chg.toFixed(2)}%
+                          </p>
+                        </div>
+                      </a>
+                    </Link>
+                  );
+                })}
+              </div>
+              <Link href="/market">
+                <a className="flex items-center gap-1 mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  View all 26 markets <ArrowRight size={13} />
+                </a>
+              </Link>
+            </div>
+
+            {/* Sim CTA */}
+            <div>
+              <SectionLabel>Practice Simulator</SectionLabel>
+              <div className="rounded-xl border border-border bg-card p-5">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Activity size={18} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">26 Assets · Always Live</p>
+                    <p className="text-sm text-muted-foreground mt-0.5 leading-snug">
+                      Stocks, crypto, forex & indices with realistic price action. Zero real money.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
+                  {[
+                    ['Stocks', '10', '#2563eb'],
+                    ['Crypto', '8',  '#d97706'],
+                    ['Forex',  '4',  '#16a34a'],
+                    ['Indices','4',  '#7c3aed'],
+                  ].map(([label, count, color]) => (
+                    <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color as string }} />
+                      <span className="text-foreground font-medium">{label}</span>
+                      <span className="text-muted-foreground ml-auto">{count}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link href="/simulator">
+                  <a className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition">
+                    <Play size={13} fill="currentColor" /> Open Simulator
+                  </a>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Bottom CTA ─────────────────────────────────────────────────── */}
+        {tier === 'free' && (
+          <div className="rounded-xl border border-border bg-card p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Upgrade</p>
+              <h3 className="text-lg font-bold text-foreground">Unlock more SimCash &amp; positions</h3>
+              <p className="text-sm text-muted-foreground mt-1">Starter gives you $25,000 SimCash and 15 open positions. Pro gives $100,000.</p>
+            </div>
+            <Link href="/pricing">
+              <a className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold whitespace-nowrap hover:opacity-90 transition shrink-0">
+                View Plans <ArrowRight size={14} />
+              </a>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

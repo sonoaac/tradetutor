@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import {
   TrendingUp, ShieldCheck, Zap, ArrowRight, BarChart3, Users,
   ChevronRight, Star, Briefcase, Target, BookOpen, Gauge,
-  ChevronLeft, GraduationCap, TrendingDown, Award
+  ChevronLeft, TrendingDown, Award
 } from "lucide-react";
 import { AuthModal } from "@/components/AuthModal";
 import { ASSETS } from "@/lib/assets";
@@ -334,42 +334,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Lessons Section */}
-      <section id="learn" className="py-16 md:py-24 border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-start md:items-center mb-8 md:mb-12 flex-col md:flex-row gap-4">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-2">Learning Paths</h2>
-              <p className="text-sm md:text-base text-muted-foreground">Start from basics, progress to advanced strategies</p>
-            </div>
-            <Link href="/lessons">
-              <button className="flex items-center gap-2 text-primary hover:text-primary/80 transition font-medium text-sm md:text-base">
-                View All Lessons <ChevronRight className="w-4 md:w-5 h-4 md:h-5" />
-              </button>
-            </Link>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {[
-              { title: 'Trading Basics', level: 'Beginner', topics: 12 },
-              { title: 'Technical Analysis', level: 'Intermediate', topics: 15 },
-              { title: 'Risk Management', level: 'Intermediate', topics: 10 },
-              { title: 'Advanced Strategies', level: 'Advanced', topics: 18 },
-              { title: 'Market Psychology', level: 'Advanced', topics: 8 },
-              { title: 'Real-Time Trading', level: 'Pro', topics: 20 },
-            ].map((lesson) => (
-              <div key={lesson.title} className="group p-5 md:p-6 bg-card border border-white/10 rounded-lg hover:border-primary/50 transition cursor-pointer">
-                <div className="flex items-start justify-between mb-2 md:mb-3">
-                  <GraduationCap className="w-6 md:w-8 h-6 md:h-8 text-primary opacity-60 group-hover:opacity-100 transition" />
-                  <span className="text-xs font-medium px-2 py-1 rounded-full bg-primary/20 text-primary">{lesson.level}</span>
-                </div>
-                <h3 className="font-bold text-base md:text-lg mb-1">{lesson.title}</h3>
-                <p className="text-xs md:text-sm text-muted-foreground">{lesson.topics} topics</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Stats Section */}
       <section className="py-16 md:py-24 bg-secondary/5 border-t border-b border-white/5">
