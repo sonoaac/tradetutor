@@ -149,7 +149,8 @@ export default function SimulatorPage() {
   const [mobilePanel, setMobilePanel] = useState<'chart' | 'order' | 'watch' | 'stats'>('chart');
 
   const asset = ASSET_MAP.get(selectedSymbol)!;
-  const currentPrice = sim.prices[selectedSymbol] ?? asset.basePrice;
+  // Use livePrices for UI display (updates every 600ms for smooth feel)
+  const currentPrice = sim.livePrices[selectedSymbol] ?? sim.prices[selectedSymbol] ?? asset.basePrice;
   const candles = sim.candles[selectedSymbol] ?? [];
 
   // ── Prev prices for % change (compare to candle[length-2]) ───────────────
