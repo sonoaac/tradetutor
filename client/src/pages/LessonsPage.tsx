@@ -1,6 +1,7 @@
 /**
  * LessonsPage — Duolingo-style gamified learning path.
  * All progress persisted to localStorage. Zero backend required.
+ * Light by default; dark mode supported via semantic Tailwind classes.
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'wouter';
@@ -178,7 +179,7 @@ function DifficultyStars({ n }: { n: 1 | 2 | 3 }) {
   return (
     <span className="flex gap-0.5">
       {[1, 2, 3].map(i => (
-        <Star key={i} size={10} fill={i <= n ? '#f5c842' : 'none'} stroke={i <= n ? '#f5c842' : '#4b5563'} />
+        <Star key={i} size={10} fill={i <= n ? '#f5c842' : 'none'} stroke={i <= n ? '#f5c842' : '#9ca3af'} />
       ))}
     </span>
   );
@@ -191,10 +192,8 @@ export default function LessonsPage() {
   const [progress, setProgress] = useState<SavedProgress>(loadProgress);
   const [activeModule, setActiveModule] = useState<string | null>(null);
 
-  // Persist on change
   useEffect(() => { saveProgress(progress); }, [progress]);
 
-  // Streak calculation on mount
   useEffect(() => {
     const today = todayKey();
     setProgress(p => {
@@ -223,19 +222,15 @@ export default function LessonsPage() {
   }, []);
 
   const resetAll = useCallback(() => {
-    const fresh: SavedProgress = { completed: [], xp: 0, streak: 0, lastStudyDay: '', todayCount: 0 };
-    setProgress(fresh);
+    setProgress({ completed: [], xp: 0, streak: 0, lastStudyDay: '', todayCount: 0 });
   }, []);
 
   const { level, title: levelTitle, pct: levelPct, toNext } = xpToLevel(progress.xp);
   const completedCount = progress.completed.length;
   const totalLessons   = ALL_LESSONS.length;
 
-  // Is a lesson unlocked? First lesson of first module is always unlocked.
-  // Each lesson unlocks after the previous one is completed.
   function isUnlocked(lesson: Lesson, moduleIndex: number, lessonIndex: number): boolean {
     if (moduleIndex === 0 && lessonIndex === 0) return true;
-    // Need previous lesson done
     const flat = ALL_LESSONS;
     const myIdx = flat.findIndex(l => l.id === lesson.id);
     if (myIdx === 0) return true;
@@ -248,55 +243,53 @@ export default function LessonsPage() {
     <div className="max-w-5xl mx-auto px-3 py-4 pb-24">
 
       {/* ── XP / Level header ──────────────────────────────────────────────── */}
-      <div className="rounded-2xl p-5 mb-6" style={{ background: '#1e2230', border: '1px solid #2a2e3e' }}>
-        {/* Level badge + title */}
+      <div className="rounded-2xl p-5 mb-6 bg-card border border-border">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div
-              className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg"
-              style={{ background: '#2196f3', color: '#fff' }}
+              className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg text-white"
+              style={{ background: '#2196f3' }}
             >
               {level}
             </div>
             <div>
-              <p className="font-bold text-white text-lg leading-tight">{levelTitle}</p>
-              <p className="text-xs" style={{ color: '#6b7280' }}>Level {level} · {progress.xp.toLocaleString()} XP earned</p>
+              <p className="font-bold text-foreground text-lg leading-tight">{levelTitle}</p>
+              <p className="text-xs text-muted-foreground">Level {level} · {progress.xp.toLocaleString()} XP earned</p>
             </div>
           </div>
 
-          {/* Stats row */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5 flex-col">
               <div className="flex items-center gap-1">
-                <Flame size={16} style={{ color: progress.streak > 0 ? '#ef5350' : '#4b5563' }} />
-                <span className="font-bold text-white">{progress.streak}</span>
+                <Flame size={16} style={{ color: progress.streak > 0 ? '#ef5350' : undefined }} className={progress.streak > 0 ? '' : 'text-muted-foreground'} />
+                <span className="font-bold text-foreground">{progress.streak}</span>
               </div>
-              <span className="text-[10px]" style={{ color: '#6b7280' }}>Streak</span>
+              <span className="text-[10px] text-muted-foreground">Streak</span>
             </div>
             <div className="flex items-center gap-1.5 flex-col">
               <div className="flex items-center gap-1">
                 <Trophy size={16} style={{ color: '#f5c842' }} />
-                <span className="font-bold text-white">{completedCount}</span>
+                <span className="font-bold text-foreground">{completedCount}</span>
               </div>
-              <span className="text-[10px]" style={{ color: '#6b7280' }}>Done</span>
+              <span className="text-[10px] text-muted-foreground">Done</span>
             </div>
             <div className="flex items-center gap-1.5 flex-col">
               <div className="flex items-center gap-1">
                 <Target size={16} style={{ color: '#26a69a' }} />
-                <span className="font-bold text-white">{progress.todayCount}</span>
+                <span className="font-bold text-foreground">{progress.todayCount}</span>
               </div>
-              <span className="text-[10px]" style={{ color: '#6b7280' }}>Today</span>
+              <span className="text-[10px] text-muted-foreground">Today</span>
             </div>
           </div>
         </div>
 
         {/* XP progress bar */}
         <div>
-          <div className="flex justify-between text-xs mb-1" style={{ color: '#6b7280' }}>
+          <div className="flex justify-between text-xs mb-1 text-muted-foreground">
             <span>Progress to Level {level + 1}</span>
             <span>{toNext > 0 ? `${toNext} XP to go` : 'Max level!'}</span>
           </div>
-          <div className="h-3 rounded-full overflow-hidden" style={{ background: '#131722' }}>
+          <div className="h-3 rounded-full overflow-hidden bg-muted">
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{ width: `${levelPct}%`, background: 'linear-gradient(90deg, #2196f3, #00bcd4)' }}
@@ -305,11 +298,11 @@ export default function LessonsPage() {
         </div>
 
         {/* Overall progress */}
-        <div className="mt-3 flex items-center justify-between text-xs" style={{ color: '#6b7280' }}>
+        <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
           <span>{completedCount} / {totalLessons} lessons completed</span>
           <span>{Math.round((completedCount / totalLessons) * 100)}% complete</span>
         </div>
-        <div className="h-1.5 rounded-full mt-1 overflow-hidden" style={{ background: '#131722' }}>
+        <div className="h-1.5 rounded-full mt-1 overflow-hidden bg-muted">
           <div
             className="h-full rounded-full transition-all duration-700"
             style={{ width: `${(completedCount / totalLessons) * 100}%`, background: '#26a69a' }}
@@ -319,25 +312,28 @@ export default function LessonsPage() {
 
       {/* ── Daily goal card ────────────────────────────────────────────────── */}
       <div
-        className="rounded-xl p-3 mb-6 flex items-center gap-3"
-        style={{ background: progress.todayCount >= 3 ? '#26a69a15' : '#f5c84215', border: `1px solid ${progress.todayCount >= 3 ? '#26a69a30' : '#f5c84230'}` }}
+        className="rounded-xl p-3 mb-6 flex items-center gap-3 border"
+        style={{
+          background: progress.todayCount >= 3 ? '#26a69a15' : '#f5c84215',
+          borderColor: progress.todayCount >= 3 ? '#26a69a30' : '#f5c84230',
+        }}
       >
         <div
-          className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
-          style={{ background: progress.todayCount >= 3 ? '#26a69a' : '#f5c842', color: '#fff' }}
+          className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 text-white"
+          style={{ background: progress.todayCount >= 3 ? '#26a69a' : '#f5c842' }}
         >
           {Math.min(progress.todayCount, 3)}/3
         </div>
         <div className="flex-1">
-          <p className="text-sm font-bold text-white">
+          <p className="text-sm font-bold text-foreground">
             {progress.todayCount >= 3 ? 'Daily goal complete!' : `Complete ${3 - progress.todayCount} more lesson${3 - progress.todayCount !== 1 ? 's' : ''} today`}
           </p>
           <div className="flex gap-1.5 mt-1">
             {[1, 2, 3].map(i => (
               <div
                 key={i}
-                className="h-1.5 flex-1 rounded-full"
-                style={{ background: i <= progress.todayCount ? '#26a69a' : '#2a2e3e' }}
+                className={`h-1.5 flex-1 rounded-full ${i <= progress.todayCount ? '' : 'bg-muted'}`}
+                style={i <= progress.todayCount ? { background: '#26a69a' } : undefined}
               />
             ))}
           </div>
@@ -360,42 +356,43 @@ export default function LessonsPage() {
             <div key={mod.id}>
               {/* Module header */}
               <button
-                className="w-full rounded-2xl p-4 flex items-center gap-3 transition-all"
+                className="w-full rounded-2xl p-4 flex items-center gap-3 transition-all border-2 bg-card"
                 style={{
-                  background: modCompleted ? mod.bg : isExpanded ? mod.bg : '#1e2230',
-                  border: `2px solid ${modCompleted ? mod.color : isExpanded ? mod.color + '66' : '#2a2e3e'}`,
+                  background: modCompleted || isExpanded ? mod.bg : undefined,
+                  borderColor: modCompleted ? mod.color : isExpanded ? mod.color + '66' : undefined,
                 }}
                 onClick={() => setActiveModule(activeModule === mod.id ? null : mod.id)}
               >
-                {/* Icon */}
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: modCompleted ? mod.color : '#131722', border: `2px solid ${mod.color}` }}
+                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border-2 bg-muted"
+                  style={{
+                    background: modCompleted ? mod.color : undefined,
+                    borderColor: mod.color,
+                  }}
                 >
                   {modCompleted
-                    ? <CheckCircle size={22} style={{ color: '#fff' }} />
+                    ? <CheckCircle size={22} className="text-white" />
                     : <ModIcon size={22} style={{ color: mod.color }} />
                   }
                 </div>
 
-                {/* Text */}
                 <div className="flex-1 text-left">
-                  <p className="font-bold text-white">{mod.title}</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#6b7280' }}>{mod.subtitle}</p>
+                  <p className="font-bold text-foreground">{mod.title}</p>
+                  <p className="text-xs mt-0.5 text-muted-foreground">{mod.subtitle}</p>
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-[10px]" style={{ color: mod.color }}>
                       {mod.lessons.filter(l => isCompleted(l.id)).length}/{mod.lessons.length} lessons
                     </span>
-                    <span className="text-[10px]" style={{ color: '#6b7280' }}>
+                    <span className="text-[10px] text-muted-foreground">
                       {mod.lessons.reduce((s, l) => s + l.xp, 0)} XP total
                     </span>
                   </div>
                 </div>
 
-                {/* Chevron */}
                 <ChevronRight
                   size={18}
-                  style={{ color: '#6b7280', transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}
+                  className="text-muted-foreground transition-transform duration-200"
+                  style={{ transform: isExpanded ? 'rotate(90deg)' : 'none' }}
                 />
               </button>
 
@@ -409,37 +406,34 @@ export default function LessonsPage() {
                     const LessonIcon = lesson.icon;
 
                     return (
-                      <div
-                        key={lesson.id}
-                        className="relative"
-                      >
+                      <div key={lesson.id} className="relative">
                         {/* Connector dot */}
                         <div
-                          className="absolute -left-5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full"
-                          style={{ background: done ? mod.color : isCurrent ? mod.color : '#2a2e3e', border: `2px solid ${done ? mod.color : '#2a2e3e'}` }}
+                          className={`absolute -left-5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 ${done || isCurrent ? '' : 'bg-muted border-border'}`}
+                          style={done || isCurrent ? { background: mod.color, borderColor: mod.color } : undefined}
                         />
 
                         <div
-                          className="rounded-xl p-3 transition-all"
+                          className="rounded-xl p-3 transition-all border bg-card"
                           style={{
-                            background: done ? mod.bg : isCurrent ? '#1e2230' : '#131722',
-                            border: `1px solid ${done ? mod.color + '44' : isCurrent ? mod.color + '44' : '#2a2e3e'}`,
+                            background: done ? mod.bg : undefined,
+                            borderColor: done || isCurrent ? mod.color + '44' : undefined,
                             opacity: !unlocked && !done ? 0.5 : 1,
                           }}
                         >
                           <div className="flex items-center gap-3">
                             {/* Status icon */}
                             <div
-                              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border bg-muted"
                               style={{
-                                background: done ? mod.color : isCurrent ? mod.color + '22' : '#1e2230',
-                                border: `1.5px solid ${done ? mod.color : '#2a2e3e'}`,
+                                background: done ? mod.color : isCurrent ? mod.color + '22' : undefined,
+                                borderColor: done ? mod.color : undefined,
                               }}
                             >
                               {done
-                                ? <CheckCircle size={18} style={{ color: '#fff' }} />
+                                ? <CheckCircle size={18} className="text-white" />
                                 : !unlocked
-                                ? <Lock size={16} style={{ color: '#4b5563' }} />
+                                ? <Lock size={16} className="text-muted-foreground" />
                                 : <LessonIcon size={18} style={{ color: mod.color }} />
                               }
                             </div>
@@ -447,11 +441,11 @@ export default function LessonsPage() {
                             {/* Content */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <p className="text-sm font-bold text-white leading-tight">{lesson.title}</p>
+                                <p className="text-sm font-bold text-foreground leading-tight">{lesson.title}</p>
                                 {isCurrent && (
                                   <span
-                                    className="text-[9px] px-1.5 py-0.5 rounded-full font-bold animate-pulse"
-                                    style={{ background: mod.color, color: '#fff' }}
+                                    className="text-[9px] px-1.5 py-0.5 rounded-full font-bold animate-pulse text-white"
+                                    style={{ background: mod.color }}
                                   >
                                     START
                                   </span>
@@ -462,13 +456,13 @@ export default function LessonsPage() {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[11px] mt-0.5 truncate" style={{ color: '#6b7280' }}>{lesson.desc}</p>
+                              <p className="text-[11px] mt-0.5 truncate text-muted-foreground">{lesson.desc}</p>
                               <div className="flex items-center gap-3 mt-1">
                                 <div className="flex items-center gap-1">
                                   <Zap size={10} style={{ color: '#f5c842' }} />
                                   <span className="text-[10px] font-medium" style={{ color: '#f5c842' }}>{lesson.xp} XP</span>
                                 </div>
-                                <span className="text-[10px]" style={{ color: '#4b5563' }}>{lesson.duration}</span>
+                                <span className="text-[10px] text-muted-foreground">{lesson.duration}</span>
                                 <DifficultyStars n={lesson.difficulty} />
                               </div>
                             </div>
@@ -478,20 +472,11 @@ export default function LessonsPage() {
                               <button
                                 onClick={() => {
                                   if (!done) completeLesson(lesson.id, lesson.xp);
-                                  // navigate to lesson detail if you have one
-                                  // navigate(`/lessons/${lesson.id}`);
                                 }}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold flex-shrink-0 transition-all"
-                                style={{
-                                  background: done ? '#1e2230' : mod.color,
-                                  color: done ? '#6b7280' : '#fff',
-                                }}
+                                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold flex-shrink-0 transition-all ${done ? 'bg-muted text-muted-foreground' : 'text-white'}`}
+                                style={done ? undefined : { background: mod.color }}
                               >
-                                {done ? (
-                                  <>Review</>
-                                ) : (
-                                  <><PlayCircle size={13} /> Study</>
-                                )}
+                                {done ? <>Review</> : <><PlayCircle size={13} /> Study</>}
                               </button>
                             )}
                           </div>
@@ -502,11 +487,11 @@ export default function LessonsPage() {
                 </div>
               )}
 
-              {/* "Next up" prompt when module is collapsed and has an active lesson */}
+              {/* "Next up" prompt */}
               {!isExpanded && modStarted && !modCompleted && firstUnlockedIdx >= 0 && (
                 <div
-                  className="mx-2 -mt-1 rounded-b-xl px-4 py-2 flex items-center justify-between"
-                  style={{ background: mod.bg, border: `1px solid ${mod.color}33`, borderTop: 'none' }}
+                  className="mx-2 -mt-1 rounded-b-xl px-4 py-2 flex items-center justify-between border border-t-0"
+                  style={{ background: mod.bg, borderColor: mod.color + '33' }}
                 >
                   <span className="text-xs" style={{ color: mod.color }}>
                     Next: {mod.lessons[firstUnlockedIdx].title}
@@ -516,8 +501,8 @@ export default function LessonsPage() {
                       const l = mod.lessons[firstUnlockedIdx];
                       completeLesson(l.id, l.xp);
                     }}
-                    className="text-xs font-bold px-3 py-1 rounded-lg"
-                    style={{ background: mod.color, color: '#fff' }}
+                    className="text-xs font-bold px-3 py-1 rounded-lg text-white"
+                    style={{ background: mod.color }}
                   >
                     Continue
                   </button>
@@ -528,9 +513,9 @@ export default function LessonsPage() {
         })}
       </div>
 
-      {/* ── Achievement badges ─────────────────────────────────────────────── */}
-      <div className="mt-8 rounded-2xl p-4" style={{ background: '#1e2230', border: '1px solid #2a2e3e' }}>
-        <h3 className="font-bold text-white mb-3 flex items-center gap-2">
+      {/* ── Rank Badges ────────────────────────────────────────────────────── */}
+      <div className="mt-8 rounded-2xl p-4 bg-card border border-border">
+        <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
           <Award size={16} style={{ color: '#f5c842' }} /> Rank Badges
         </h3>
         <div className="grid grid-cols-4 gap-2">
@@ -549,17 +534,17 @@ export default function LessonsPage() {
             return (
               <div
                 key={badge.title}
-                className="flex flex-col items-center p-2 rounded-xl gap-1"
-                style={{ background: unlocked ? badge.color + '20' : '#131722', opacity: unlocked ? 1 : 0.4 }}
+                className={`flex flex-col items-center p-2 rounded-xl gap-1 ${unlocked ? '' : 'opacity-40'}`}
+                style={{ background: unlocked ? badge.color + '20' : undefined }}
                 title={`${badge.xp} XP required`}
               >
                 <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center"
-                  style={{ background: unlocked ? badge.color : '#2a2e3e' }}
+                  className="w-9 h-9 rounded-full flex items-center justify-center bg-muted"
+                  style={unlocked ? { background: badge.color } : undefined}
                 >
-                  <BadgeIcon size={16} style={{ color: unlocked ? '#fff' : '#4b5563' }} />
+                  <BadgeIcon size={16} style={{ color: unlocked ? '#fff' : undefined }} className={unlocked ? '' : 'text-muted-foreground'} />
                 </div>
-                <span className="text-[9px] text-center leading-tight font-medium" style={{ color: unlocked ? badge.color : '#4b5563' }}>
+                <span className={`text-[9px] text-center leading-tight font-medium ${unlocked ? '' : 'text-muted-foreground'}`} style={unlocked ? { color: badge.color } : undefined}>
                   {badge.title}
                 </span>
               </div>
@@ -572,8 +557,7 @@ export default function LessonsPage() {
       <div className="mt-4 text-center">
         <button
           onClick={resetAll}
-          className="text-xs px-3 py-1.5 rounded-lg"
-          style={{ background: '#1e2230', color: '#4b5563' }}
+          className="text-xs px-3 py-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition"
         >
           Reset Progress
         </button>
