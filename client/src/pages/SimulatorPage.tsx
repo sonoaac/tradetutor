@@ -1,911 +1,624 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link } from 'wouter';
-import { AuthModal } from "@/components/AuthModal";
-import { SimpleTradingChart } from '@/components/SimpleTradingChart';
-import { DollarSign, TrendingUp, TrendingDown, Activity, Wallet, ArrowUpRight, ArrowDownRight, X } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import {
+  TrendingUp, TrendingDown, X, Zap, Trophy, Flame, Star,
+  Activity, DollarSign, Globe, Cpu, Crown, ChevronRight,
+  BarChart2, Target, Award, AlertTriangle, RefreshCw,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { useSimTicker } from '@/hooks/use-sim-ticker';
+import { AuthModal } from '@/components/AuthModal';
+import {
+  useSimulator, ASSETS, ASSET_MAP, formatPrice,
+  type Asset, type Position, type ClosedTrade,
+} from '@/hooks/use-simulator';
+import { useGamification } from '@/hooks/use-gamification';
+import { LiveCandleChart } from '@/components/simulator/LiveCandleChart';
 
-interface Position {
-  id: string;
-  symbol: string;
-  type: 'long' | 'short';
-  quantity: number;
-  entryPrice: number;
-  currentPrice: number;
-  profitLoss: number;
-  profitLossPercent: number;
+// ─── Icon map for achievements ─────────────────────────────────────────────
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  Zap, Trophy, Flame, Star, Activity, DollarSign, Globe, Cpu, Crown,
+};
+
+// ─── Theme colours ─────────────────────────────────────────────────────────
+
+const TV = {
+  bg:       '#131722',
+  panel:    '#1e2230',
+  border:   '#2a2e3e',
+  text:     '#d1d4dc',
+  muted:    '#6b7280',
+  green:    '#26a69a',
+  red:      '#ef5350',
+  blue:     '#2196f3',
+  cyan:     '#00bcd4',
+  orange:   '#ff9800',
+  purple:   '#9c27b0',
+  yellow:   '#f5c842',
+};
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+const fmt$ = (n: number) =>
+  `$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const fmtPct = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
+
+// ─── Sub-components ────────────────────────────────────────────────────────
+
+function PnlBadge({ value, pct }: { value: number; pct: number }) {
+  const color = value >= 0 ? TV.green : TV.red;
+  const Icon = value >= 0 ? TrendingUp : TrendingDown;
+  return (
+    <span style={{ color }} className="flex items-center gap-1 text-xs font-mono">
+      <Icon size={12} />
+      {fmt$(value)} ({fmtPct(pct)})
+    </span>
+  );
 }
 
-interface Order {
-  id: string;
-  symbol: string;
-  side: 'buy' | 'sell';
-  quantity: number;
-  price: number;
-  timestamp: string;
-  status: 'executed' | 'pending' | 'cancelled';
+function CategoryBadge({ category }: { category: string }) {
+  const colors: Record<string, string> = {
+    Stocks: '#2196f333', Crypto: '#ff980033', Forex: '#26a69a33', Indices: '#9c27b033',
+  };
+  const texts: Record<string, string> = {
+    Stocks: '#2196f3', Crypto: '#ff9800', Forex: '#26a69a', Indices: '#9c27b0',
+  };
+  return (
+    <span
+      className="text-[10px] px-1.5 py-0.5 rounded font-medium"
+      style={{ background: colors[category] || '#333', color: texts[category] || '#fff' }}
+    >
+      {category}
+    </span>
+  );
 }
 
-const MOCK_POSITIONS: Position[] = [
-  { id: '1', symbol: 'SMBY', type: 'long', quantity: 10, entryPrice: 145.30, currentPrice: 152.45, profitLoss: 71.50, profitLossPercent: 4.92 },
-  { id: '2', symbol: 'BTN', type: 'long', quantity: 0.5, entryPrice: 42350.00, currentPrice: 43120.00, profitLoss: 385.00, profitLossPercent: 1.82 },
-];
+// ─── XP Bar ────────────────────────────────────────────────────────────────
 
-const MOCK_ORDERS: Order[] = [
-  { id: '1', symbol: 'SMBY', side: 'buy', quantity: 10, price: 145.30, timestamp: '2026-02-02 14:32:15', status: 'executed' },
-  { id: '2', symbol: 'BTN', side: 'buy', quantity: 0.5, price: 42350.00, timestamp: '2026-02-02 13:18:42', status: 'executed' },
-  { id: '3', symbol: 'PRTC', side: 'buy', quantity: 5, price: 189.50, timestamp: '2026-02-02 12:05:33', status: 'pending' },
-];
+function XpBar({ level, xpProgress, xpRequired }: { level: number; xpProgress: number; xpRequired: number }) {
+  const pct = xpRequired > 0 ? Math.min(100, (xpProgress / xpRequired) * 100) : 100;
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className="text-xs font-bold px-1.5 py-0.5 rounded"
+        style={{ background: TV.blue + '33', color: TV.blue }}
+      >
+        Lv{level}
+      </span>
+      <div className="flex-1 h-1.5 rounded-full" style={{ background: TV.border }}>
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, background: TV.blue }}
+        />
+      </div>
+      <span className="text-[10px] font-mono" style={{ color: TV.muted }}>
+        {xpProgress}/{xpRequired}
+      </span>
+    </div>
+  );
+}
+
+// ─── Watchlist Item ────────────────────────────────────────────────────────
+
+function WatchlistItem({
+  asset, price, prevPrice, selected, onClick,
+}: {
+  asset: Asset; price: number; prevPrice: number; selected: boolean; onClick: () => void;
+}) {
+  const change = prevPrice > 0 ? ((price - prevPrice) / prevPrice) * 100 : 0;
+  const color = change >= 0 ? TV.green : TV.red;
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center justify-between px-3 py-2 text-left transition-colors"
+      style={{
+        background: selected ? TV.border : 'transparent',
+        borderLeft: selected ? `2px solid ${TV.blue}` : '2px solid transparent',
+      }}
+    >
+      <div className="flex flex-col min-w-0">
+        <span className="text-xs font-bold text-white">{asset.symbol}</span>
+        <span className="text-[10px] truncate" style={{ color: TV.muted }}>{asset.name}</span>
+      </div>
+      <div className="flex flex-col items-end">
+        <span className="text-xs font-mono text-white">{formatPrice(price, asset)}</span>
+        <span className="text-[10px] font-mono" style={{ color }}>{fmtPct(change)}</span>
+      </div>
+    </button>
+  );
+}
+
+// ─── Main Page ─────────────────────────────────────────────────────────────
 
 export default function SimulatorPage() {
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const { tickId, simNowMs } = useSimTicker();
+  const { user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [positions, setPositions] = useState<Position[]>(MOCK_POSITIONS);
-  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
-  const [selectedSymbol, setSelectedSymbol] = useState('SMBY');
-  const [orderSide, setOrderSide] = useState<'buy' | 'sell'>('buy');
-  const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
-  const [quantity, setQuantity] = useState('1');
-  const [limitPrice, setLimitPrice] = useState('');
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [showChartModal, setShowChartModal] = useState(false);
-  const [mobileTab, setMobileTab] = useState<'chart' | 'trade' | 'positions' | 'history'>('trade');
-  const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({
-    'SMBY': 152.45,
-    'BTN': 43120.00,
-    'PRTC': 189.50,
-    'ETHA': 2840.30,
-    'VLTR': 256.80,
-    'SOLR': 125.40
-  });
 
-  const [balance, setBalance] = useState(50000);
-  const lastAppliedTickRef = useRef<number | null>(null);
+  const tier = user?.tier ?? 'free';
+  const sim = useSimulator(tier);
+  const gam = useGamification();
 
-  const hasSimulatorAccess = isAuthenticated && !!user?.tier && user.tier !== 'free';
-  
-  // Calculate real-time portfolio values
-  const totalPositionValue = positions.reduce((sum, pos) => {
-    const currentPrice = currentPrices[pos.symbol] || pos.currentPrice;
-    return sum + (currentPrice * pos.quantity);
-  }, 0);
-  
-  const totalValue = balance + totalPositionValue;
-  
-  const profitLoss = positions.reduce((sum, pos) => {
-    const currentPrice = currentPrices[pos.symbol] || pos.currentPrice;
-    return sum + ((currentPrice - pos.entryPrice) * pos.quantity * (pos.type === 'short' ? -1 : 1));
-  }, 0);
-  
-  const profitLossPercent = totalPositionValue > 0 ? (profitLoss / totalPositionValue) * 100 : 0;
+  // ── UI state ──────────────────────────────────────────────────────────────
+  const [selectedSymbol, setSelectedSymbol] = useState('AAPL');
+  const [direction, setDirection] = useState<'long' | 'short'>('long');
+  const [qty, setQty] = useState('1');
+  const [slInput, setSlInput] = useState('');
+  const [tpInput, setTpInput] = useState('');
+  const [activeTab, setActiveTab] = useState<'positions' | 'history' | 'achievements' | 'challenges'>('positions');
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [mobilePanel, setMobilePanel] = useState<'chart' | 'order' | 'watch' | 'stats'>('chart');
 
-  const profitLossPercentText = `${profitLossPercent > 0 ? '+' : ''}${profitLossPercent.toLocaleString(undefined, {
-    maximumFractionDigits: 3,
-  })}%`;
+  const asset = ASSET_MAP.get(selectedSymbol)!;
+  const currentPrice = sim.prices[selectedSymbol] ?? asset.basePrice;
+  const candles = sim.candles[selectedSymbol] ?? [];
 
-  const currentPrice = currentPrices[selectedSymbol] || 100;
-
-  // Live price simulation (synchronized 7s ticker)
-  useEffect(() => {
-    if (!hasSimulatorAccess) return;
-    if (lastAppliedTickRef.current === tickId) return;
-    if (lastAppliedTickRef.current == null) {
-      lastAppliedTickRef.current = tickId;
-      return;
-    }
-    lastAppliedTickRef.current = tickId;
-
-    setCurrentPrices(prev => {
-      const updated = { ...prev };
-      const MIN_MOVE = 0.01;
-
-      Object.keys(updated).forEach(symbol => {
-        const isCrypto = symbol.includes('BT') || symbol.includes('ETH') || symbol.includes('SOL') || symbol === 'BTN';
-        const maxMove = isCrypto ? 3 : 1.5;
-        const clampedMax = Math.max(MIN_MOVE, Math.min(3, maxMove));
-        const absDelta = MIN_MOVE + Math.random() * (clampedMax - MIN_MOVE);
-        const direction = Math.random() > 0.5 ? 1 : -1;
-
-        updated[symbol] = Math.max(updated[symbol] + direction * absDelta, 0.01);
-      });
-
-      return updated;
+  // ── Prev prices for % change (compare to candle[length-2]) ───────────────
+  const prevPrices = useMemo(() => {
+    const p: Record<string, number> = {};
+    ASSETS.forEach(a => {
+      const hist = sim.candles[a.symbol];
+      if (hist && hist.length >= 2) p[a.symbol] = hist[hist.length - 2].close;
+      else p[a.symbol] = a.basePrice;
     });
-  }, [tickId, hasSimulatorAccess]);
+    return p;
+  }, [sim.candles]);
 
-  // Update position P&L in real-time
-  useEffect(() => {
-    if (!hasSimulatorAccess) return;
-    setPositions(prev => prev.map(pos => {
-      const currentPrice = currentPrices[pos.symbol] || pos.currentPrice;
-      const profitLoss = (currentPrice - pos.entryPrice) * pos.quantity * (pos.type === 'short' ? -1 : 1);
-      const profitLossPercent = ((currentPrice - pos.entryPrice) / pos.entryPrice) * 100 * (pos.type === 'short' ? -1 : 1);
-      
-      return {
-        ...pos,
-        currentPrice,
-        profitLoss,
-        profitLossPercent
-      };
-    }));
-  }, [currentPrices, hasSimulatorAccess]);
+  // ── Active position for selected symbol (to show lines on chart) ──────────
+  const activePos = sim.positions.find(p => p.symbol === selectedSymbol);
 
-  const handlePlaceOrder = () => {
-    setShowConfirmation(true);
-  };
+  // ── R:R calculation ───────────────────────────────────────────────────────
+  const qtyNum = parseFloat(qty) || 0;
+  const slNum  = parseFloat(slInput) || null;
+  const tpNum  = parseFloat(tpInput) || null;
+  const rrRatio = useMemo(() => {
+    if (!slNum || !tpNum || !currentPrice) return null;
+    const risk   = Math.abs(currentPrice - slNum)  * qtyNum;
+    const reward = Math.abs(currentPrice - tpNum)  * qtyNum;
+    if (risk === 0) return null;
+    return (reward / risk).toFixed(2);
+  }, [slNum, tpNum, currentPrice, qtyNum]);
 
-  const confirmOrder = () => {
-    const price = orderType === 'market' ? currentPrice : parseFloat(limitPrice);
-    const qty = parseFloat(quantity);
-    const totalCost = price * qty;
-
-    // Execute trade
-    if (orderSide === 'buy') {
-      if (totalCost > balance) {
-        alert('Insufficient cash balance. You can reset your practice cash from the Portfolio page, or upgrade your plan for a higher starting SimCash amount.');
-        return;
-      }
-      
-      setBalance(prev => prev - totalCost);
-      
-      // Add to positions
-      const existingPos = positions.find(p => p.symbol === selectedSymbol && p.type === 'long');
-      if (existingPos) {
-        setPositions(prev => prev.map(p => 
-          p.id === existingPos.id 
-            ? { ...p, quantity: p.quantity + qty, entryPrice: ((p.entryPrice * p.quantity) + (price * qty)) / (p.quantity + qty) }
-            : p
-        ));
-      } else {
-        const newPosition: Position = {
-          id: Date.now().toString(),
-          symbol: selectedSymbol,
-          type: 'long',
-          quantity: qty,
-          entryPrice: price,
-          currentPrice: price,
-          profitLoss: 0,
-          profitLossPercent: 0
-        };
-        setPositions(prev => [...prev, newPosition]);
-      }
+  // ── Place trade ───────────────────────────────────────────────────────────
+  const handleTrade = useCallback(() => {
+    const result = sim.openPosition(selectedSymbol, direction, qtyNum, slNum, tpNum);
+    if (result.ok) {
+      gam.onTradeOpened(selectedSymbol, asset.category);
+      setQty('1');
+      setSlInput('');
+      setTpInput('');
     } else {
-      // Sell/Short
-      const existingPos = positions.find(p => p.symbol === selectedSymbol && p.type === 'long');
-      
-      if (existingPos && existingPos.quantity >= qty) {
-        // Close long position
-        setBalance(prev => prev + totalCost);
-        setPositions(prev => prev.map(p => 
-          p.id === existingPos.id 
-            ? { ...p, quantity: p.quantity - qty }
-            : p
-        ).filter(p => p.quantity > 0));
-      } else if (!existingPos) {
-        // Open short position
-        const newPosition: Position = {
-          id: Date.now().toString(),
-          symbol: selectedSymbol,
-          type: 'short',
-          quantity: qty,
-          entryPrice: price,
-          currentPrice: price,
-          profitLoss: 0,
-          profitLossPercent: 0
-        };
-        setPositions(prev => [...prev, newPosition]);
-        setBalance(prev => prev + totalCost);
-      }
+      alert(result.error);
     }
+  }, [sim, gam, selectedSymbol, direction, qtyNum, slNum, tpNum, asset.category]);
 
-    const newOrder: Order = {
-      id: Date.now().toString(),
-      symbol: selectedSymbol,
-      side: orderSide,
-      quantity: qty,
-      price: price,
-      timestamp: new Date().toLocaleString(),
-      status: orderType === 'market' ? 'executed' : 'pending',
-    };
-    setOrders([newOrder, ...orders]);
-    setShowConfirmation(false);
-    setQuantity('1');
-    setLimitPrice('');
-  };
+  // ── Close position ────────────────────────────────────────────────────────
+  const handleClose = useCallback((pos: Position) => {
+    sim.closePosition(pos.id);
+    gam.onTradeClosed(pos.pnl, pos.pnl > 0, sim.winStreak, sim.totalTrades + 1, pos.symbol);
+  }, [sim, gam]);
 
-  return (
-    !isAuthenticated ? ( 
-      <div className="flex items-center justify-center py-12">
-        <div className="max-w-xl w-full bg-card border border-border rounded-2xl p-6 text-center">
-          <h1 className="text-2xl font-bold font-display mb-2">Simulator</h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            You need an account to place simulated trades and track performance.
-          </p>
+  // ── Watchlist filtered ───────────────────────────────────────────────────
+  const watchlistAssets = categoryFilter
+    ? ASSETS.filter(a => a.category === categoryFilter)
+    : ASSETS;
 
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Checking your session…</p>
-          ) : (
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                type="button"
-                className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium"
-                onClick={() => setShowAuthModal(true)}
-              >
-                Log in / Create account
-              </button>
-              <Link href="/pricing">
-                <a className="inline-flex items-center justify-center rounded-md border border-border bg-background h-11 px-6 text-sm font-medium">
-                  View plans
-                </a>
-              </Link>
-            </div>
-          )}
+  // ─── Panel: Watchlist ────────────────────────────────────────────────────
+  const WatchlistPanel = (
+    <div className="flex flex-col h-full" style={{ background: TV.bg }}>
+      <div className="px-3 py-2 border-b" style={{ borderColor: TV.border }}>
+        <p className="text-xs font-bold text-white mb-1.5">Markets</p>
+        <div className="flex gap-1 flex-wrap">
+          {['All', 'Stocks', 'Crypto', 'Forex', 'Indices'].map(cat => (
+            <button
+              key={cat}
+              onClick={() => setCategoryFilter(cat === 'All' ? null : cat)}
+              className="text-[10px] px-2 py-0.5 rounded transition-colors"
+              style={{
+                background: (categoryFilter ?? 'All') === cat ? TV.blue : TV.border,
+                color: (categoryFilter ?? 'All') === cat ? '#fff' : TV.muted,
+              }}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        {watchlistAssets.map(a => (
+          <WatchlistItem
+            key={a.symbol}
+            asset={a}
+            price={sim.prices[a.symbol] ?? a.basePrice}
+            prevPrice={prevPrices[a.symbol] ?? a.basePrice}
+            selected={a.symbol === selectedSymbol}
+            onClick={() => setSelectedSymbol(a.symbol)}
+          />
+        ))}
+      </div>
+    </div>
+  );
 
-          <AuthModal
-            isOpen={showAuthModal}
-            onClose={() => setShowAuthModal(false)}
-            disableRedirectOnSuccess
+  // ─── Panel: Order Form ────────────────────────────────────────────────────
+  const cost = qtyNum * currentPrice;
+  const canAfford = cost <= sim.available;
+  const atPosLimit = sim.positions.length >= sim.maxPositions;
+
+  const OrderPanel = (
+    <div className="flex flex-col h-full overflow-y-auto" style={{ background: TV.panel }}>
+      {/* Account summary */}
+      <div className="px-3 py-2 border-b" style={{ borderColor: TV.border }}>
+        <div className="flex justify-between text-xs mb-1">
+          <span style={{ color: TV.muted }}>SimCash</span>
+          <span className="font-mono font-bold text-white">{fmt$(sim.available)}</span>
+        </div>
+        <div className="flex justify-between text-xs mb-1">
+          <span style={{ color: TV.muted }}>Equity</span>
+          <span className="font-mono text-white">{fmt$(sim.totalBalance)}</span>
+        </div>
+        <div className="flex justify-between text-xs">
+          <span style={{ color: TV.muted }}>Open PnL</span>
+          <span className="font-mono" style={{ color: sim.positions.reduce((s, p) => s + p.pnl, 0) >= 0 ? TV.green : TV.red }}>
+            {fmt$(sim.positions.reduce((s, p) => s + p.pnl, 0))}
+          </span>
+        </div>
+      </div>
+
+      {/* XP bar */}
+      <div className="px-3 py-2 border-b" style={{ borderColor: TV.border }}>
+        <XpBar level={gam.level} xpProgress={gam.xpProgress} xpRequired={gam.xpRequired} />
+        <div className="flex gap-3 mt-1 text-[10px]" style={{ color: TV.muted }}>
+          <span>Streak <span className="font-bold" style={{ color: TV.yellow }}>{sim.winStreak}</span></span>
+          <span>Win Rate <span className="font-bold" style={{ color: TV.green }}>{sim.winRate}%</span></span>
+          <span>Trades <span className="font-bold text-white">{sim.totalTrades}</span></span>
+        </div>
+      </div>
+
+      {/* Symbol + price */}
+      <div className="px-3 py-2 border-b" style={{ borderColor: TV.border }}>
+        <div className="flex items-center justify-between">
+          <span className="font-bold text-white">{asset.symbol}</span>
+          <CategoryBadge category={asset.category} />
+        </div>
+        <p className="text-xs mt-0.5" style={{ color: TV.muted }}>{asset.name}</p>
+        <p className="text-lg font-mono font-bold text-white mt-1">{formatPrice(currentPrice, asset)}</p>
+      </div>
+
+      {/* Long / Short toggle */}
+      <div className="px-3 py-2 border-b" style={{ borderColor: TV.border }}>
+        <div className="flex rounded overflow-hidden border" style={{ borderColor: TV.border }}>
+          <button
+            onClick={() => setDirection('long')}
+            className="flex-1 py-1.5 text-xs font-bold transition-colors"
+            style={{ background: direction === 'long' ? TV.green : 'transparent', color: direction === 'long' ? '#fff' : TV.muted }}
+          >
+            LONG
+          </button>
+          <button
+            onClick={() => setDirection('short')}
+            className="flex-1 py-1.5 text-xs font-bold transition-colors"
+            style={{ background: direction === 'short' ? TV.red : 'transparent', color: direction === 'short' ? '#fff' : TV.muted }}
+          >
+            SHORT
+          </button>
+        </div>
+      </div>
+
+      {/* Inputs */}
+      <div className="px-3 py-2 space-y-2 border-b" style={{ borderColor: TV.border }}>
+        <div>
+          <label className="text-[10px] mb-1 block" style={{ color: TV.muted }}>Quantity</label>
+          <input
+            type="number"
+            value={qty}
+            min="0"
+            step="any"
+            onChange={e => setQty(e.target.value)}
+            className="w-full px-2 py-1.5 text-xs rounded font-mono outline-none"
+            style={{ background: TV.bg, border: `1px solid ${TV.border}`, color: TV.text }}
           />
         </div>
-      </div>
-    ) : !hasSimulatorAccess ? (
-      <div className="flex items-center justify-center py-12">
-        <div className="max-w-xl w-full bg-card border border-border rounded-2xl p-6 text-center">
-          <h1 className="text-2xl font-bold font-display mb-2">Simulator</h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            Simulator trading is a paid feature. Upgrade to Starter to unlock full simulator access.
-          </p>
-
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Checking your plan…</p>
-          ) : (
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/pricing">
-                <a className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-11 px-6 text-sm font-medium">
-                  Upgrade to Starter
-                </a>
-              </Link>
-              <Link href="/market">
-                <a className="inline-flex items-center justify-center rounded-md border border-border bg-background h-11 px-6 text-sm font-medium">
-                  Browse markets
-                </a>
-              </Link>
-            </div>
-          )}
+        <div>
+          <label className="text-[10px] mb-1 block" style={{ color: TV.muted }}>Stop Loss (optional)</label>
+          <input
+            type="number"
+            value={slInput}
+            placeholder={`e.g. ${formatPrice(currentPrice * 0.97, asset)}`}
+            onChange={e => setSlInput(e.target.value)}
+            className="w-full px-2 py-1.5 text-xs rounded font-mono outline-none"
+            style={{ background: TV.bg, border: `1px solid ${slInput ? TV.red : TV.border}`, color: TV.text }}
+          />
         </div>
-      </div>
-    ) : (
-      <div className="space-y-6">
-        {/* Portfolio Stats Bar */}
-        <div className="bg-gradient-to-r from-gray-800 to-gray-900 border-b-2 border-gray-700 px-6 py-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div title="Available cash for trading">
-              <div className="flex items-center gap-2 text-gray-400 text-xs uppercase font-semibold tracking-wide mb-1">
-                <Wallet className="w-4 h-4" />
-                Cash Balance
-              </div>
-              <div className="text-white text-2xl font-mono font-bold">${balance.toLocaleString()}</div>
-            </div>
-            <div title="Total portfolio value (cash + positions)">
-              <div className="flex items-center gap-2 text-gray-400 text-xs uppercase font-semibold tracking-wide mb-1">
-                <Activity className="w-4 h-4" />
-                Total Value
-              </div>
-              <div className="text-white text-2xl font-mono font-bold">${totalValue.toLocaleString()}</div>
-            </div>
-            <div title="Unrealized profit or loss">
-              <div className="flex items-center gap-2 text-gray-400 text-xs uppercase font-semibold tracking-wide mb-1">
-                <DollarSign className="w-4 h-4" />
-                P&L
-              </div>
-              <div className={`text-2xl font-mono font-bold ${profitLoss >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {profitLoss >= 0 ? '+' : ''}${profitLoss.toFixed(2)}
-              </div>
-            </div>
-            <div title="Return on investment percentage">
-              <div className="flex items-center gap-2 text-gray-400 text-xs uppercase font-semibold tracking-wide mb-1">
-                <TrendingUp className="w-4 h-4" />
-                Return
-              </div>
-              <div className={`text-2xl font-mono font-bold ${profitLossPercent >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {profitLossPercentText}
-              </div>
-            </div>
-          </div>
+        <div>
+          <label className="text-[10px] mb-1 block" style={{ color: TV.muted }}>Take Profit (optional)</label>
+          <input
+            type="number"
+            value={tpInput}
+            placeholder={`e.g. ${formatPrice(currentPrice * 1.03, asset)}`}
+            onChange={e => setTpInput(e.target.value)}
+            className="w-full px-2 py-1.5 text-xs rounded font-mono outline-none"
+            style={{ background: TV.bg, border: `1px solid ${tpInput ? TV.green : TV.border}`, color: TV.text }}
+          />
         </div>
 
-        {/* Main Trading Layout: Desktop = 2-col (form + chart) | Mobile = tabs */}
-        <div className="flex flex-col lg:grid lg:grid-cols-[320px_1fr] min-h-[100dvh] overflow-hidden">
-          
-          {/* LEFT PANEL - Trading Form (Hidden on mobile, shown lg+) */}
-          <div className="hidden lg:flex flex-col border-r border-gray-200 bg-white overflow-hidden">
-            <div className="p-4 border-b-2 border-gray-200 bg-gray-50">
-              <h3 className="font-bold text-black text-lg">Place Order</h3>
-            </div>
-
-            <div className="p-4 space-y-4">
-              {/* Symbol Input */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Symbol</label>
-                <input
-                  type="text"
-                  value={selectedSymbol}
-                  onChange={(e) => setSelectedSymbol(e.target.value.toUpperCase())}
-                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black font-mono font-bold text-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
-                  placeholder="SMBY"
-                />
-              </div>
-
-              {/* Buy/Sell Toggle */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Side</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setOrderSide('buy')}
-                    className={`py-3 rounded-lg font-bold transition-all transform hover:scale-105 ${
-                      orderSide === 'buy'
-                        ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-500/50'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md'
-                    }`}
-                  >
-                    Buy
-                  </button>
-                  <button
-                    onClick={() => setOrderSide('sell')}
-                    className={`py-3 rounded-lg font-bold transition-all transform hover:scale-105 ${
-                      orderSide === 'sell'
-                        ? 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-500/50'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md'
-                    }`}
-                  >
-                    Sell
-                  </button>
-                </div>
-              </div>
-
-              {/* Order Type */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Order Type</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setOrderType('market')}
-                    className={`py-2 rounded-lg font-semibold text-sm transition-all ${
-                      orderType === 'market'
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Market
-                  </button>
-                  <button
-                    onClick={() => setOrderType('limit')}
-                    className={`py-2 rounded-lg font-semibold text-sm transition-all ${
-                      orderType === 'limit'
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Limit
-                  </button>
-                </div>
-              </div>
-
-              {/* Quantity */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Quantity</label>
-                <input
-                  type="number"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black font-mono focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
-                  placeholder="1"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-
-              {/* Limit Price (if limit order) */}
-              {orderType === 'limit' && (
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Limit Price</label>
-                  <input
-                    type="number"
-                    value={limitPrice}
-                    onChange={(e) => setLimitPrice(e.target.value)}
-                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black font-mono focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              )}
-
-              {/* Current Price Display */}
-              <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200 shadow-sm">
-                <div className="text-xs text-gray-600 uppercase font-semibold mb-1">Current Price</div>
-                <div className="text-2xl font-mono font-bold text-blue-600">${currentPrice.toFixed(2)}</div>
-              </div>
-
-              {/* Place Order Button */}
-              <button
-                onClick={handlePlaceOrder}
-                className={`w-full py-3 rounded-lg font-bold text-white shadow-lg transition-all transform hover:scale-105 ${
-                  orderSide === 'buy'
-                    ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 shadow-green-500/50'
-                    : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 shadow-red-500/50'
-                }`}
-              >
-                {orderSide === 'buy' ? 'Place Buy Order' : 'Place Sell Order'}
-              </button>
-            </div>
+        {/* R:R */}
+        {rrRatio && (
+          <div className="flex items-center justify-between text-[10px]">
+            <span style={{ color: TV.muted }}>Risk : Reward</span>
+            <span className="font-mono font-bold" style={{ color: parseFloat(rrRatio) >= 2 ? TV.green : TV.yellow }}>
+              1 : {rrRatio}
+            </span>
           </div>
-
-          {/* CENTER - Chart & Mobile Tabs (Responsive Layout) */}
-          <div className="flex flex-col bg-gray-50 overflow-hidden">
-            
-            {/* Header - Symbol & Chart Title */}
-            <div className="bg-gradient-to-r from-white to-gray-50 border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 shadow-sm sticky top-0 z-20">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-black">{selectedSymbol} Trading Chart</h2>
-            </div>
-
-            {/* Mobile Tab Switcher (hidden on lg+) */}
-            <div className="lg:hidden flex gap-2 px-4 py-2 border-b border-gray-200 bg-white sticky top-14 z-20 overflow-x-auto">
-              {(['trade', 'positions', 'history'] as const).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setMobileTab(tab)}
-                  className={`px-3 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-all ${
-                    mobileTab === tab
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
-
-            {/* Chart Content (desktop only - always shown on lg+) */}
-            <div className="hidden lg:block flex-1 overflow-y-auto">
-              <div className="p-4 sm:p-6">
-                <SimpleTradingChart
-                  symbol={selectedSymbol}
-                  currentPrice={currentPrice}
-                  simNowMs={simNowMs}
-                />
-              </div>
-            </div>
-
-            {/* Trade Panel (Mobile Only) */}
-            {mobileTab === 'trade' && (
-              <div className="lg:hidden flex-1 overflow-y-auto pb-24">
-                <div className="p-4 space-y-4 bg-white border-b border-gray-200">
-                  <h3 className="font-bold text-black text-lg">Place Order</h3>
-                  
-                  {/* Symbol Input */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Symbol</label>
-                    <input
-                      type="text"
-                      value={selectedSymbol}
-                      onChange={(e) => setSelectedSymbol(e.target.value.toUpperCase())}
-                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black font-mono font-bold text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
-                      placeholder="SMBY"
-                    />
-                  </div>
-
-                  {/* Buy/Sell Toggle */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Side</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setOrderSide('buy')}
-                        className={`py-3 rounded-lg font-bold transition-all ${
-                          orderSide === 'buy'
-                            ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        Buy
-                      </button>
-                      <button
-                        onClick={() => setOrderSide('sell')}
-                        className={`py-3 rounded-lg font-bold transition-all ${
-                          orderSide === 'sell'
-                            ? 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        Sell
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Order Type */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Order Type</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setOrderType('market')}
-                        className={`py-2 rounded-lg font-semibold text-sm transition-all ${
-                          orderType === 'market'
-                            ? 'bg-blue-600 text-white shadow-md'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        Market
-                      </button>
-                      <button
-                        onClick={() => setOrderType('limit')}
-                        className={`py-2 rounded-lg font-semibold text-sm transition-all ${
-                          orderType === 'limit'
-                            ? 'bg-blue-600 text-white shadow-md'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        Limit
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Quantity */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Quantity</label>
-                    <input
-                      type="number"
-                      value={quantity}
-                      onChange={(e) => setQuantity(e.target.value)}
-                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black font-mono focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
-                      placeholder="1"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-
-                  {/* Limit Price (if limit order) */}
-                  {orderType === 'limit' && (
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Limit Price</label>
-                      <input
-                        type="number"
-                        value={limitPrice}
-                        onChange={(e) => setLimitPrice(e.target.value)}
-                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black font-mono focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                  )}
-
-                  {/* Current Price Display */}
-                  <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200 shadow-sm">
-                    <div className="text-xs text-gray-600 uppercase font-semibold mb-1">Current Price</div>
-                    <div className="text-2xl font-mono font-bold text-blue-600">${currentPrice.toFixed(2)}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Positions Panel (Mobile Only) */}
-            {mobileTab === 'positions' && (
-              <div className="lg:hidden flex-1 overflow-y-auto pb-24">
-                <div className="bg-white border-b border-gray-200 p-4">
-                  <h3 className="font-bold text-black flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-blue-600" />
-                    Open Positions ({positions.length})
-                  </h3>
-                </div>
-                <div className="divide-y divide-gray-100">
-                  {positions.length === 0 ? (
-                    <div className="p-8 text-center">
-                      <div className="text-4xl mb-3">📊</div>
-                      <div className="text-gray-500 font-semibold mb-1">No open positions</div>
-                      <div className="text-sm text-gray-400">Place your first order to start trading</div>
-                    </div>
-                  ) : (
-                    positions.map(position => (
-                      <div 
-                        key={position.id} 
-                        className={`p-4 hover:bg-gray-50 transition-all border-l-4 ${
-                          position.profitLoss >= 0 
-                            ? 'border-green-500 bg-green-50/30' 
-                            : 'border-red-500 bg-red-50/30'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="font-bold text-black">{position.symbol}</div>
-                            {position.profitLoss >= 0 && position.profitLossPercent > 5 && (
-                              <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-semibold">
-                                🔥 Hot
-                              </span>
-                            )}
-                          </div>
-                          <button className="text-gray-400 hover:text-red-600 transition-colors">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <div className="text-xs text-gray-500 capitalize mb-2">{position.type} • {position.quantity} shares</div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <div className="text-xs text-gray-500">Entry</div>
-                            <div className="font-mono text-black">${position.entryPrice.toFixed(2)}</div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-500">Current</div>
-                            <div className="font-mono text-black">${position.currentPrice.toFixed(2)}</div>
-                          </div>
-                        </div>
-                        <div className="mt-2 pt-2 border-t border-gray-100">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-600">P&L</span>
-                            <div className="text-right">
-                              <div className={`font-mono font-bold text-sm ${position.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {position.profitLoss >= 0 ? '+' : ''}${position.profitLoss.toFixed(2)}
-                              </div>
-                              <div className={`text-xs font-semibold ${position.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {position.profitLossPercent >= 0 ? '+' : ''}{position.profitLossPercent.toFixed(2)}%
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* History Panel (Mobile Only) */}
-            {mobileTab === 'history' && (
-              <div className="lg:hidden flex-1 overflow-y-auto pb-24">
-                <div className="bg-white border-b border-gray-200 p-4">
-                  <h3 className="font-bold text-black flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-blue-600" />
-                    Recent Orders
-                  </h3>
-                </div>
-                <div className="divide-y divide-gray-100">
-                  {orders.slice(0, 10).map(order => (
-                    <div key={order.id} className="p-4 hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 transition-all">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <div className="font-bold text-black">{order.symbol}</div>
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded shadow-sm ${
-                            order.side === 'buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                          }`}>
-                            {order.side.toUpperCase()}
-                          </span>
-                        </div>
-                        <span className={`text-xs font-semibold ${
-                          order.status === 'executed' ? 'text-green-600' :
-                          order.status === 'pending' ? 'text-yellow-600' :
-                          'text-gray-500'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {order.quantity} @ ${order.price.toFixed(2)}
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1">{order.timestamp}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT PANEL - Positions & Orders (Desktop Only, hidden on mobile) */}
-          <div className="hidden lg:flex flex-col border-l border-gray-200 bg-white overflow-hidden">
-            {/* Positions */}
-            <div className="p-4 border-b-2 border-gray-200 bg-gray-50">
-              <h3 className="font-bold text-black flex items-center gap-2">
-                <Activity className="w-5 h-5 text-blue-600" />
-                Open Positions ({positions.length})
-              </h3>
-            </div>
-
-            <div className="divide-y divide-gray-100">
-              {positions.length === 0 ? (
-                <div className="p-12 text-center">
-                  <div className="text-6xl mb-4">📊</div>
-                  <div className="text-gray-500 font-semibold mb-1">No open positions</div>
-                  <div className="text-sm text-gray-400">Place your first order to start trading</div>
-                </div>
-              ) : (
-                positions.map(position => (
-                  <div 
-                    key={position.id} 
-                    className={`p-4 hover:bg-gray-50 transition-all border-l-4 ${
-                      position.profitLoss >= 0 
-                        ? 'border-green-500 bg-green-50/30' 
-                        : 'border-red-500 bg-red-50/30'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="font-bold text-black">{position.symbol}</div>
-                        {position.profitLoss >= 0 && position.profitLossPercent > 5 && (
-                          <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-semibold">
-                            🔥 Hot
-                          </span>
-                        )}
-                      </div>
-                      <button className="text-gray-400 hover:text-red-600 transition-colors">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="text-xs text-gray-500 capitalize mb-2">{position.type} • {position.quantity} shares</div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <div className="text-xs text-gray-500">Entry</div>
-                        <div className="font-mono text-black">${position.entryPrice.toFixed(2)}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-500">Current</div>
-                        <div className="font-mono text-black">${position.currentPrice.toFixed(2)}</div>
-                      </div>
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-gray-100">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-600">P&L</span>
-                        <div className="text-right">
-                          <div className={`font-mono font-bold ${position.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {position.profitLoss >= 0 ? '+' : ''}${position.profitLoss.toFixed(2)}
-                          </div>
-                          <div className={`text-xs font-semibold ${position.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {position.profitLossPercent >= 0 ? '+' : ''}{position.profitLossPercent.toFixed(2)}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Orders */}
-            <div className="p-4 border-b-2 border-t-2 border-gray-200 bg-gray-50 mt-4">
-              <h3 className="font-bold text-black flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-blue-600" />
-                Recent Orders
-              </h3>
-            </div>
-
-            <div className="divide-y divide-gray-100">
-              {orders.slice(0, 10).map(order => (
-                <div key={order.id} className="p-4 hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 transition-all">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <div className="font-bold text-black">{order.symbol}</div>
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded shadow-sm ${
-                        order.side === 'buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}>
-                        {order.side.toUpperCase()}
-                      </span>
-                    </div>
-                    <span className={`text-xs font-semibold ${
-                      order.status === 'executed' ? 'text-green-600' :
-                      order.status === 'pending' ? 'text-yellow-600' :
-                      'text-gray-500'
-                    }`}>
-                      {order.status}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {order.quantity} @ ${order.price.toFixed(2)}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1">{order.timestamp}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Sticky Bottom Action Button */}
-        {mobileTab === 'trade' && (
-          <button
-            onClick={handlePlaceOrder}
-            className={`lg:hidden fixed bottom-16 left-0 right-0 py-4 px-4 font-bold text-white shadow-2xl transition-all z-40 ${
-              orderSide === 'buy'
-                ? 'bg-gradient-to-r from-green-600 to-green-500'
-                : 'bg-gradient-to-r from-red-600 to-red-500'
-            }`}
-          >
-            {orderSide === 'buy' ? 'Place Buy Order' : 'Place Sell Order'}
-          </button>
         )}
-        
-        {/* Mobile Floating Chart Button */}
+
+        {/* Cost */}
+        <div className="flex items-center justify-between text-[10px]">
+          <span style={{ color: TV.muted }}>Cost</span>
+          <span className="font-mono" style={{ color: canAfford ? TV.text : TV.red }}>{fmt$(cost)}</span>
+        </div>
+      </div>
+
+      {/* Place button */}
+      <div className="px-3 py-2">
         <button
-          onClick={() => setShowChartModal(true)}
-          className="lg:hidden fixed bottom-20 right-4 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
-          title="View Chart"
+          onClick={handleTrade}
+          disabled={!qtyNum || !canAfford || atPosLimit}
+          className="w-full py-2 text-sm font-bold rounded transition-opacity disabled:opacity-40"
+          style={{ background: direction === 'long' ? TV.green : TV.red, color: '#fff' }}
         >
-          <Activity className="w-6 h-6" />
+          {atPosLimit ? 'Position Limit Reached' : !canAfford ? 'Insufficient SimCash' : `${direction === 'long' ? 'BUY' : 'SELL'} ${asset.symbol}`}
         </button>
+        <p className="text-[10px] text-center mt-1" style={{ color: TV.muted }}>
+          {sim.positions.length}/{sim.maxPositions} positions open
+        </p>
+      </div>
 
-      {/* Chart Modal (Mobile Only) */}
-      {showChartModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-2">
-          <div className="bg-white rounded-xl shadow-2xl w-full h-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-bold text-black">{selectedSymbol} Chart</h3>
-              <button
-                onClick={() => setShowChartModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6 text-gray-600" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <SimpleTradingChart
-                symbol={selectedSymbol}
-                currentPrice={currentPrice}
-                simNowMs={simNowMs}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Order Confirmation Modal */}
-      {showConfirmation && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-2xl font-bold text-black mb-4">Confirm Order</h3>
-            <div className="space-y-3 mb-6">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Symbol</span>
-                <span className="font-bold text-black">{selectedSymbol}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Side</span>
-                <span className={`font-bold ${orderSide === 'buy' ? 'text-green-600' : 'text-red-600'}`}>
-                  {orderSide.toUpperCase()}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Type</span>
-                <span className="font-bold text-black capitalize">{orderType}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Quantity</span>
-                <span className="font-mono font-bold text-black">{quantity}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Price</span>
-                <span className="font-mono font-bold text-black">
-                  ${orderType === 'market' ? currentPrice.toFixed(2) : limitPrice}
-                </span>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowConfirmation(false)}
-                className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-lg transition-all transform hover:scale-105 shadow-md"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmOrder}
-                className={`flex-1 py-3 text-white font-bold rounded-lg transition-all transform hover:scale-105 shadow-lg ${
-                  orderSide === 'buy' 
-                    ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 shadow-green-500/50' 
-                    : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 shadow-red-500/50'
-                }`}
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Reset */}
+      <div className="px-3 pb-3">
+        <button
+          onClick={sim.resetAccount}
+          className="w-full py-1.5 text-[10px] rounded flex items-center justify-center gap-1 transition-colors"
+          style={{ background: TV.border, color: TV.muted }}
+        >
+          <RefreshCw size={10} /> Reset Account
+        </button>
+      </div>
     </div>
-    )
+  );
+
+  // ─── Bottom tabs: Positions / History / Achievements / Challenges ─────────
+  const BottomTabs = (
+    <div className="flex flex-col" style={{ background: TV.panel, borderTop: `1px solid ${TV.border}` }}>
+      {/* Tab bar */}
+      <div className="flex border-b" style={{ borderColor: TV.border }}>
+        {(['positions', 'history', 'achievements', 'challenges'] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className="flex-1 py-2 text-[11px] font-medium capitalize transition-colors"
+            style={{
+              color: activeTab === tab ? TV.blue : TV.muted,
+              borderBottom: activeTab === tab ? `2px solid ${TV.blue}` : '2px solid transparent',
+            }}
+          >
+            {tab === 'positions' ? `Positions (${sim.positions.length})` :
+             tab === 'history'   ? 'History' :
+             tab === 'achievements' ? 'Badges' : 'Challenges'}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div className="max-h-52 overflow-y-auto">
+        {activeTab === 'positions' && (
+          sim.positions.length === 0
+            ? <p className="text-[11px] text-center py-4" style={{ color: TV.muted }}>No open positions</p>
+            : sim.positions.map(pos => (
+              <div key={pos.id} className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: TV.border }}>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                    style={{ background: pos.direction === 'long' ? TV.green + '33' : TV.red + '33', color: pos.direction === 'long' ? TV.green : TV.red }}
+                  >
+                    {pos.direction.toUpperCase()}
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-white">{pos.symbol}</p>
+                    <p className="text-[10px]" style={{ color: TV.muted }}>
+                      {pos.quantity} @ {formatPrice(pos.entryPrice, ASSET_MAP.get(pos.symbol)!)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <PnlBadge value={pos.pnl} pct={pos.pnlPct} />
+                  <button onClick={() => { setSelectedSymbol(pos.symbol); }}>
+                    <ChevronRight size={14} style={{ color: TV.muted }} />
+                  </button>
+                  <button onClick={() => handleClose(pos)}>
+                    <X size={14} style={{ color: TV.red }} />
+                  </button>
+                </div>
+              </div>
+            ))
+        )}
+
+        {activeTab === 'history' && (
+          sim.history.length === 0
+            ? <p className="text-[11px] text-center py-4" style={{ color: TV.muted }}>No closed trades yet</p>
+            : sim.history.slice(0, 50).map((t: ClosedTrade) => (
+              <div key={t.id} className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: TV.border }}>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                    style={{ background: t.direction === 'long' ? TV.green + '33' : TV.red + '33', color: t.direction === 'long' ? TV.green : TV.red }}
+                  >
+                    {t.direction.toUpperCase()}
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-white">{t.symbol}</p>
+                    <p className="text-[10px]" style={{ color: TV.muted }}>
+                      {t.quantity} · {formatPrice(t.entryPrice, ASSET_MAP.get(t.symbol)!)} → {formatPrice(t.exitPrice, ASSET_MAP.get(t.symbol)!)}
+                    </p>
+                  </div>
+                </div>
+                <PnlBadge value={t.pnl} pct={t.pnlPct} />
+              </div>
+            ))
+        )}
+
+        {activeTab === 'achievements' && (
+          <div className="grid grid-cols-2 gap-2 p-2">
+            {gam.achievements.map(a => {
+              const Icon = ICON_MAP[a.icon] ?? Star;
+              return (
+                <div
+                  key={a.id}
+                  className="flex items-center gap-2 p-2 rounded"
+                  style={{ background: a.unlocked ? TV.border : TV.bg, opacity: a.unlocked ? 1 : 0.4 }}
+                >
+                  <Icon size={16} style={{ color: a.unlocked ? TV.yellow : TV.muted }} />
+                  <div>
+                    <p className="text-[11px] font-bold text-white">{a.name}</p>
+                    <p className="text-[9px]" style={{ color: TV.muted }}>{a.description}</p>
+                    <p className="text-[9px]" style={{ color: TV.blue }}>+{a.xpReward} XP</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {activeTab === 'challenges' && (
+          <div className="p-2 space-y-2">
+            {gam.dailyChallenges.map(c => {
+              const pct = Math.min(100, (c.progress / c.target) * 100);
+              return (
+                <div key={c.id} className="p-2 rounded" style={{ background: TV.bg }}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <Target size={12} style={{ color: c.completed ? TV.green : TV.muted }} />
+                      <p className="text-[11px] font-bold text-white">{c.name}</p>
+                    </div>
+                    <span className="text-[10px]" style={{ color: TV.blue }}>+{c.xpReward} XP</span>
+                  </div>
+                  <p className="text-[10px] mb-1.5" style={{ color: TV.muted }}>{c.description}</p>
+                  <div className="h-1 rounded-full" style={{ background: TV.border }}>
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${pct}%`, background: c.completed ? TV.green : TV.blue }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-right mt-0.5" style={{ color: TV.muted }}>
+                    {c.progress}/{c.target}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // ─── Desktop layout (3 columns) ───────────────────────────────────────────
+  return (
+    <div className="flex flex-col h-screen" style={{ background: TV.bg, color: TV.text }}>
+
+      {/* ── Mobile tab bar ───────────────────────────────────────────────── */}
+      <div className="flex md:hidden border-b" style={{ borderColor: TV.border }}>
+        {(['chart', 'order', 'watch', 'stats'] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setMobilePanel(tab)}
+            className="flex-1 py-2 text-[11px] font-medium capitalize"
+            style={{ color: mobilePanel === tab ? TV.blue : TV.muted, borderBottom: mobilePanel === tab ? `2px solid ${TV.blue}` : '2px solid transparent' }}
+          >
+            {tab === 'watch' ? 'Markets' : tab === 'stats' ? 'Stats' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Mobile panels ────────────────────────────────────────────────── */}
+      <div className="flex md:hidden flex-1 flex-col overflow-hidden">
+        {mobilePanel === 'chart' && (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <LiveCandleChart
+              candles={candles}
+              asset={asset}
+              entryPrice={activePos?.entryPrice}
+              stopLoss={activePos?.stopLoss}
+              takeProfit={activePos?.takeProfit}
+              height={300}
+            />
+            {BottomTabs}
+          </div>
+        )}
+        {mobilePanel === 'order' && (
+          <div className="flex-1 overflow-y-auto">{OrderPanel}</div>
+        )}
+        {mobilePanel === 'watch' && (
+          <div className="flex-1 overflow-y-auto">{WatchlistPanel}</div>
+        )}
+        {mobilePanel === 'stats' && (
+          <div className="flex-1 overflow-y-auto p-3 space-y-3">
+            <StatGrid sim={sim} gam={gam} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Desktop 3-column layout ───────────────────────────────────────── */}
+      <div className="hidden md:flex flex-1 overflow-hidden">
+        {/* Col 1: Watchlist (200px) */}
+        <div className="w-[200px] flex-shrink-0 border-r overflow-hidden flex flex-col" style={{ borderColor: TV.border }}>
+          {WatchlistPanel}
+        </div>
+
+        {/* Col 2: Chart + bottom tabs */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <LiveCandleChart
+            candles={candles}
+            asset={asset}
+            entryPrice={activePos?.entryPrice}
+            stopLoss={activePos?.stopLoss}
+            takeProfit={activePos?.takeProfit}
+            height={400}
+          />
+          {BottomTabs}
+        </div>
+
+        {/* Col 3: Order panel (260px) */}
+        <div className="w-[260px] flex-shrink-0 border-l overflow-y-auto" style={{ borderColor: TV.border }}>
+          {OrderPanel}
+        </div>
+      </div>
+
+      {showAuthModal && <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />}
+    </div>
+  );
+}
+
+// ─── Stat grid (used in mobile stats panel) ───────────────────────────────
+
+function StatGrid({ sim, gam }: { sim: ReturnType<typeof useSimulator>; gam: ReturnType<typeof useGamification> }) {
+  const stats = [
+    { label: 'Balance', value: `$${sim.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: TV.text, Icon: DollarSign },
+    { label: 'Available', value: `$${sim.available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: TV.green, Icon: BarChart2 },
+    { label: 'Win Rate', value: `${sim.winRate}%`, color: sim.winRate >= 50 ? TV.green : TV.red, Icon: Activity },
+    { label: 'Win Streak', value: sim.winStreak.toString(), color: TV.yellow, Icon: Flame },
+    { label: 'Total Trades', value: sim.totalTrades.toString(), color: TV.blue, Icon: Target },
+    { label: 'Level', value: `Lv${gam.level}`, color: TV.blue, Icon: Award },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {stats.map(({ label, value, color, Icon }) => (
+        <div key={label} className="p-3 rounded" style={{ background: TV.panel }}>
+          <div className="flex items-center gap-1.5 mb-1">
+            <Icon size={12} style={{ color }} />
+            <p className="text-[10px]" style={{ color: TV.muted }}>{label}</p>
+          </div>
+          <p className="text-base font-bold font-mono" style={{ color }}>{value}</p>
+        </div>
+      ))}
+    </div>
   );
 }
