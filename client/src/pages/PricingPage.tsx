@@ -1,281 +1,201 @@
-﻿import { useMemo, useState } from "react";
-import { Link } from "wouter";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Check, Zap, TrendingUp } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+/**
+ * PricingPage — single $9.99 SimCash top-up.
+ * No tiers. No subscriptions. Pay $9.99 → get $100,000 SimCash to trade.
+ * When SimCash runs out, come back and top up again.
+ */
+import { Link } from 'wouter';
+import {
+  CheckCircle, TrendingUp, DollarSign, RefreshCw, Zap, BarChart2,
+} from 'lucide-react';
 
-type PlanInterval = "month" | "year";
+const SIMCASH_AMOUNT = 100_000;
+const PRICE         = 9.99;
+const LS_CASH       = 'tt_sim_cash_v1';
 
-interface PricingPlan {
-  id: string;
-  baseId: "starter" | "pro";
-  name: string;
-  description: string;
-  interval: PlanInterval;
-  price: number;
-  features: string[];
-  icon: React.ReactNode;
-  popular?: boolean;
+function getCurrentSimCash(): number {
+  try { const v = localStorage.getItem(LS_CASH); return v ? Math.round(parseFloat(v)) : 0; } catch { return 0; }
 }
 
-const plans: PricingPlan[] = [
+const FEATURES = [
+  { icon: TrendingUp, text: '$100,000 SimCash to trade with' },
+  { icon: BarChart2,  text: 'Full simulator — 26 assets, candlestick charts' },
+  { icon: Zap,        text: 'Long & Short positions with Stop Loss / Take Profit' },
+  { icon: CheckCircle,text: 'All lessons, market encyclopedia, and gamified XP' },
+  { icon: RefreshCw,  text: 'Top up any time when SimCash runs out' },
+  { icon: DollarSign, text: 'No subscription — pay once, play until it\'s gone' },
+];
+
+const FAQS = [
   {
-    id: "starter-monthly",
-    baseId: "starter",
-    name: "Starter (Trader Mode)",
-    description: "Place trades, unlock your portfolio, and track performance",
-    interval: "month",
-    price: 9.99,
-    icon: <Zap className="h-6 w-6" />,
-    features: [
-      "Trading simulator (Buy/Sell)",
-      "Portfolio tracking (P&L, positions)",
-      "Up to 10 lessons",
-      "Basic market data",
-      "Community updates",
-    ],
+    q: 'What is SimCash?',
+    a: 'SimCash is fake money you use inside the TradeTutor simulator. It works exactly like real money — you buy, sell, win, lose — but nothing is connected to real markets or real funds.',
   },
   {
-    id: "starter-yearly",
-    baseId: "starter",
-    name: "Starter (Trader Mode)",
-    description: "2 months free with annual billing",
-    interval: "year",
-    price: 99.99,
-    icon: <Zap className="h-6 w-6" />,
-    features: [
-      "Trading simulator (Buy/Sell)",
-      "Portfolio tracking (P&L, positions)",
-      "Up to 10 lessons",
-      "Basic market data",
-      "Community updates",
-    ],
+    q: 'What happens when my SimCash runs out?',
+    a: 'When your balance hits $0, you come back here and top up for another $9.99. You keep your trade history and XP — just no cash to trade with.',
   },
   {
-    id: "pro-monthly",
-    baseId: "pro",
-    name: "Pro (Mentored Trader)",
-    description: "RTT Coach + advanced insights while you trade",
-    interval: "month",
-    price: 19.99,
-    icon: <TrendingUp className="h-6 w-6" />,
-    popular: true,
-    features: [
-      "Everything in Starter",
-      "RTT Coach (real-time feedback)",
-      "Advanced market analysis",
-      "Performance analytics",
-      "Priority support",
-    ],
+    q: 'Can I reset for free?',
+    a: 'The Reset button in the simulator is always available, but it costs $9.99 to refill SimCash. Resetting without a purchase brings your cash back to $0.',
   },
   {
-    id: "pro-yearly",
-    baseId: "pro",
-    name: "Pro (Mentored Trader)",
-    description: "Best value with annual billing",
-    interval: "year",
-    price: 179.99,
-    icon: <TrendingUp className="h-6 w-6" />,
-    features: [
-      "Everything in Starter",
-      "RTT Coach (real-time feedback)",
-      "Advanced market analysis",
-      "Performance analytics",
-      "Priority support",
-    ],
+    q: 'When will Stripe be connected?',
+    a: 'Payment processing is coming very soon. For now, use the simulator freely while we finish the checkout integration.',
   },
 ];
 
 export default function PricingPage() {
-  const [billingInterval, setBillingInterval] = useState<PlanInterval>("month");
-  const { isAuthenticated } = useAuth();
+  const currentCash = getCurrentSimCash();
+  const hasBalance  = currentCash > 500;
 
-  const getPaymentLink = (plan: PricingPlan) => {
-    const key =
-      "VITE_STRIPE_PAYMENT_LINK_" +
-      plan.baseId.toUpperCase() +
-      "_" +
-      (plan.interval === "month" ? "MONTHLY" : "YEARLY");
-
-    const url = (import.meta as any)?.env?.[key] as string | undefined;
-    if (!url) return null;
-    return url;
-  };
-
-  const formatPrice = (plan: PricingPlan) => {
-    const period = plan.interval === "month" ? "month" : "year";
-
-    if (plan.interval === "year") {
-      const monthlyEquivalent = (plan.price / 12).toFixed(2);
-      return (
-        <div>
-          <span className="text-4xl font-bold">${plan.price}</span>
-          <span className="text-muted-foreground">/{period}</span>
-          {plan.baseId === "starter" && (
-            <div className="text-sm text-primary mt-1 font-medium">2 months free</div>
-          )}
-          <div className="text-sm text-muted-foreground mt-1">(${monthlyEquivalent}/month)</div>
-        </div>
-      );
-    }
-
-    return (
-      <div>
-        <span className="text-4xl font-bold">${plan.price}</span>
-        <span className="text-muted-foreground">/{period}</span>
-      </div>
-    );
-  };
-
-  const visiblePlans = useMemo(
-    () => plans.filter((plan) => plan.interval === billingInterval),
-    [billingInterval]
-  );
+  // Payment link from env — connect Stripe later
+  const paymentLink = (import.meta as any)?.env?.VITE_STRIPE_PAYMENT_LINK_SIMCASH as string | undefined;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
-          <p className="text-xl text-muted-foreground mb-8">
-            Start in Learn Mode. Upgrade when you're ready to trade.
-          </p>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-3xl mx-auto px-4 py-16">
 
-          <div className="flex flex-col items-center gap-4 mb-6">
-            <div className="inline-flex items-center gap-2 p-1 bg-secondary rounded-lg">
-              <button
-                onClick={() => setBillingInterval("month")}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  billingInterval === "month"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setBillingInterval("year")}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  billingInterval === "year"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Yearly
-              </button>
+        {/* Header */}
+        <div className="text-center mb-12">
+          <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full border border-border bg-muted text-muted-foreground mb-4">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            One simple plan
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
+            $9.99 gets you<br />
+            <span className="text-primary">$100,000 SimCash</span>
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            Practice trading with $100,000 of fake money. No risk. No subscriptions.
+            When it runs out, top up and keep learning.
+          </p>
+        </div>
+
+        {/* Current balance (if any) */}
+        {hasBalance && (
+          <div className="mb-8 rounded-xl border border-border bg-muted/50 px-6 py-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Your current SimCash balance</p>
+              <p className="text-2xl font-bold font-mono text-primary mt-0.5">
+                ${currentCash.toLocaleString()}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {billingInterval === "year" ? "Save with annual billing" : "Flexible month-to-month"}
+            <Link href="/simulator">
+              <a className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition">
+                <TrendingUp size={15} /> Go Trade
+              </a>
+            </Link>
+          </div>
+        )}
+
+        {/* Main card */}
+        <div className="rounded-2xl border-2 border-primary shadow-lg overflow-hidden mb-10">
+          {/* Top badge */}
+          <div className="bg-primary px-6 py-3 flex items-center justify-between">
+            <span className="text-primary-foreground font-bold text-sm">SimCash Top-Up</span>
+            <span className="text-primary-foreground text-xs opacity-80">One-time · No subscription</span>
+          </div>
+
+          <div className="bg-card px-6 py-8">
+            {/* Price */}
+            <div className="flex items-end gap-3 mb-6">
+              <span className="text-6xl font-bold text-foreground">$9.99</span>
+              <div className="pb-2">
+                <p className="text-sm font-semibold text-muted-foreground leading-none">one-time</p>
+                <p className="text-xs text-muted-foreground mt-0.5">pay as you go</p>
+              </div>
+              <div className="ml-auto pb-2 text-right">
+                <p className="text-3xl font-bold text-primary">$100,000</p>
+                <p className="text-sm text-muted-foreground">SimCash</p>
+              </div>
+            </div>
+
+            {/* Features */}
+            <div className="grid sm:grid-cols-2 gap-3 mb-8">
+              {FEATURES.map(({ icon: Icon, text }) => (
+                <div key={text} className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Icon size={12} className="text-primary" />
+                  </div>
+                  <span className="text-sm text-foreground">{text}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            {paymentLink ? (
+              <a
+                href={paymentLink}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg text-center hover:opacity-90 transition"
+              >
+                Get $100,000 SimCash — $9.99
+              </a>
+            ) : (
+              <div className="space-y-3">
+                <button
+                  disabled
+                  className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg opacity-60 cursor-not-allowed"
+                >
+                  Checkout Coming Soon
+                </button>
+                <p className="text-xs text-center text-muted-foreground">
+                  Payment processing is being set up. Try the simulator free in the meantime.
+                </p>
+              </div>
+            )}
+
+            {/* Sub-text */}
+            <p className="text-xs text-center text-muted-foreground mt-4">
+              Secure checkout via Stripe · No card saved · Cancel not needed — it's one-time
             </p>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-2xl">Free (Learn Mode)</CardTitle>
-              <CardDescription>Preview the platform and learn the basics</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <span className="text-4xl font-bold">$0</span>
-                <span className="text-muted-foreground">/forever</span>
-              </div>
-
-              <div className="space-y-3">
-                {[
-                  "Access the first 2 lessons",
-                  "Market exploration and watchlists",
-                  "RTT Coach preview (locked)",
-                  "Trading and portfolio tracking locked",
-                ].map((feature) => (
-                  <div key={feature} className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter>
-              {isAuthenticated ? (
-                <Link href="/dashboard">
-                  <a className="w-full inline-flex items-center justify-center rounded-md border border-border bg-background min-h-10 px-8 text-sm font-medium hover:bg-secondary/40 transition-colors">
-                    Go to dashboard
-                  </a>
-                </Link>
-              ) : (
-                <Link href="/auth?mode=register&next=%2Fdashboard">
-                  <a className="w-full inline-flex items-center justify-center rounded-md border border-border bg-background min-h-10 px-8 text-sm font-medium hover:bg-secondary/40 transition-colors">
-                    Create free account
-                  </a>
-                </Link>
-              )}
-            </CardFooter>
-          </Card>
-
-          {visiblePlans.map((plan) => {
-            const paymentLink = getPaymentLink(plan);
-            return (
-              <Card
-                key={plan.id}
-                className={`relative ${plan.popular ? "border-primary shadow-lg scale-105" : "border-border"}`}
-              >
-                {plan.popular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2" variant="default">
-                    Most Popular
-                  </Badge>
-                )}
-
-                <CardHeader>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary">{plan.icon}</div>
-                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  </div>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-6">
-                  <div>{formatPrice(plan)}</div>
-
-                  <div className="space-y-3">
-                    {plan.features.map((feature) => (
-                      <div key={feature} className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-
-                <CardFooter>
-                  {paymentLink ? (
-                    <Button asChild className="w-full" size="lg">
-                      <a href={paymentLink} target="_blank" rel="noreferrer">
-                        Continue to checkout
-                      </a>
-                    </Button>
-                  ) : (
-                    <Button className="w-full" size="lg" disabled>
-                      Checkout unavailable
-                    </Button>
-                  )}
-                </CardFooter>
-              </Card>
-            );
-          })}
-        </div>
-
-        <div className="mt-16 text-center">
-          <p className="text-muted-foreground">Secure checkout. Cancel anytime.</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Need help choosing?{" "}
-            <a href="mailto:support@tradetutor.com" className="text-primary hover:underline">
-              Contact us
+        {/* Try free */}
+        <div className="text-center mb-12">
+          <p className="text-muted-foreground text-sm mb-3">Not ready to pay? The simulator is open to everyone.</p>
+          <Link href="/simulator">
+            <a className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border border-border text-foreground font-medium text-sm hover:bg-muted transition">
+              Try Simulator Free
             </a>
-          </p>
+          </Link>
         </div>
+
+        {/* How it works */}
+        <div className="mb-12">
+          <h2 className="text-xl font-bold text-foreground mb-6 text-center">How it works</h2>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {[
+              { step: '1', title: 'Pay $9.99',           desc: 'One-time purchase. No recurring charges. No hidden fees.' },
+              { step: '2', title: 'Get $100k SimCash',   desc: 'Credited instantly to your simulator account. Start trading immediately.' },
+              { step: '3', title: 'Trade until it\'s gone', desc: 'Lose it all? That\'s the game. Come back and top up to keep learning.' },
+            ].map(({ step, title, desc }) => (
+              <div key={step} className="text-center p-5 rounded-xl border border-border bg-card">
+                <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold text-lg flex items-center justify-center mx-auto mb-3">
+                  {step}
+                </div>
+                <p className="font-semibold text-foreground mb-1">{title}</p>
+                <p className="text-sm text-muted-foreground">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <div>
+          <h2 className="text-xl font-bold text-foreground mb-6 text-center">Questions</h2>
+          <div className="space-y-4">
+            {FAQS.map(({ q, a }) => (
+              <div key={q} className="rounded-xl border border-border bg-card px-5 py-4">
+                <p className="font-semibold text-foreground mb-1">{q}</p>
+                <p className="text-sm text-muted-foreground">{a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   );

@@ -17,12 +17,13 @@ import {
   useState, useEffect, useRef, useCallback, useMemo,
   type CSSProperties,
 } from 'react';
+import { Link } from 'wouter';
 import { createChart, CrosshairMode, ColorType } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import {
   TrendingUp, TrendingDown, X, RefreshCw,
   BarChart2, Target, Activity, DollarSign, Flame,
-  ChevronRight, AlertTriangle,
+  ChevronRight, AlertTriangle, ShoppingCart,
 } from 'lucide-react';
 
 // ─── Theme ──────────────────────────────────────────────────────────────────
@@ -805,8 +806,35 @@ export default function SimulatorPage() {
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────
 
+  // Low-balance banner threshold
+  const isLow    = simCash < 5_000 && positions.length === 0;
+  const isBroke  = simCash <= 0    && positions.length === 0;
+
   return (
     <div className="flex flex-col h-full" style={{ background: C.bg, color: C.text }}>
+
+      {/* ── Low SimCash banner ─────────────────────────────────────────────── */}
+      {isLow && (
+        <div
+          className="flex-shrink-0 flex items-center justify-between px-4 py-2 gap-3"
+          style={{ background: isBroke ? C.red + '22' : C.yellow + '22', borderBottom: `1px solid ${isBroke ? C.red + '44' : C.yellow + '44'}` }}
+        >
+          <div className="flex items-center gap-2 text-xs" style={{ color: isBroke ? C.red : C.yellow }}>
+            <AlertTriangle size={13} />
+            <span className="font-semibold">
+              {isBroke ? 'SimCash empty — you need to top up to keep trading.' : `Low balance: ${fmt$(simCash)} remaining.`}
+            </span>
+          </div>
+          <Link href="/pricing">
+            <a
+              className="flex items-center gap-1.5 px-3 py-1 rounded text-xs font-bold flex-shrink-0"
+              style={{ background: isBroke ? C.red : C.yellow, color: '#000' }}
+            >
+              <ShoppingCart size={11} /> Get $100k — $9.99
+            </a>
+          </Link>
+        </div>
+      )}
 
       {/* ── Mobile tab bar ─────────────────────────────────────────────────── */}
       <div className="flex md:hidden flex-shrink-0 border-b" style={{ borderColor: C.border }}>
