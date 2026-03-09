@@ -18,13 +18,12 @@ import {
   type CSSProperties,
 } from 'react';
 import { Link } from 'wouter';
-import { createChart, CrosshairMode, ColorType } from 'lightweight-charts';
-import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import {
   TrendingUp, TrendingDown, X, RefreshCw,
   BarChart2, Target, Activity, DollarSign, Flame,
   ChevronRight, AlertTriangle, ShoppingCart,
 } from 'lucide-react';
+import { CanvasChart, type ChartCandle, type PriceLine } from '@/components/CanvasChart';
 
 // ─── Theme ──────────────────────────────────────────────────────────────────
 
@@ -257,121 +256,6 @@ function PnlBadge({ value, pct }: { value: number; pct: number }) {
 
 // ─── Candle chart using lightweight-charts ────────────────────────────────────
 
-interface ChartProps {
-  candles: Candle[];
-  asset: Asset;
-  livePrice: number;
-  entryPrice?: number | null;
-  stopLoss?: number | null;
-  takeProfit?: number | null;
-}
-
-function CandleChart({ candles, asset, livePrice, entryPrice, stopLoss, takeProfit }: ChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const chartRef     = useRef<IChartApi | null>(null);
-  const candleRef    = useRef<ISeriesApi<'Candlestick'> | null>(null);
-  const ma9Ref       = useRef<ISeriesApi<'Line'> | null>(null);
-  const ma21Ref      = useRef<ISeriesApi<'Line'> | null>(null);
-  const volRef       = useRef<ISeriesApi<'Histogram'> | null>(null);
-
-  // Build chart once
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const chart = createChart(containerRef.current, {
-      layout: { background: { type: ColorType.Solid, color: C.bg }, textColor: C.text },
-      grid:   { vertLines: { color: C.border }, horzLines: { color: C.border } },
-      crosshair: { mode: CrosshairMode.Normal },
-      rightPriceScale: { borderColor: C.border },
-      timeScale: { borderColor: C.border, timeVisible: true, secondsVisible: false },
-      width:  containerRef.current.clientWidth,
-      height: containerRef.current.clientHeight || 380,
-    });
-
-    const cs = chart.addCandlestickSeries({
-      upColor: C.green, downColor: C.red,
-      borderUpColor: C.green, borderDownColor: C.red,
-      wickUpColor: C.green, wickDownColor: C.red,
-    });
-
-    const ma9  = chart.addLineSeries({ color: '#00bcd4', lineWidth: 1, priceLineVisible: false });
-    const ma21 = chart.addLineSeries({ color: '#ff9800', lineWidth: 1, priceLineVisible: false });
-
-    // Volume on separate scale
-    const vol = chart.addHistogramSeries({
-      color: C.border, priceFormat: { type: 'volume' },
-      priceScaleId: 'vol',
-    });
-    chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.80, bottom: 0 } });
-
-    chartRef.current  = chart;
-    candleRef.current = cs;
-    ma9Ref.current    = ma9;
-    ma21Ref.current   = ma21;
-    volRef.current    = vol;
-
-    // Resize observer
-    const ro = new ResizeObserver(() => {
-      if (containerRef.current) {
-        chart.applyOptions({
-          width:  containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight || 380,
-        });
-      }
-    });
-    ro.observe(containerRef.current);
-
-    return () => { ro.disconnect(); chart.remove(); chartRef.current = null; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Update data when candles change
-  useEffect(() => {
-    if (!candleRef.current || !ma9Ref.current || !ma21Ref.current || !volRef.current) return;
-    if (candles.length === 0) return;
-
-    // Append live price to last candle for display
-    const withLive = candles.map((c, i) =>
-      i === candles.length - 1
-        ? { ...c, close: livePrice, high: Math.max(c.high, livePrice), low: Math.min(c.low, livePrice) }
-        : c
-    );
-
-    candleRef.current.setData(withLive.map(c => ({ time: c.time as any, open: c.open, high: c.high, low: c.low, close: c.close })));
-
-    const closes = withLive.map(c => c.close);
-    const times  = withLive.map(c => c.time as any);
-
-    const ma9v  = sma(closes, 9);
-    const ma21v = sma(closes, 21);
-
-    ma9Ref.current.setData(
-      ma9v.map((v, i) => v != null ? { time: times[i], value: v } : null).filter(Boolean) as any[]
-    );
-    ma21Ref.current.setData(
-      ma21v.map((v, i) => v != null ? { time: times[i], value: v } : null).filter(Boolean) as any[]
-    );
-    volRef.current.setData(
-      withLive.map(c => ({ time: c.time as any, value: c.volume, color: c.close >= c.open ? C.green + '66' : C.red + '66' }))
-    );
-
-    // Price lines: remove & re-add
-    try { candleRef.current.setMarkers([]); } catch { /* */ }
-
-    if (entryPrice) {
-      candleRef.current.createPriceLine({ price: entryPrice, color: '#2196f3', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'Entry' });
-    }
-    if (stopLoss) {
-      candleRef.current.createPriceLine({ price: stopLoss, color: C.red, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'SL' });
-    }
-    if (takeProfit) {
-      candleRef.current.createPriceLine({ price: takeProfit, color: C.green, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'TP' });
-    }
-
-    chartRef.current?.timeScale().scrollToRealTime();
-  }, [candles, livePrice, entryPrice, stopLoss, takeProfit]);
-
-  return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;
-}
-
 // ─── Main Simulator ───────────────────────────────────────────────────────────
 
 // Interval constants
@@ -593,6 +477,12 @@ export default function SimulatorPage() {
 
   const activePos = positions.find(p => p.symbol === selectedSym) ?? null;
   const selectedCandles = candles[selectedSym] ?? [];
+
+  const chartPriceLines: PriceLine[] = [
+    ...(activePos?.entryPrice ? [{ price: activePos.entryPrice, color: '#2196f3', label: 'Entry', dash: true }] : []),
+    ...(activePos?.stopLoss   ? [{ price: activePos.stopLoss,   color: C.red,     label: 'SL',    dash: true }] : []),
+    ...(activePos?.takeProfit ? [{ price: activePos.takeProfit, color: C.green,   label: 'TP',    dash: true }] : []),
+  ];
 
   // ─────────────────────────────────────────────────────────────────────────
   // Panels
@@ -858,13 +748,10 @@ export default function SimulatorPage() {
         {mobileTab === 'chart' && (
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 min-h-0">
-              <CandleChart
+              <CanvasChart
                 candles={selectedCandles}
-                asset={asset}
                 livePrice={livePrice}
-                entryPrice={activePos?.entryPrice}
-                stopLoss={activePos?.stopLoss}
-                takeProfit={activePos?.takeProfit}
+                priceLines={chartPriceLines}
               />
             </div>
             {BottomTabs}
@@ -896,13 +783,10 @@ export default function SimulatorPage() {
           </div>
           {/* Chart fills remaining space */}
           <div className="flex-1 min-h-0">
-            <CandleChart
+            <CanvasChart
               candles={selectedCandles}
-              asset={asset}
               livePrice={livePrice}
-              entryPrice={activePos?.entryPrice}
-              stopLoss={activePos?.stopLoss}
-              takeProfit={activePos?.takeProfit}
+              priceLines={chartPriceLines}
             />
           </div>
           {BottomTabs}
