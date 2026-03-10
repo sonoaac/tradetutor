@@ -3,16 +3,11 @@ from flask import Blueprint, request, jsonify, session
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db, bcrypt, limiter
 from app.models.user import User
-from app.models.portfolio import Portfolio
-from decimal import Decimal
-from app.services.payment_service import PaymentService
 import re
 import random
 import uuid
 
 auth_bp = Blueprint('auth', __name__)
-
-payment_service = PaymentService()
 
 
 def _username_part(value: str | None) -> str:
@@ -129,14 +124,6 @@ def register():
     # Automatically log in the user after registration
     login_user(user, remember=True)
 
-    # If the user paid via Payment Link before creating an account,
-    # grant access now based on email.
-    try:
-        payment_service.apply_pending_entitlement_for_user(user)
-    except Exception:
-        # Non-fatal
-        pass
-    
     return jsonify({
         'message': 'User created successfully',
         'user': user.to_dict()
@@ -170,12 +157,6 @@ def login():
     # Backfill username for older accounts
     _ensure_username(user)
 
-    # If the user paid via Payment Link, grant access now.
-    try:
-        payment_service.apply_pending_entitlement_for_user(user)
-    except Exception:
-        pass
-    
     return jsonify({
         'message': 'Logged in successfully',
         'user': user.to_dict()
