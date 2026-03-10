@@ -1,17 +1,14 @@
 /**
  * PricingPage — $9.99 SimCash top-up with live Stripe checkout.
- * Falls back to demo credit if backend isn't configured.
  */
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import {
   CheckCircle, TrendingUp, DollarSign, RefreshCw, Zap, BarChart2, Loader2,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { apiUrl } from '@/lib/api';
-
-const SIMCASH_AMOUNT = 100_000;
-const LS_CASH = 'tt_sim_cash_v1';
 
 const FEATURES = [
   { icon: TrendingUp, text: '$100,000 SimCash to trade with' },
@@ -41,19 +38,10 @@ const FAQS = [
   },
 ];
 
+const LS_CASH = 'tt_sim_cash_v1';
+
 function getCurrentSimCash(): number {
   try { const v = localStorage.getItem(LS_CASH); return v ? Math.round(parseFloat(v)) : 0; } catch { return 0; }
-}
-
-/** Demo fallback — grants SimCash locally when no Stripe is configured */
-function demoCredit(): string {
-  try {
-    const current = parseFloat(localStorage.getItem(LS_CASH) ?? '0') || 0;
-    localStorage.setItem(LS_CASH, String(current + SIMCASH_AMOUNT));
-    const demoKey = `tt_credited_demo_${Date.now()}`;
-    sessionStorage.setItem(demoKey, '1');
-  } catch { /* */ }
-  return '/payment/success?session_id=demo';
 }
 
 export default function PricingPage() {
@@ -82,9 +70,9 @@ export default function PricingPage() {
       if (!res.ok) throw new Error(data.error || 'Checkout failed');
       window.location.href = data.url;
     } catch (err: any) {
-      // Demo fallback — credit locally and navigate to success page
-      const dest = demoCredit();
-      navigate(dest);
+      const msg = err?.message || 'Something went wrong. Please try again.';
+      setError(msg);
+      setLoading(false);
     }
   }
 
@@ -172,8 +160,8 @@ export default function PricingPage() {
 
             {error && <p className="text-sm text-red-500 text-center mt-2">{error}</p>}
 
-            <p className="text-xs text-center text-muted-foreground mt-4">
-              Secure checkout via Stripe · No card saved · One-time charge
+            <p className="text-xs text-center text-muted-foreground mt-4 flex items-center justify-center gap-1">
+              <Lock size={10} /> Secure checkout via Stripe · No card saved · One-time charge
             </p>
           </div>
         </div>
