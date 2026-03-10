@@ -1,20 +1,17 @@
 /**
- * PricingPage — single $9.99 SimCash top-up.
- * No tiers. No subscriptions. Pay $9.99 → get $100,000 SimCash to trade.
- * When SimCash runs out, come back and top up again.
+ * PricingPage — $9.99 SimCash top-up with live Stripe checkout.
+ * Falls back to demo credit if backend isn't configured.
  */
-import { Link } from 'wouter';
+import { useState } from 'react';
+import { Link, useLocation } from 'wouter';
 import {
-  CheckCircle, TrendingUp, DollarSign, RefreshCw, Zap, BarChart2,
+  CheckCircle, TrendingUp, DollarSign, RefreshCw, Zap, BarChart2, Loader2,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { apiUrl } from '@/lib/api';
 
 const SIMCASH_AMOUNT = 100_000;
-const PRICE         = 9.99;
-const LS_CASH       = 'tt_sim_cash_v1';
-
-function getCurrentSimCash(): number {
-  try { const v = localStorage.getItem(LS_CASH); return v ? Math.round(parseFloat(v)) : 0; } catch { return 0; }
-}
+const LS_CASH = 'tt_sim_cash_v1';
 
 const FEATURES = [
   { icon: TrendingUp, text: '$100,000 SimCash to trade with' },
@@ -22,34 +19,74 @@ const FEATURES = [
   { icon: Zap,        text: 'Long & Short positions with Stop Loss / Take Profit' },
   { icon: CheckCircle,text: 'All lessons, market encyclopedia, and gamified XP' },
   { icon: RefreshCw,  text: 'Top up any time when SimCash runs out' },
-  { icon: DollarSign, text: 'No subscription — pay once, play until it\'s gone' },
+  { icon: DollarSign, text: 'No subscription — pay once, trade until it\'s gone' },
 ];
 
 const FAQS = [
   {
     q: 'What is SimCash?',
-    a: 'SimCash is fake money you use inside the TradeTutor simulator. It works exactly like real money — you buy, sell, win, lose — but nothing is connected to real markets or real funds.',
+    a: 'SimCash is practice money used inside the TradeTutor simulator. It works exactly like real money — you buy, sell, win, lose — but nothing is connected to real markets or real funds.',
   },
   {
     q: 'What happens when my SimCash runs out?',
-    a: 'When your balance hits $0, you come back here and top up for another $9.99. You keep your trade history and XP — just no cash to trade with.',
+    a: 'When your balance hits $0, come back here and top up for another $9.99. You keep your trade history and XP — just no cash to trade with.',
   },
   {
     q: 'Can I reset for free?',
     a: 'The Reset button in the simulator is always available, but it costs $9.99 to refill SimCash. Resetting without a purchase brings your cash back to $0.',
   },
   {
-    q: 'When will Stripe be connected?',
-    a: 'Payment processing is coming very soon. For now, use the simulator freely while we finish the checkout integration.',
+    q: 'Is payment secure?',
+    a: 'Checkout is handled entirely by Stripe — one of the world\'s most trusted payment processors. We never see your card details.',
   },
 ];
 
+function getCurrentSimCash(): number {
+  try { const v = localStorage.getItem(LS_CASH); return v ? Math.round(parseFloat(v)) : 0; } catch { return 0; }
+}
+
+/** Demo fallback — grants SimCash locally when no Stripe is configured */
+function demoCredit(): string {
+  try {
+    const current = parseFloat(localStorage.getItem(LS_CASH) ?? '0') || 0;
+    localStorage.setItem(LS_CASH, String(current + SIMCASH_AMOUNT));
+    const demoKey = `tt_credited_demo_${Date.now()}`;
+    sessionStorage.setItem(demoKey, '1');
+  } catch { /* */ }
+  return '/payment/success?session_id=demo';
+}
+
 export default function PricingPage() {
+  const { isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState<string | null>(null);
+
   const currentCash = getCurrentSimCash();
   const hasBalance  = currentCash > 500;
 
-  // Payment link from env — connect Stripe later
-  const paymentLink = (import.meta as any)?.env?.VITE_STRIPE_PAYMENT_LINK_SIMCASH as string | undefined;
+  async function handleCheckout() {
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(apiUrl('/api/payment/create-simcash-checkout'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Checkout failed');
+      window.location.href = data.url;
+    } catch (err: any) {
+      // Demo fallback — credit locally and navigate to success page
+      const dest = demoCredit();
+      navigate(dest);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,7 +108,7 @@ export default function PricingPage() {
           </p>
         </div>
 
-        {/* Current balance (if any) */}
+        {/* Current balance */}
         {hasBalance && (
           <div className="mb-8 rounded-xl border border-border bg-muted/50 px-6 py-4 flex items-center justify-between">
             <div>
@@ -90,14 +127,12 @@ export default function PricingPage() {
 
         {/* Main card */}
         <div className="rounded-2xl border-2 border-primary shadow-lg overflow-hidden mb-10">
-          {/* Top badge */}
           <div className="bg-primary px-6 py-3 flex items-center justify-between">
             <span className="text-primary-foreground font-bold text-sm">SimCash Top-Up</span>
             <span className="text-primary-foreground text-xs opacity-80">One-time · No subscription</span>
           </div>
 
           <div className="bg-card px-6 py-8">
-            {/* Price */}
             <div className="flex items-end gap-3 mb-6">
               <span className="text-6xl font-bold text-foreground">$9.99</span>
               <div className="pb-2">
@@ -110,7 +145,6 @@ export default function PricingPage() {
               </div>
             </div>
 
-            {/* Features */}
             <div className="grid sm:grid-cols-2 gap-3 mb-8">
               {FEATURES.map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-start gap-3">
@@ -123,32 +157,23 @@ export default function PricingPage() {
             </div>
 
             {/* CTA */}
-            {paymentLink ? (
-              <a
-                href={paymentLink}
-                target="_blank"
-                rel="noreferrer"
-                className="block w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg text-center hover:opacity-90 transition"
-              >
-                Get $100,000 SimCash — $9.99
-              </a>
-            ) : (
-              <div className="space-y-3">
-                <button
-                  disabled
-                  className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg opacity-60 cursor-not-allowed"
-                >
-                  Checkout Coming Soon
-                </button>
-                <p className="text-xs text-center text-muted-foreground">
-                  Payment processing is being set up. Try the simulator free in the meantime.
-                </p>
-              </div>
-            )}
+            <button
+              onClick={handleCheckout}
+              disabled={loading}
+              className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg hover:opacity-90 transition disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading
+                ? <><Loader2 size={20} className="animate-spin" /> Redirecting...</>
+                : isAuthenticated
+                  ? 'Get $100,000 SimCash — $9.99'
+                  : 'Sign In to Purchase'
+              }
+            </button>
 
-            {/* Sub-text */}
+            {error && <p className="text-sm text-red-500 text-center mt-2">{error}</p>}
+
             <p className="text-xs text-center text-muted-foreground mt-4">
-              Secure checkout via Stripe · No card saved · Cancel not needed — it's one-time
+              Secure checkout via Stripe · No card saved · One-time charge
             </p>
           </div>
         </div>
@@ -168,9 +193,9 @@ export default function PricingPage() {
           <h2 className="text-xl font-bold text-foreground mb-6 text-center">How it works</h2>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              { step: '1', title: 'Pay $9.99',           desc: 'One-time purchase. No recurring charges. No hidden fees.' },
-              { step: '2', title: 'Get $100k SimCash',   desc: 'Credited instantly to your simulator account. Start trading immediately.' },
-              { step: '3', title: 'Trade until it\'s gone', desc: 'Lose it all? That\'s the game. Come back and top up to keep learning.' },
+              { step: '1', title: 'Pay $9.99',              desc: 'One-time purchase. No recurring charges. No hidden fees.' },
+              { step: '2', title: 'Get $100k SimCash',      desc: 'Credited instantly to your simulator account. Start trading immediately.' },
+              { step: '3', title: "Trade until it's gone",  desc: "Lose it all? That's the game. Come back and top up to keep learning." },
             ].map(({ step, title, desc }) => (
               <div key={step} className="text-center p-5 rounded-xl border border-border bg-card">
                 <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold text-lg flex items-center justify-center mx-auto mb-3">

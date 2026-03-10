@@ -194,6 +194,13 @@ export default function LessonsPage() {
 
   useEffect(() => { saveProgress(progress); }, [progress]);
 
+  // Re-read localStorage when window regains focus (picks up completions from LessonDetailPage)
+  useEffect(() => {
+    const onFocus = () => setProgress(loadProgress());
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
+
   useEffect(() => {
     const today = todayKey();
     setProgress(p => {
@@ -470,9 +477,7 @@ export default function LessonsPage() {
                             {/* Action button */}
                             {unlocked && (
                               <button
-                                onClick={() => {
-                                  if (!done) completeLesson(lesson.id, lesson.xp);
-                                }}
+                                onClick={() => navigate('/lessons/' + lesson.id)}
                                 className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold flex-shrink-0 transition-all ${done ? 'bg-muted text-muted-foreground' : 'text-white'}`}
                                 style={done ? undefined : { background: mod.color }}
                               >
@@ -497,10 +502,7 @@ export default function LessonsPage() {
                     Next: {mod.lessons[firstUnlockedIdx].title}
                   </span>
                   <button
-                    onClick={() => {
-                      const l = mod.lessons[firstUnlockedIdx];
-                      completeLesson(l.id, l.xp);
-                    }}
+                    onClick={() => navigate('/lessons/' + mod.lessons[firstUnlockedIdx].id)}
                     className="text-xs font-bold px-3 py-1 rounded-lg text-white"
                     style={{ background: mod.color }}
                   >

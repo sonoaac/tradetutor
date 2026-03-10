@@ -41,6 +41,8 @@ class Config:
     STRIPE_PRICE_STARTER_YEARLY = os.environ.get('STRIPE_PRICE_STARTER_YEARLY')
     STRIPE_PRICE_PRO_MONTHLY = os.environ.get('STRIPE_PRICE_PRO_MONTHLY')
     STRIPE_PRICE_PRO_YEARLY = os.environ.get('STRIPE_PRICE_PRO_YEARLY')
+    # One-time $9.99 SimCash top-up Price ID
+    STRIPE_PRICE_SIMCASH = os.environ.get('STRIPE_PRICE_SIMCASH')
     
     # PayPal (for future payments)
     PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID')

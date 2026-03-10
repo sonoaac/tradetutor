@@ -541,17 +541,98 @@ class PaymentService:
         except Exception:
             db.session.rollback()
     
+    def create_simcash_checkout_session(self, user_id: str, email: str):
+        """Create a Stripe Checkout Session for a $9.99 SimCash top-up (one-time payment)."""
+        self._get_stripe_key()
+
+        SIMCASH_PRICE = current_app.config.get('STRIPE_PRICE_SIMCASH')
+        if not SIMCASH_PRICE:
+            raise ValueError('STRIPE_PRICE_SIMCASH is not configured')
+
+        # Get or create Stripe customer so receipts go to the right email
+        billing_account = BillingAccount.query.filter_by(
+            user_id=user_id, provider='stripe'
+        ).first()
+
+        if billing_account:
+            customer_id = billing_account.provider_customer_id
+        else:
+            customer = self.stripe.Customer.create(
+                email=email, metadata={'user_id': user_id}
+            )
+            customer_id = customer.id
+            billing_account = BillingAccount(
+                user_id=user_id,
+                provider='stripe',
+                provider_customer_id=customer_id,
+            )
+            db.session.add(billing_account)
+            db.session.commit()
+
+        frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:5173')
+
+        session = self.stripe.checkout.Session.create(
+            customer=customer_id,
+            payment_method_types=['card'],
+            line_items=[{'price': SIMCASH_PRICE, 'quantity': 1}],
+            mode='payment',
+            success_url=f'{frontend_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}',
+            cancel_url=f'{frontend_url}/pricing',
+            metadata={
+                'user_id': user_id,
+                'payment_type': 'simcash',
+                'simcash_amount': '100000',
+            },
+        )
+        return session.url
+
     def handle_checkout_completed(self, session):
         """Handle successful checkout session"""
         user_id = session['metadata'].get('user_id')
+        payment_type = session['metadata'].get('payment_type', 'subscription')
+
+        # ── SimCash one-time top-up ──────────────────────────────────────────
+        if payment_type == 'simcash':
+            if not user_id:
+                current_app.logger.error('SimCash checkout missing user_id in metadata')
+                return
+
+            simcash_amount = int(session['metadata'].get('simcash_amount', 100000))
+            user = User.query.get(user_id)
+            if user:
+                portfolio = Portfolio.query.filter_by(user_id=user.id).first()
+                if not portfolio:
+                    portfolio = Portfolio(user_id=user.id, simcash_balance=simcash_amount)
+                    db.session.add(portfolio)
+                else:
+                    portfolio.simcash_balance = (portfolio.simcash_balance or 0) + simcash_amount
+
+                amount = session.get('amount_total', 0) / 100
+                payment = Payment(
+                    user_id=user_id,
+                    amount=amount,
+                    currency=session.get('currency', 'usd').upper(),
+                    status='completed',
+                    provider='stripe',
+                    transaction_id=session['id'],
+                    plan_type='simcash',
+                )
+                db.session.add(payment)
+                db.session.commit()
+                current_app.logger.info(
+                    f'SimCash +{simcash_amount} credited to user {user_id}'
+                )
+            return
+
+        # ── Subscription checkout ────────────────────────────────────────────
         plan = session['metadata'].get('plan')
         subscription_id = session.get('subscription')
         customer_id = session.get('customer')
-        
+
         if not user_id or not plan:
             current_app.logger.error('Missing user_id or plan in checkout session')
             return
-        
+
         # Get subscription details from Stripe
         subscription = self.stripe.Subscription.retrieve(subscription_id)
         

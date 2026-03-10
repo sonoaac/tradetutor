@@ -23,6 +23,22 @@ def get_paypal_config():
     return jsonify(payment_service.get_paypal_config()), 200
 
 
+@payment_bp.route('/create-simcash-checkout', methods=['POST'])
+@login_required
+@limiter.limit("10 per minute")
+def create_simcash_checkout():
+    """Create a Stripe Checkout Session for a $9.99 SimCash top-up."""
+    try:
+        url = payment_service.create_simcash_checkout_session(
+            user_id=current_user.id,
+            email=current_user.email,
+        )
+        return jsonify({'url': url}), 200
+    except Exception as e:
+        current_app.logger.error(f'SimCash checkout error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+
 @payment_bp.route('/create-checkout-session', methods=['POST'])
 @login_required
 @limiter.limit("10 per minute")

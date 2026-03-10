@@ -22,6 +22,7 @@ import {
   TrendingUp, TrendingDown, X, RefreshCw,
   BarChart2, Target, Activity, DollarSign, Flame,
   ChevronRight, AlertTriangle, ShoppingCart,
+  Bot, ToggleLeft, ToggleRight, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { CanvasChart, type ChartCandle, type PriceLine } from '@/components/CanvasChart';
 
@@ -302,6 +303,13 @@ export default function SimulatorPage() {
   const [mobileTab,  setMobileTab]  = useState<'chart' | 'order' | 'markets'>('chart');
   const [error,      setError]      = useState<string | null>(null);
 
+  // ── Trading Assistant state
+  const [assistantOn,      setAssistantOn]      = useState(true);
+  const [assistantMinimized, setAssistantMinimized] = useState(false);
+  const [assistantDismissed, setAssistantDismissed] = useState(false);
+  const [showTogglePrompt,  setShowTogglePrompt]  = useState(false);
+  const goodTradesRef = useRef(0);
+
   // Persist cash whenever it changes
   useEffect(() => { saveCash(simCash); }, [simCash]);
   useEffect(() => { saveHistory(history); }, [history]);
@@ -374,8 +382,14 @@ export default function SimulatorPage() {
           const pnlPct = (pnl / (pos.entryPrice * pos.quantity)) * 100;
           closed.push({ id: pos.id, symbol: pos.symbol, direction: pos.direction, quantity: pos.quantity, entryPrice: pos.entryPrice, exitPrice: p, pnl, pnlPct, closedAt: Date.now() });
           cashDelta += pos.entryPrice * pos.quantity + pnl;
-          if (pnl > 0) { setWins(w => w + 1); setStreak(s => s + 1); }
-          else         { setLosses(l => l + 1); setStreak(_ => 0); }
+          if (pnl > 0) {
+            setWins(w => w + 1); setStreak(s => s + 1);
+            goodTradesRef.current += 1;
+            if (goodTradesRef.current >= 5 && assistantOn && !showTogglePrompt) {
+              setShowTogglePrompt(true);
+            }
+          }
+          else { setLosses(l => l + 1); setStreak(_ => 0); }
         } else {
           remaining.push({ ...pos, pnl: calcPnl(pos, p), pnlPct: (calcPnl(pos, p) / (pos.entryPrice * pos.quantity)) * 100 });
         }
@@ -458,8 +472,12 @@ export default function SimulatorPage() {
     setPositions(p => p.filter(x => x.id !== pos.id));
     setHistory(h => [closed, ...h]);
     setSimCash(c => c + pos.entryPrice * pos.quantity + pnl);
-    if (pnl > 0) { setWins(w => w + 1); setStreak(s => s + 1); }
-    else         { setLosses(l => l + 1); setStreak(_ => 0); }
+    if (pnl > 0) {
+      setWins(w => w + 1); setStreak(s => s + 1);
+      goodTradesRef.current += 1;
+      if (goodTradesRef.current >= 5 && assistantOn && !showTogglePrompt) setShowTogglePrompt(true);
+    }
+    else { setLosses(l => l + 1); setStreak(_ => 0); }
   }, [livePrices]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resetAccount = useCallback(() => {
@@ -477,6 +495,62 @@ export default function SimulatorPage() {
 
   const activePos = positions.find(p => p.symbol === selectedSym) ?? null;
   const selectedCandles = candles[selectedSym] ?? [];
+
+  // ── Trading Assistant signal computation ─────────────────────────────────
+  const assistantSignal = useMemo(() => {
+    const cdls = selectedCandles;
+    if (cdls.length < 20) return null;
+    const closes = cdls.map(c => c.close);
+    // Simple RSI-14
+    const gains: number[] = [], losses: number[] = [];
+    for (let i = 1; i < closes.length; i++) {
+      const d = closes[i] - closes[i - 1];
+      gains.push(d > 0 ? d : 0);
+      losses.push(d < 0 ? -d : 0);
+    }
+    const avgG = gains.slice(-14).reduce((a, b) => a + b, 0) / 14;
+    const avgL = losses.slice(-14).reduce((a, b) => a + b, 0) / 14;
+    const rs = avgL === 0 ? 100 : avgG / avgL;
+    const rsi = 100 - 100 / (1 + rs);
+    // MA5 vs MA20
+    const ma5  = closes.slice(-5).reduce((a, b) => a + b, 0) / 5;
+    const ma20 = closes.slice(-20).reduce((a, b) => a + b, 0) / 20;
+    const price = closes[closes.length - 1];
+    const trend = ma5 > ma20 ? 'up' : 'down';
+    const pctFromMa20 = ((price - ma20) / ma20) * 100;
+
+    let action: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
+    let confidence = 'Medium';
+    const reasons: string[] = [];
+
+    if (rsi < 35 && trend === 'up') {
+      action = 'BUY'; confidence = 'High';
+      reasons.push(`RSI ${rsi.toFixed(0)} — oversold with upward trend`);
+      reasons.push('Short-term MA above long-term MA (bullish)');
+    } else if (rsi < 45 && trend === 'up') {
+      action = 'BUY'; confidence = 'Medium';
+      reasons.push(`RSI ${rsi.toFixed(0)} — momentum building`);
+      reasons.push('Price above 20-period average');
+    } else if (rsi > 65 && trend === 'down') {
+      action = 'SELL'; confidence = 'High';
+      reasons.push(`RSI ${rsi.toFixed(0)} — overbought with downward trend`);
+      reasons.push('Short-term MA below long-term MA (bearish)');
+    } else if (rsi > 55 && trend === 'down') {
+      action = 'SELL'; confidence = 'Medium';
+      reasons.push(`RSI ${rsi.toFixed(0)} — momentum fading`);
+      reasons.push('Price trending below 20-period average');
+    } else {
+      action = 'HOLD'; confidence = 'Low';
+      reasons.push(`RSI ${rsi.toFixed(0)} — no clear edge`);
+      reasons.push('Wait for clearer signal before entering');
+    }
+
+    if (Math.abs(pctFromMa20) > 3) {
+      reasons.push(`Price ${pctFromMa20 > 0 ? '+' : ''}${pctFromMa20.toFixed(1)}% from MA20`);
+    }
+
+    return { action, confidence, reasons, rsi: rsi.toFixed(0), ma5, ma20 };
+  }, [selectedCandles]);
 
   const chartPriceLines: PriceLine[] = [
     ...(activePos?.entryPrice ? [{ price: activePos.entryPrice, color: '#2196f3', label: 'Entry', dash: true }] : []),
@@ -797,6 +871,147 @@ export default function SimulatorPage() {
           {OrderPanel}
         </div>
       </div>
+
+      {/* ── Trading Assistant ─────────────────────────────────────────────── */}
+      {!assistantDismissed && (
+        <div
+          className="fixed bottom-4 right-4 z-50 w-72 rounded-xl shadow-2xl overflow-hidden"
+          style={{ background: C.panel, border: `1px solid ${C.border}` }}
+        >
+          {/* Header */}
+          <div
+            className="flex items-center justify-between px-3 py-2 cursor-pointer select-none"
+            style={{ background: '#1a2035', borderBottom: `1px solid ${C.border}` }}
+            onClick={() => setAssistantMinimized(m => !m)}
+          >
+            <div className="flex items-center gap-2">
+              <Bot size={14} className="text-blue-400" />
+              <span className="text-xs font-bold text-white">Trading Assistant</span>
+              {assistantSignal && (
+                <span
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                  style={{
+                    background: assistantSignal.action === 'BUY' ? C.green + '33' : assistantSignal.action === 'SELL' ? C.red + '33' : C.yellow + '22',
+                    color: assistantSignal.action === 'BUY' ? C.green : assistantSignal.action === 'SELL' ? C.red : C.yellow,
+                  }}
+                >
+                  {assistantSignal.action}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={e => { e.stopPropagation(); setAssistantOn(o => !o); }}
+                className="p-0.5"
+                title={assistantOn ? 'Turn off assistant' : 'Turn on assistant'}
+              >
+                {assistantOn
+                  ? <ToggleRight size={16} className="text-blue-400" />
+                  : <ToggleLeft size={16} style={{ color: C.muted }} />
+                }
+              </button>
+              {assistantMinimized
+                ? <ChevronUp size={13} style={{ color: C.muted }} />
+                : <ChevronDown size={13} style={{ color: C.muted }} />
+              }
+              <button onClick={() => setAssistantDismissed(true)} className="p-0.5">
+                <X size={12} style={{ color: C.muted }} />
+              </button>
+            </div>
+          </div>
+
+          {/* Body */}
+          {!assistantMinimized && assistantOn && assistantSignal && (
+            <div className="p-3 space-y-2">
+              {/* Signal */}
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex-1 text-center py-1.5 rounded font-bold text-sm"
+                  style={{
+                    background: assistantSignal.action === 'BUY' ? C.green + '22' : assistantSignal.action === 'SELL' ? C.red + '22' : C.yellow + '22',
+                    color: assistantSignal.action === 'BUY' ? C.green : assistantSignal.action === 'SELL' ? C.red : C.yellow,
+                  }}
+                >
+                  {assistantSignal.action === 'BUY' ? '↑ BUY Signal' : assistantSignal.action === 'SELL' ? '↓ SELL Signal' : '→ HOLD'}
+                </div>
+                <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: C.border, color: C.muted }}>
+                  {assistantSignal.confidence}
+                </span>
+              </div>
+
+              {/* Reasons */}
+              <div className="space-y-1">
+                {assistantSignal.reasons.map((r, i) => (
+                  <div key={i} className="flex items-start gap-1.5 text-[11px]" style={{ color: C.text }}>
+                    <span style={{ color: C.blue, flexShrink: 0 }}>•</span>
+                    <span>{r}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Conflict warning */}
+              {activePos && (
+                (activePos.direction === 'long' && assistantSignal.action === 'SELL') ||
+                (activePos.direction === 'short' && assistantSignal.action === 'BUY')
+              ) && (
+                <div className="flex items-start gap-1.5 text-[11px] px-2 py-1.5 rounded" style={{ background: C.red + '22', color: C.red }}>
+                  <AlertTriangle size={11} className="flex-shrink-0 mt-0.5" />
+                  <span>Signal conflicts with your open {activePos.direction} position on {activePos.symbol}. Consider reviewing your trade.</span>
+                </div>
+              )}
+
+              {/* Caution for going against signal */}
+              {!activePos && direction === 'long' && assistantSignal.action === 'SELL' && (
+                <div className="flex items-start gap-1.5 text-[11px] px-2 py-1.5 rounded" style={{ background: C.yellow + '22', color: C.yellow }}>
+                  <AlertTriangle size={11} className="flex-shrink-0 mt-0.5" />
+                  <span>You are about to go LONG but signals suggest bearish momentum. Are you sure?</span>
+                </div>
+              )}
+              {!activePos && direction === 'short' && assistantSignal.action === 'BUY' && (
+                <div className="flex items-start gap-1.5 text-[11px] px-2 py-1.5 rounded" style={{ background: C.yellow + '22', color: C.yellow }}>
+                  <AlertTriangle size={11} className="flex-shrink-0 mt-0.5" />
+                  <span>You are about to SHORT but signals suggest bullish momentum. Are you sure?</span>
+                </div>
+              )}
+
+              <div className="text-[10px] pt-1" style={{ color: C.muted }}>
+                RSI {assistantSignal.rsi} · For learning only — not financial advice
+              </div>
+            </div>
+          )}
+
+          {!assistantMinimized && !assistantOn && (
+            <div className="p-3 text-center text-[11px]" style={{ color: C.muted }}>
+              Assistant is off. Toggle to get trade signals.
+            </div>
+          )}
+
+          {/* 5 good trades prompt */}
+          {showTogglePrompt && (
+            <div className="px-3 pb-3 pt-1 border-t" style={{ borderColor: C.border }}>
+              <p className="text-[11px] text-center mb-2" style={{ color: C.text }}>
+                🎉 5 great trades! You are getting good at this. Want to turn off the assistant and trade on your own?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setAssistantOn(false); setShowTogglePrompt(false); }}
+                  className="flex-1 py-1 rounded text-[11px] font-bold"
+                  style={{ background: C.green + '22', color: C.green }}
+                >
+                  Turn Off
+                </button>
+                <button
+                  onClick={() => setShowTogglePrompt(false)}
+                  className="flex-1 py-1 rounded text-[11px]"
+                  style={{ background: C.border, color: C.muted }}
+                >
+                  Keep On
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

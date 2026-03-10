@@ -14,6 +14,10 @@ class Portfolio(db.Model):
     balance = db.Column(db.Numeric(15, 2), default=Decimal('10000.00'), nullable=False)
     track = db.Column(db.String(20))  # 'stocks', 'crypto', 'forex'
     experience = db.Column(db.String(20))  # 'beginner', 'intermediate', 'advanced'
+
+    # SimCash — practice money. Credits accumulate via $9.99 top-ups.
+    # Persisted here so purchases survive browser/device changes.
+    simcash_balance = db.Column(db.Integer, default=0, nullable=False)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -24,6 +28,7 @@ class Portfolio(db.Model):
             'id': self.id,
             'userId': self.user_id,
             'balance': str(self.balance),
+            'simcashBalance': self.simcash_balance or 0,
             'track': self.track,
             'experience': self.experience,
             'createdAt': self.created_at.isoformat(),

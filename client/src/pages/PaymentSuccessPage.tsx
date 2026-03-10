@@ -1,43 +1,73 @@
 /**
- * PaymentSuccessPage — credits $100,000 SimCash to localStorage on arrival.
- * Stripe redirects here with ?session_id=... after a successful checkout.
+ * PaymentSuccessPage — polls server for SimCash balance after successful checkout.
+ * Also syncs to localStorage for the simulator.
  */
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { CheckCircle, TrendingUp, Zap } from 'lucide-react';
+import { CheckCircle, TrendingUp, Zap, Loader2 } from 'lucide-react';
+import { apiUrl } from '@/lib/api';
 
 const SIMCASH_REWARD = 100_000;
-const LS_CASH        = 'tt_sim_cash_v1';
-
-function creditSimCash(): number {
-  try {
-    const current = parseFloat(localStorage.getItem(LS_CASH) ?? '0') || 0;
-    const next    = current + SIMCASH_REWARD;
-    localStorage.setItem(LS_CASH, String(next));
-    return next;
-  } catch {
-    return SIMCASH_REWARD;
-  }
-}
+const LS_CASH = 'tt_sim_cash_v1';
 
 export default function PaymentSuccessPage() {
   const [, setLocation] = useLocation();
-  const [newBalance, setNewBalance] = useState<number | null>(null);
+  const [serverBalance, setServerBalance] = useState<number | null>(null);
+  const [loadingBalance, setLoadingBalance] = useState(true);
 
   useEffect(() => {
-    // Credit SimCash once on mount — idempotent via credited flag per session_id
     const params    = new URLSearchParams(window.location.search);
-    const sessionId = params.get('session_id') || 'manual';
-    const flagKey   = `tt_credited_${sessionId}`;
+    const sessionId = params.get('session_id') || 'demo';
 
-    if (!sessionStorage.getItem(flagKey)) {
-      const bal = creditSimCash();
-      setNewBalance(bal);
-      sessionStorage.setItem(flagKey, '1');
-    } else {
-      // Already credited — just show current balance
-      try { setNewBalance(parseFloat(localStorage.getItem(LS_CASH) ?? '0')); } catch { /* */ }
+    // Demo / local mode — just read from localStorage
+    if (sessionId === 'demo') {
+      try {
+        const bal = parseFloat(localStorage.getItem(LS_CASH) ?? '0') || 0;
+        setServerBalance(bal);
+      } catch { /* */ }
+      setLoadingBalance(false);
+      return;
     }
+
+    // Real mode — poll server for updated balance (webhook may take a moment)
+    let attempts = 0;
+    const maxAttempts = 8;
+    const creditedKey = `tt_credited_${sessionId}`;
+
+    async function fetchBalance() {
+      try {
+        const res = await fetch(apiUrl('/api/simcash'), { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          const bal  = data.balance || 0;
+          setServerBalance(bal);
+          // Sync to localStorage for simulator
+          try { localStorage.setItem(LS_CASH, String(bal)); } catch { /* */ }
+          sessionStorage.setItem(creditedKey, '1');
+          setLoadingBalance(false);
+          return true;
+        }
+      } catch { /* */ }
+      return false;
+    }
+
+    async function poll() {
+      if (sessionStorage.getItem(creditedKey)) {
+        // Already processed — just show localStorage balance
+        try { setServerBalance(parseFloat(localStorage.getItem(LS_CASH) ?? '0')); } catch { /* */ }
+        setLoadingBalance(false);
+        return;
+      }
+      const ok = await fetchBalance();
+      if (!ok && attempts < maxAttempts) {
+        attempts++;
+        setTimeout(poll, 2000);
+      } else if (!ok) {
+        setLoadingBalance(false);
+      }
+    }
+
+    setTimeout(poll, 1200); // wait for webhook to process
   }, []);
 
   return (
@@ -56,14 +86,22 @@ export default function PaymentSuccessPage() {
         {/* SimCash credited card */}
         <div className="rounded-2xl border-2 border-primary bg-card p-6 mb-6 text-center">
           <p className="text-sm font-semibold text-muted-foreground mb-1">SimCash Added</p>
-          <p className="text-5xl font-bold text-primary font-mono mb-1">
+          <p className="text-5xl font-bold text-primary font-mono mb-2">
             +${SIMCASH_REWARD.toLocaleString()}
           </p>
-          {newBalance != null && (
-            <p className="text-sm text-muted-foreground">
-              New balance: <span className="font-semibold text-foreground font-mono">${newBalance.toLocaleString()}</span>
-            </p>
-          )}
+          <div className="text-sm text-muted-foreground">
+            {loadingBalance ? (
+              <span className="flex items-center justify-center gap-1.5">
+                <Loader2 size={14} className="animate-spin" /> Syncing balance...
+              </span>
+            ) : serverBalance !== null ? (
+              <span>
+                New balance: <span className="font-semibold text-foreground font-mono">${serverBalance.toLocaleString()}</span>
+              </span>
+            ) : (
+              <span>Balance will appear in your simulator shortly.</span>
+            )}
+          </div>
         </div>
 
         {/* What to do now */}
@@ -74,7 +112,7 @@ export default function PaymentSuccessPage() {
           </div>
           <div className="flex items-center gap-2 text-sm text-foreground">
             <TrendingUp size={14} className="text-primary flex-shrink-0" />
-            <span>Trade 26 assets — stocks, crypto, forex & indices</span>
+            <span>Trade 26 assets — stocks, crypto, forex &amp; indices</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-foreground">
             <CheckCircle size={14} className="text-primary flex-shrink-0" />
