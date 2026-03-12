@@ -65,7 +65,8 @@ class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
     SESSION_COOKIE_SECURE = True
-    SESSION_COOKIE_SAMESITE = 'None'  # For cross-origin requests
+    SESSION_COOKIE_SAMESITE = 'None'  # Required for cross-origin Vercel → Render requests
+    SESSION_COOKIE_DOMAIN = os.environ.get('SESSION_COOKIE_DOMAIN', '.tradetutor.academy')  # Covers apex + subdomains so Vercel proxy forwards the session cookie
 
 
 config = {
