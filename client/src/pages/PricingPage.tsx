@@ -80,6 +80,20 @@ export default function PricingPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-16">
 
+        {/* Social proof */}
+        <div className="flex items-center justify-center gap-6 mb-10 flex-wrap">
+          {[
+            { value: '3,200+', label: 'learners practicing' },
+            { value: '$0', label: 'real money risked' },
+            { value: '21', label: 'lessons to master' },
+          ].map(({ value, label }) => (
+            <div key={label} className="text-center">
+              <p className="text-2xl font-bold text-foreground">{value}</p>
+              <p className="text-xs text-muted-foreground">{label}</p>
+            </div>
+          ))}
+        </div>
+
         {/* Header */}
         <div className="text-center mb-12">
           <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full border border-border bg-muted text-muted-foreground mb-4">
@@ -116,7 +130,7 @@ export default function PricingPage() {
         {/* Main card */}
         <div className="rounded-2xl border-2 border-primary shadow-lg overflow-hidden mb-10">
           <div className="bg-primary px-6 py-3 flex items-center justify-between">
-            <span className="text-primary-foreground font-bold text-sm">SimCash Top-Up</span>
+            <span className="text-primary-foreground font-bold text-sm">Full Access Pack</span>
             <span className="text-primary-foreground text-xs opacity-80">One-time · No subscription</span>
           </div>
 
@@ -160,9 +174,15 @@ export default function PricingPage() {
 
             {error && <p className="text-sm text-red-500 text-center mt-2">{error}</p>}
 
-            <p className="text-xs text-center text-muted-foreground mt-4 flex items-center justify-center gap-1">
-              <Lock size={10} /> Secure checkout via Stripe · No card saved · One-time charge
-            </p>
+            <div className="mt-4 flex flex-col items-center gap-2">
+              <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
+                <Lock size={10} /> Secure checkout via Stripe · No card saved · One-time charge
+              </p>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                <CheckCircle size={11} className="text-green-500 shrink-0" />
+                <span className="text-[11px] font-medium text-green-600 dark:text-green-400">100% risk-free — it's all simulated money</span>
+              </div>
+            </div>
           </div>
         </div>
 

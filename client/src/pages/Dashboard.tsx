@@ -329,10 +329,13 @@ function UserDashboard({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
             { label: 'Day streak',        value: `${streak}`,                           sub: 'in a row',         Icon: Flame,         color: '#dc2626' },
             { label: 'Total XP',          value: totalXp.toLocaleString(),              sub: 'experience',       Icon: Zap,           color: '#d97706' },
           ].map(({ label, value, sub, Icon, color }) => (
-            <div key={label} className="p-5 rounded-xl border border-border bg-card">
+            <div key={label} className="p-5 rounded-xl border border-border bg-card relative overflow-hidden" style={{ borderLeft: `3px solid ${color}` }}>
+              <div className="absolute top-0 right-0 w-16 h-16 rounded-full opacity-5 -translate-y-4 translate-x-4" style={{ background: color }} />
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm text-muted-foreground">{label}</p>
-                <Icon size={15} style={{ color }} />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: color + '18' }}>
+                  <Icon size={14} style={{ color }} />
+                </div>
               </div>
               <p className="text-2xl font-bold text-foreground leading-none mb-1">{value}</p>
               <p className="text-xs text-muted-foreground">{sub}</p>

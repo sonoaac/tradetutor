@@ -172,6 +172,54 @@ export default function Auth() {
           <span className="font-display font-bold text-xl tracking-tight">TradeTutor</span>
         </div>
 
+        {/* Simulator preview mock */}
+        <div className="relative z-10 rounded-2xl bg-white/5 border border-white/10 overflow-hidden shadow-2xl">
+          {/* Header bar */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-white/80 font-mono">ZYNC</span>
+              <span className="text-[10px] text-white/40">ZynCoin · Crypto</span>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-mono font-bold text-white">$68,412.50</p>
+              <p className="text-[10px] font-mono text-green-400">+2.34%</p>
+            </div>
+          </div>
+          {/* Mini candlestick chart */}
+          <div className="px-4 pt-4 pb-2">
+            <div className="flex items-end gap-[3px] h-20">
+              {[40,52,45,58,50,55,48,62,57,70,65,72,68,76,71,80,75,78,82,76,84,79,88,85,90,87,92,96,89,95].map((h, i) => {
+                const colors = [
+                  '#ef4444','#22c55e','#22c55e','#22c55e','#ef4444','#22c55e','#ef4444','#22c55e',
+                  '#ef4444','#22c55e','#ef4444','#22c55e','#ef4444','#22c55e','#ef4444','#22c55e',
+                  '#ef4444','#22c55e','#22c55e','#ef4444','#22c55e','#ef4444','#22c55e','#ef4444',
+                  '#22c55e','#ef4444','#22c55e','#22c55e','#ef4444','#22c55e',
+                ];
+                return (
+                  <div key={i} className="flex-1 rounded-sm opacity-80" style={{ height: `${h}%`, background: colors[i] }} />
+                );
+              })}
+            </div>
+            <div className="flex justify-between mt-1">
+              <span className="text-[9px] text-white/20 font-mono">30 days</span>
+              <span className="text-[9px] text-white/20 font-mono">today</span>
+            </div>
+          </div>
+          {/* Portfolio snapshot */}
+          <div className="grid grid-cols-3 gap-px border-t border-white/10 bg-white/5">
+            {[
+              { label: 'Balance', value: '$98,241', up: true },
+              { label: 'P&L Today', value: '+$1,840', up: true },
+              { label: 'Open', value: '3 trades', up: null },
+            ].map(({ label, value, up }) => (
+              <div key={label} className="bg-[#0d0f14] px-3 py-2.5 text-center">
+                <p className="text-[9px] text-white/30 mb-0.5">{label}</p>
+                <p className={`text-xs font-mono font-bold ${up === true ? 'text-green-400' : up === false ? 'text-red-400' : 'text-white/70'}`}>{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Headline */}
         <div className="relative z-10 space-y-6">
           <div>
@@ -283,11 +331,11 @@ export default function Auth() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="firstName" className="text-xs font-medium">First name</Label>
-                    <Input id="firstName" placeholder="Jane" value={form.firstName} onChange={set('firstName')} autoComplete="given-name" />
+                    <Input id="firstName" placeholder="First name" value={form.firstName} onChange={set('firstName')} autoComplete="given-name" />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="lastName" className="text-xs font-medium">Last name</Label>
-                    <Input id="lastName" placeholder="Doe" value={form.lastName} onChange={set('lastName')} autoComplete="family-name" />
+                    <Input id="lastName" placeholder="Last name" value={form.lastName} onChange={set('lastName')} autoComplete="family-name" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
