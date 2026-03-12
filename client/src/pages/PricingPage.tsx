@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import {
   CheckCircle, TrendingUp, DollarSign, RefreshCw, Zap, BarChart2, Loader2,
-  Lock,
+  Lock, ShieldCheck, Check,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { apiUrl } from '@/lib/api';
@@ -80,18 +80,20 @@ export default function PricingPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-16">
 
-        {/* Social proof */}
-        <div className="flex items-center justify-center gap-6 mb-10 flex-wrap">
-          {[
-            { value: '3,200+', label: 'learners practicing' },
-            { value: '$0', label: 'real money risked' },
-            { value: '21', label: 'lessons to master' },
-          ].map(({ value, label }) => (
-            <div key={label} className="text-center">
-              <p className="text-2xl font-bold text-foreground">{value}</p>
-              <p className="text-xs text-muted-foreground">{label}</p>
-            </div>
-          ))}
+        {/* Social proof stats bar */}
+        <div className="bg-gradient-to-br from-blue-500/7 to-indigo-500/5 border border-blue-500/12 rounded-2xl mb-12 mx-auto max-w-xl">
+          <div className="flex items-center justify-center gap-0">
+            {[
+              { value: '3,200+', label: 'Learners practicing' },
+              { value: '$0',     label: 'Real money risked' },
+              { value: '21',     label: 'Lessons to master' },
+            ].map((s, i) => (
+              <div key={i} className={`flex-1 text-center py-4 ${i < 2 ? 'border-r border-border' : ''}`}>
+                <p className="text-2xl font-extrabold tracking-tight text-foreground">{s.value}</p>
+                <p className="text-[11px] uppercase tracking-widest text-muted-foreground mt-0.5 font-medium">{s.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Header */}
@@ -112,10 +114,10 @@ export default function PricingPage() {
 
         {/* Current balance */}
         {hasBalance && (
-          <div className="mb-8 rounded-xl border border-border bg-muted/50 px-6 py-4 flex items-center justify-between">
+          <div className="mb-8 rounded-xl border border-green-500/15 bg-gradient-to-r from-green-500/7 to-emerald-500/4 px-6 py-4 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-foreground">Your current SimCash balance</p>
-              <p className="text-2xl font-bold font-mono text-primary mt-0.5">
+              <p className="text-2xl font-extrabold font-mono text-green-400 tabular-nums mt-0.5">
                 ${currentCash.toLocaleString()}
               </p>
             </div>
@@ -128,10 +130,10 @@ export default function PricingPage() {
         )}
 
         {/* Main card */}
-        <div className="rounded-2xl border-2 border-primary shadow-lg overflow-hidden mb-10">
-          <div className="bg-primary px-6 py-3 flex items-center justify-between">
-            <span className="text-primary-foreground font-bold text-sm">Full Access Pack</span>
-            <span className="text-primary-foreground text-xs opacity-80">One-time · No subscription</span>
+        <div className="rounded-2xl border border-blue-500/20 shadow-[0_24px_64px_rgba(0,0,0,0.4),0_0_80px_rgba(59,130,246,0.06)] overflow-hidden mb-10">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 flex items-center justify-between">
+            <span className="text-white font-bold text-sm">Full Access Pack</span>
+            <span className="text-white/70 text-xs">One-time · No subscription</span>
           </div>
 
           <div className="bg-card px-6 py-8">
@@ -158,11 +160,30 @@ export default function PricingPage() {
               ))}
             </div>
 
+            {/* Trust strip */}
+            <div className="flex items-center justify-center gap-5 flex-wrap px-2 py-2.5 bg-green-500/5 border border-green-500/12 rounded-xl mb-3 text-[11px] text-green-400 font-medium">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck size={13} /> Risk-free — no real money
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check size={13} /> No card saved
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Zap size={13} /> Instant access
+              </span>
+            </div>
+
             {/* CTA */}
             <button
               onClick={handleCheckout}
               disabled={loading}
-              className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg hover:opacity-90 transition disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-[18px] rounded-[14px] font-bold text-[1.05rem] tracking-wide text-white
+                bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600
+                shadow-[0_4px_24px_rgba(59,130,246,0.35),inset_0_1px_0_rgba(255,255,255,0.15)]
+                hover:shadow-[0_8px_32px_rgba(59,130,246,0.5)] hover:-translate-y-0.5
+                transition-all duration-200
+                disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0
+                flex items-center justify-center gap-2"
             >
               {loading
                 ? <><Loader2 size={20} className="animate-spin" /> Redirecting...</>
@@ -174,14 +195,12 @@ export default function PricingPage() {
 
             {error && <p className="text-sm text-red-500 text-center mt-2">{error}</p>}
 
-            <div className="mt-4 flex flex-col items-center gap-2">
-              <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
-                <Lock size={10} /> Secure checkout via Stripe · No card saved · One-time charge
-              </p>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
-                <CheckCircle size={11} className="text-green-500 shrink-0" />
-                <span className="text-[11px] font-medium text-green-600 dark:text-green-400">100% risk-free — it's all simulated money</span>
-              </div>
+            <div className="flex items-center justify-center gap-5 flex-wrap mt-3.5">
+              {['Secured by Stripe', 'No card saved', 'Instant access', 'One-time charge'].map((t, i) => (
+                <span key={i} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <Check size={11} className="text-green-500" /> {t}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -201,12 +220,12 @@ export default function PricingPage() {
           <h2 className="text-xl font-bold text-foreground mb-6 text-center">How it works</h2>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              { step: '1', title: 'Pay $9.99',              desc: 'One-time purchase. No recurring charges. No hidden fees.' },
-              { step: '2', title: 'Get $100k SimCash',      desc: 'Credited instantly to your simulator account. Start trading immediately.' },
-              { step: '3', title: "Trade until it's gone",  desc: "Lose it all? That's the game. Come back and top up to keep learning." },
+              { step: '1', title: 'Pay $9.99',             desc: 'One-time purchase. No recurring charges. No hidden fees.' },
+              { step: '2', title: 'Get $100k SimCash',     desc: 'Credited instantly to your simulator account. Start trading immediately.' },
+              { step: '3', title: "Trade until it's gone", desc: "Lose it all? That's the game. Come back and top up to keep learning." },
             ].map(({ step, title, desc }) => (
-              <div key={step} className="text-center p-5 rounded-xl border border-border bg-card">
-                <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold text-lg flex items-center justify-center mx-auto mb-3">
+              <div key={step} className="text-center p-5 rounded-xl border border-border bg-card hover:-translate-y-1 hover:border-blue-500/20 hover:shadow-[0_16px_40px_rgba(59,130,246,0.1)] transition-all duration-200">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-lg flex items-center justify-center mx-auto mb-3 shadow-[0_4px_14px_rgba(99,102,241,0.4)]">
                   {step}
                 </div>
                 <p className="font-semibold text-foreground mb-1">{title}</p>
@@ -218,10 +237,10 @@ export default function PricingPage() {
 
         {/* FAQ */}
         <div>
-          <h2 className="text-xl font-bold text-foreground mb-6 text-center">Questions</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground mb-6 text-center">Frequently Asked Questions</h2>
           <div className="space-y-4">
             {FAQS.map(({ q, a }) => (
-              <div key={q} className="rounded-xl border border-border bg-card px-5 py-4">
+              <div key={q} className="rounded-xl border border-border bg-card px-5 py-4 hover:border-blue-500/25 hover:bg-blue-500/[0.02] transition-all duration-200">
                 <p className="font-semibold text-foreground mb-1">{q}</p>
                 <p className="text-sm text-muted-foreground">{a}</p>
               </div>
