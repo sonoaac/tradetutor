@@ -110,15 +110,15 @@ export function MobileNav() {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="pb-safe">
-        <div className="mx-auto flex max-w-md items-stretch justify-between px-2">
+        <div className="flex w-full items-stretch">
           {items.map((item) => {
             const active = isActivePath(item.href);
             const Icon = item.icon;
             return (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} href={item.href} className="flex flex-1">
                 <a
                   className={cn(
-                    "flex w-full flex-col items-center justify-center gap-1 px-2 py-2 text-xs font-medium",
+                    "flex flex-1 flex-col items-center justify-center gap-1 px-1 py-3 text-xs font-medium min-h-[52px]",
                     active ? "text-foreground" : "text-muted-foreground"
                   )}
                   aria-current={active ? "page" : undefined}

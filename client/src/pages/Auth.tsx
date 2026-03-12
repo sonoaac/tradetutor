@@ -151,7 +151,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-[100dvh] flex">
 
       {/* ── Left panel (desktop only) ─────────────────────────────────────── */}
       <div className="hidden lg:flex lg:w-[46%] xl:w-[44%] flex-col justify-between bg-[#0d0f14] text-white p-10 xl:p-14 relative overflow-hidden select-none">
@@ -226,7 +226,7 @@ export default function Auth() {
       </div>
 
       {/* ── Right panel (form) ────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-background px-5 py-10 sm:px-10">
+      <div className="flex-1 flex flex-col items-center justify-center bg-background px-5 py-10 sm:px-10 overflow-y-auto">
 
         {/* Mobile logo */}
         <div className="flex lg:hidden items-center gap-2 mb-8">

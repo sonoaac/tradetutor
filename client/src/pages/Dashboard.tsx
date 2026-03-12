@@ -104,7 +104,7 @@ function GuestHome({ onSignUp }: { onSignUp: () => void }) {
       <LiveTicker prices={prices} />
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="px-6 pt-14 pb-16 max-w-5xl mx-auto">
+      <section className="px-4 sm:px-6 pt-8 sm:pt-14 pb-12 sm:pb-16 max-w-5xl mx-auto">
         <div className="mb-5">
           <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full border border-border bg-muted text-muted-foreground">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -118,15 +118,15 @@ function GuestHome({ onSignUp }: { onSignUp: () => void }) {
         <p className="text-lg text-muted-foreground max-w-2xl mb-8 leading-relaxed">
           Practice with a live-looking simulator, complete gamified lessons, and build real trading skills — before you risk a single dollar.
         </p>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Link href="/simulator">
-            <a className="inline-flex items-center gap-2 px-7 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition">
+            <a className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition">
               Start Simulator <ArrowRight size={15} />
             </a>
           </Link>
           <button
             onClick={onSignUp}
-            className="inline-flex items-center gap-2 px-7 py-3 rounded-lg border border-border bg-background text-foreground font-semibold hover:bg-muted transition"
+            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-lg border border-border bg-background text-foreground font-semibold hover:bg-muted transition"
           >
             Sign Up Free
           </button>

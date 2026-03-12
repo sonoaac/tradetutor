@@ -5,6 +5,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'wouter';
+import { cn } from '@/lib/utils';
 import {
   Lock, CheckCircle, Star, Flame, Trophy, Zap, Target, BookOpen,
   PlayCircle, Award, GraduationCap, TrendingUp, BarChart2, Brain,
@@ -421,7 +422,13 @@ export default function LessonsPage() {
                         />
 
                         <div
-                          className="rounded-xl p-3 transition-all border bg-card"
+                          role={unlocked ? "button" : undefined}
+                          tabIndex={unlocked ? 0 : undefined}
+                          onClick={unlocked ? () => navigate('/lessons/' + lesson.id) : undefined}
+                          className={cn(
+                            "rounded-xl p-3 transition-all border bg-card",
+                            unlocked && "cursor-pointer active:scale-[0.99]"
+                          )}
                           style={{
                             background: done ? mod.bg : undefined,
                             borderColor: done || isCurrent ? mod.color + '44' : undefined,
@@ -477,8 +484,8 @@ export default function LessonsPage() {
                             {/* Action button */}
                             {unlocked && (
                               <button
-                                onClick={() => navigate('/lessons/' + lesson.id)}
-                                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold flex-shrink-0 transition-all ${done ? 'bg-muted text-muted-foreground' : 'text-white'}`}
+                                onClick={(e) => { e.stopPropagation(); navigate('/lessons/' + lesson.id); }}
+                                className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold flex-shrink-0 transition-all min-w-[58px] justify-center ${done ? 'bg-muted text-muted-foreground' : 'text-white'}`}
                                 style={done ? undefined : { background: mod.color }}
                               >
                                 {done ? <>Review</> : <><PlayCircle size={13} /> Study</>}
