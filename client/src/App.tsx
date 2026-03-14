@@ -15,6 +15,7 @@ import PricingPage from "@/pages/PricingPage";
 import PaymentSuccessPage from "@/pages/PaymentSuccessPage";
 import PaymentCancelPage from "@/pages/PaymentCancelPage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
+import LeaderboardPage from "@/pages/LeaderboardPage";
 import { AppShell } from "@/components/layout/AppShell";
 
 function Router() {
@@ -82,6 +83,13 @@ function Router() {
         {() => (
           <AppShell>
             <SubscriptionPage />
+          </AppShell>
+        )}
+      </Route>
+      <Route path="/leaderboard">
+        {() => (
+          <AppShell>
+            <LeaderboardPage />
           </AppShell>
         )}
       </Route>

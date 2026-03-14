@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Store,
   CreditCard,
+  Trophy,
   LogIn,
   LogOut,
 } from "lucide-react";
@@ -25,6 +26,7 @@ export function Sidebar() {
       { href: "/market", icon: Store, label: "Market" },
       { href: "/simulator", icon: CandlestickChart, label: "Simulator" },
       { href: "/lessons", icon: GraduationCap, label: "Lessons" },
+      { href: "/leaderboard", icon: Trophy, label: "Leaderboard" },
       { href: "/portfolio", icon: Wallet, label: "Portfolio" },
       { href: "/pricing", icon: CreditCard, label: "Plans" },
     ],
